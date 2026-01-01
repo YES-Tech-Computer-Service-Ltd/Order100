@@ -1,0 +1,354 @@
+/* Order100 Native Frontend Launcher CSS */
+
+#wll-site-launcher {
+    position: fixed;
+    z-index: 999999;
+}
+
+/* Base Panel */
+.o100-launcher-panel {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    overflow: hidden;
+    position: fixed;
+    bottom: 80px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    display: none;
+    flex-direction: column;
+    transform-origin: bottom right;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: scale(0.95);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.o100-launcher-panel.is-open {
+    display: flex;
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Panel Positioning */
+#wll-site-launcher.o100-pos-right .o100-launcher-panel {
+    right: 20px;
+    transform-origin: bottom right;
+}
+
+#wll-site-launcher.o100-pos-left .o100-launcher-panel {
+    left: 20px;
+    transform-origin: bottom left;
+}
+
+/* Header */
+.o100-launcher-header {
+    background: #4F47EB;
+    color: #FFF;
+    padding: 25px 20px;
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.o100-launcher-close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.o100-launcher-close:hover {
+    background: rgba(0,0,0,0.4);
+}
+
+.o100-launcher-back {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.o100-launcher-logo {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border-radius: 8px;
+    margin: 0 auto 10px auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.o100-launcher-logo img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.o100-launcher-title {
+    margin: 0 0 8px 0;
+    color: inherit;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.o100-launcher-desc {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+/* Body */
+.o100-launcher-body {
+    padding: 20px;
+    background: #F5F5F5;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 450px;
+}
+
+/* Cards */
+.o100-launcher-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.o100-launcher-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.o100-launcher-card-icon {
+    background: #e0e7ff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.o100-launcher-card-content {
+    flex: 1;
+}
+
+.o100-launcher-card-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 2px;
+    color: #1e293b;
+}
+
+.o100-launcher-card-desc {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.o100-launcher-card-arrow {
+    color: #94a3b8;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Footer */
+.o100-launcher-footer {
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #eee;
+    background: #fff;
+}
+
+.o100-launcher-btn {
+    color: #FFF;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+.o100-launcher-btn:hover {
+    opacity: 0.9;
+}
+
+/* Trigger Button */
+.o100-launcher-trigger {
+    position: fixed;
+    bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 999999;
+}
+
+.o100-launcher-trigger:hover {
+    transform: scale(1.05);
+}
+
+#wll-site-launcher.o100-pos-right .o100-launcher-trigger {
+    right: 20px;
+}
+
+#wll-site-launcher.o100-pos-left .o100-launcher-trigger {
+    left: 20px;
+}
+
+.o100-launcher-trigger-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.o100-launcher-trigger-text {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Secondary & Tertiary Panels */
+.o100-launcher-secondary-panel,
+.o100-launcher-tertiary-panel {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #F5F5F5;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.o100-launcher-secondary-panel.is-active,
+.o100-launcher-tertiary-panel.is-active {
+    display: flex;
+}
+
+/* Tertiary Panel Specifics */
+.o100-launcher-tertiary-panel {
+    z-index: 20; /* Must sit above secondary panel */
+}
+
+/* Loaders */
+.o100-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #94a3b8;
+}
+
+.o100-loader svg {
+    animation: o100-spin 1s linear infinite;
+    width: 24px;
+    height: 24px;
+}
+
+@keyframes o100-spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================================= */
+/* NATIVE EXFOOD CHECKOUT RESTORATION STYLES                 */
+/* ========================================================= */
+
+/* Order Method Tabs */
+.exwf-cksp-method.exwf-method-ct {margin-bottom: 30px;}
+.exwf-cksp-method.exwf-method-ct .exwf-method-title { display: flex; padding: 0; }
+.exwf-cksp-method.exwf-method-ct .exwf-method-title > div { flex: 1; text-align: center; padding: 15px; line-height: 1.2; font-size: 120%; border: 2px solid #ddd; cursor: pointer; color: inherit; font-weight: bold;}
+.exwf-cksp-method.exwf-method-ct .exwf-method-title > div:not(:first-child) { border-left: 0; }
+.exwf-cksp-method.exwf-method-ct .exwf-method-title .at-method {background: #ea1f2e; color: #fff; border-color: #ea1f2e; pointer-events: none;} 
+
+/* Loading States */
+.exwf-method-ct.ex-loading, .exwf-tip-form.ex-loading { opacity: .7; pointer-events: none; position: relative; }
+.exwf-method-ct.ex-loading:after, .exwf-tip-form.ex-loading:after {
+  content: " ";
+  display: block;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 4px solid rgba(0,0,0,.1);
+  border-color: #cecece rgba(0,0,0,.1) #cecece rgba(0,0,0,.1);
+  animation: lds-dual-ring 1.2s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -19px;
+  margin-left: -19px;
+  z-index: 99;
+}
+@keyframes lds-dual-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Tip Form */
+.exwf-tip-form {margin-bottom: 20px;}
+.exwf-tip-form input{ margin-bottom: 5px; }
+.exwf-tip-form input[name=exwf-remove-tip]:focus,
+.exwf-tip-form input[name=exwf-add-tip]:focus,
+.exwf-tip-form input[name=exwf-remove-tip],
+.exwf-tip-form input[name=exwf-tip-fixed],
+.exwf-tip-form input[name=exwf-add-tip] {background: #ea1f2e;color: #fff;padding: 10px 30px;box-shadow: 2px 2px 2px rgb(0 0 0 / 20%); transition: all .2s; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;}
+.exwf-tip-form input[name=exwf-remove-tip]:hover,
+.exwf-tip-form input[name=exwf-add-tip]:hover{background: #101010;}
+.exwf-tip-form input[name=exwf-remove-tip]{ opacity:.7}
+.exwf-tip-form .exwf-tip-error{ display: none; color:red; }
+.exwf-tip-form input[name=exwf-tip]{ padding: 10px; border: 1px solid #ccc; border-radius: 4px;}
+.exwf-tip-form input[name=exwf-tip-fixed]{padding: 10px 12px; margin-right: 5px; border: 1px solid #ccc; background: transparent; color: inherit; box-shadow: none; transition: all .2s; border-radius: 4px;}
+.exwf-tip-form input[name=exwf-tip-fixed].exwf-actip,
+.exwf-tip-form input[name=exwf-tip-fixed]:hover,
+.exwf-tip-form input[name=exwf-tip-fixed]:focus{ background: #ea1f2e;color: #fff; border-color: #ea1f2e; }
+
+.exwf-deli-field.ex-loading { opacity: .7; pointer-events: none; position: relative; }
+.exwf-deli-field.ex-loading:after {
+  content: " ";
+  display: block;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 4px solid rgba(0,0,0,.1);
+  border-color: #cecece rgba(0,0,0,.1) #cecece rgba(0,0,0,.1);
+  animation: lds-dual-ring 1.2s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -19px;
+  margin-left: -19px;
+  z-index: 99;
+}
+.exwf-tip-title{ font-weight: 600; margin-bottom: 10px; font-size: 16px; }
+

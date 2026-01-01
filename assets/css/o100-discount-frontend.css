@@ -1,0 +1,159 @@
+/* Discount Frontend Styles - WooFood Integration */
+
+/* Promo Badge (below price on product cards and in popup) */
+.o100-promo-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 4px;
+    /* Colors set dynamically via JS from settings */
+    color: var(--o100-promo-color, #E53935);
+    background-color: var(--o100-promo-bg, #FFEEF0);
+}
+
+/* Price Display - Strikethrough original + discounted price */
+.o100-price-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.o100-price-original {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9em;
+}
+
+.o100-price-discounted {
+    color: #E53935;
+    font-weight: 700;
+}
+
+/* On-Sale Badge (overlay on product image) */
+.o100-sale-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    border-radius: 3px;
+    background: #E53935;
+}
+
+.o100-sale-badge.o100-badge-pill {
+    border-radius: 50px;
+}
+
+.o100-sale-badge.o100-badge-square {
+    border-radius: 3px;
+}
+
+.o100-sale-badge.o100-badge-ribbon {
+    border-radius: 0;
+    left: 0;
+    padding: 3px 12px 3px 8px;
+    clip-path: polygon(0 0, 100% 0, 90% 50%, 100% 100%, 0 100%);
+}
+
+/* Promotional Banner */
+.o100-promo-banner {
+    background: linear-gradient(135deg, #FFEEF0 0%, #FFE0E3 100%);
+    color: #E53935;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border: 1px solid #FFD0D5;
+}
+
+/* Promo in popup modal */
+.o100-popup-promo {
+    margin: 8px 0;
+}
+
+.o100-popup-promo .o100-promo-badge {
+    font-size: 13px;
+    padding: 4px 12px;
+}
+
+.o100-popup-promo .o100-price-wrap {
+    margin-top: 4px;
+}
+
+/* Ensure product cards have relative positioning for badge overlay */
+.ex-product-item,
+.exfood-grid-item,
+.exfd_product_item {
+    position: relative;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .o100-promo-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+
+    .o100-promo-banner {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}
+
+/* First-Time Customer Floating Popup */
+.o100-first-time-popup {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #FFEBEE;
+    color: #D32F2F;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(211, 47, 47, 0.2);
+    z-index: 999999;
+    pointer-events: none;
+    transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #FFCDD2;
+    opacity: 0;
+}
+
+.o100-first-time-popup.o100-ftp-visible {
+    bottom: 30px;
+    opacity: 1;
+}
+
+.o100-first-time-popup.o100-ftp-hiding {
+    bottom: -100px;
+    opacity: 0;
+}
+
+.o100-first-time-popup .icon,
+.o100-first-time-popup .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Force hide WooFood's "Order X amount more to get free delivery" when our free shipping is active */
+body.o100-free-shipping-active .exwf-min-free-ship,
+body.o100-free-shipping-active .exwf-mini-amount {
+    display: none !important;
+}
+

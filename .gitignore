@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# WordPress
+wp-config.php
+wp-content/uploads/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Build/Temp
+dist/
+build/
+*.zip
+*.tar.gz
+scratch*.php
+test*.php
+diag*.php

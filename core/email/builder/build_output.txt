@@ -1,0 +1,22 @@
+
+> woo-exfood-builder@1.0.0 build
+> tsc && vite build
+
+src/pages/Editor.tsx(683,25): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(686,27): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(691,28): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(702,29): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(712,27): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(728,24): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(738,28): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(748,27): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(758,23): error TS18048: 'wrapper' is possibly 'undefined'.
+src/pages/Editor.tsx(1005,13): error TS6133: 'basicBlocks' is declared but its value is never read.
+src/pages/Editor.tsx(1025,19): error TS6133: 'sender' is declared but its value is never read.
+src/pages/Editor.tsx(1091,37): error TS2551: Property 'getTarget' does not exist on type 'AssetManager'. Did you mean 'setTarget'?
+src/pages/Editor.tsx(1116,37): error TS2345: Argument of type 'HTMLElement | undefined' is not assignable to parameter of type 'Node'.
+  Type 'undefined' is not assignable to type 'Node'.
+src/pages/Editor.tsx(1130,9): error TS6133: 'setDevice' is declared but its value is never read.
+src/pages/Editor.tsx(1131,9): error TS6133: 'runCommand' is declared but its value is never read.
+src/pages/Editor.tsx(1339,33): error TS18047: 'editor' is possibly 'null'.
+src/pages/Editor.tsx(2162,7): error TS6133: 'topBtnStyle' is declared but its value is never read.

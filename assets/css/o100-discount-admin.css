@@ -1,0 +1,473 @@
+/* Discount Admin Styles */
+
+.o100-discount-wrap {
+	margin-top: 15px;
+}
+
+/* Sub-tabs Navigation */
+.o100-discount-subtabs {
+	display: flex;
+	gap: 0;
+	border-bottom: 2px solid #8c8f94;
+	margin: 0 0 20px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.o100-discount-subtabs li {
+	margin: 0;
+}
+
+.o100-discount-subtabs a {
+	display: inline-block;
+	padding: 8px 16px;
+	text-decoration: none;
+	color: #50575e;
+	font-size: 13px;
+	font-weight: 500;
+	border: 1px solid transparent;
+	border-bottom: none;
+	border-radius: 3px 3px 0 0;
+	background: #f0f0f1;
+	margin-bottom: -2px;
+	transition: background .15s, color .15s;
+}
+
+.o100-discount-subtabs a:hover {
+	background: #e0e5ea;
+	color: #1d2327;
+}
+
+.o100-discount-subtabs a.o100-subtab-active {
+	background: #fff;
+	color: #1d2327;
+	border-color: #8c8f94 #8c8f94 #fff;
+	font-weight: 600;
+}
+
+/* Toolbar */
+.o100-dr-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 15px;
+	gap: 12px;
+}
+
+.o100-dr-search-filter {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.o100-dr-filter-select,
+.o100-dr-sort-select {
+	min-width: 160px;
+	padding: 6px 12px;
+}
+
+/* Rules Table */
+.o100-dr-table {
+	margin-bottom: 20px;
+}
+
+.o100-dr-col-status {
+	width: 90px;
+}
+
+.o100-dr-col-title {
+	width: 200px;
+}
+
+.o100-dr-col-actions {
+	width: 140px;
+}
+
+.o100-dr-status-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 5px;
+}
+
+.o100-dr-status-active {
+	background: #00a32a;
+}
+
+.o100-dr-status-inactive {
+	background: #d63638;
+}
+
+.o100-dr-no-rules td {
+	text-align: center;
+	color: #999;
+	padding: 20px !important;
+}
+
+/* Form Wrapper */
+.o100-dr-form-wrap {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	margin-top: 15px;
+}
+
+.o100-dr-form-title {
+	margin-top: 0;
+}
+
+/* Form Grid */
+.o100-dr-form-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+}
+
+@media (max-width: 1200px) {
+	.o100-dr-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Form Sections */
+.o100-dr-form-section {
+	background: #f9f9f9;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+	padding: 15px;
+}
+
+.o100-dr-form-section h4 {
+	margin: 0 0 12px 0;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #e2e4e7;
+	color: #1d2327;
+}
+
+/* Fields */
+.o100-dr-field {
+	margin-bottom: 12px;
+}
+
+.o100-dr-field>label {
+	display: block;
+	font-weight: 500;
+	margin-bottom: 4px;
+	color: #1d2327;
+}
+
+.o100-dr-field input[type="text"],
+.o100-dr-field input[type="number"],
+.o100-dr-field input[type="date"],
+.o100-dr-field input[type="time"],
+.o100-dr-field select {
+	width: 100%;
+	max-width: 400px;
+}
+
+.o100-dr-field .description {
+	color: #757575;
+	font-style: italic;
+	margin-top: 4px;
+}
+
+.o100-dr-field-inline {
+	display: flex;
+	gap: 10px;
+	align-items: flex-end;
+}
+
+.o100-dr-field-inline>span {
+	padding: 5px 0;
+	color: #757575;
+}
+
+.o100-dr-inline-check {
+	display: inline-block !important;
+	margin-right: 12px;
+	font-weight: normal !important;
+}
+
+.o100-dr-multiselect {
+	min-height: 100px;
+}
+
+/* Bulk Tiers */
+.o100-dr-bulk-tier {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.o100-dr-bulk-tier input {
+	width: 100px;
+}
+
+.o100-dr-bulk-tier select {
+	width: 70px;
+}
+
+.o100-dr-remove-tier {
+	color: #d63638 !important;
+}
+
+/* Filter Rows */
+.o100-dr-filter-row {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	margin-bottom: 12px;
+	padding: 10px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.o100-dr-filter-type {
+	width: 150px;
+	flex-shrink: 0;
+}
+
+.o100-dr-filter-search-area {
+	flex: 1;
+	min-width: 0;
+}
+
+.o100-dr-search-wrap {
+	position: relative;
+}
+
+.o100-dr-filter-search,
+#o100-dr-get-product-search {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+.o100-dr-search-results {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	background: #fff;
+	border: 1px solid #8c8f94;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	max-height: 200px;
+	overflow-y: auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.o100-dr-search-result-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 13px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.o100-dr-search-result-item:hover {
+	background: #f0f6fc;
+	color: #2271b1;
+}
+
+.o100-dr-search-result-item:last-child {
+	border-bottom: none;
+}
+
+.o100-dr-search-no-results {
+	padding: 10px 12px;
+	color: #999;
+	font-style: italic;
+	font-size: 13px;
+}
+
+/* Selected Tags */
+.o100-dr-selected-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.o100-dr-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	background: #f0f6fc;
+	border: 1px solid #c3d7e8;
+	border-radius: 4px;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.o100-dr-tag-type {
+	display: inline-block;
+	padding: 1px 5px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 3px;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.o100-dr-tag-label {
+	font-weight: 500;
+	color: #1d2327;
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.o100-dr-tag-id {
+	color: #999;
+	font-size: 11px;
+}
+
+.o100-dr-tag-remove {
+	background: none;
+	border: none;
+	color: #d63638;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	padding: 0 2px;
+	font-weight: bold;
+}
+
+.o100-dr-tag-remove:hover {
+	color: #a00;
+}
+
+.o100-dr-remove-filter {
+	flex-shrink: 0;
+	color: #d63638 !important;
+	margin-top: 2px;
+}
+
+/* Form Actions */
+.o100-dr-form-actions {
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #e2e4e7;
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+
+.o100-dr-save-status {
+	font-size: 13px;
+	color: #00a32a;
+}
+
+/* Settings */
+.o100-dr-settings .o100-dr-field {
+	max-width: 500px;
+}
+
+/* Import/Export */
+.o100-dr-io-section {
+	margin-bottom: 20px;
+}
+
+.o100-dr-import-status {
+	margin-left: 10px;
+	font-size: 13px;
+}
+
+/* Reports */
+.o100-dr-reports-total td {
+	background: #f0f0f1 !important;
+}
+
+/* Condition Builder */
+.o100-dr-condition-relationship {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 12px;
+	padding: 8px 12px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+}
+
+.o100-dr-condition-relationship label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.o100-dr-conditions-list {
+	margin-bottom: 10px;
+}
+
+.o100-dr-condition-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: flex-start;
+	margin-bottom: 8px;
+	padding: 10px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.o100-dr-condition-row select {
+	max-width: 220px;
+}
+
+.o100-dr-condition-type {
+	min-width: 180px;
+}
+
+.o100-dr-condition-operator-wrap select {
+	min-width: 160px;
+}
+
+.o100-dr-condition-value-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+.o100-dr-condition-value-wrap input[type="number"],
+.o100-dr-condition-value-wrap input[type="time"] {
+	width: 120px;
+}
+
+.o100-dr-condition-value-wrap input[type="text"] {
+	width: 200px;
+}
+
+.o100-dr-condition-value-wrap span {
+	color: #757575;
+}
+
+.o100-dr-condition-checkboxes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	padding: 4px 0;
+}
+
+.o100-dr-condition-remove {
+	flex-shrink: 0;
+	color: #d63638 !important;
+	margin-left: auto;
+}
+
+.o100-dr-no-conditions {
+	color: #757575;
+	font-style: italic;
+	margin: 8px 0;
+}

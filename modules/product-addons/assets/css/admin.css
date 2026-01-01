@@ -1,0 +1,413 @@
+/**
+ * Item Modifiers — Admin CSS
+ * @package Order100
+ *
+ * Uses #o100_addon_options as root selector for maximum specificity
+ * to override competing plugin styles (woo-custom-product-addons-pro).
+ * Arrow buttons are .cmb-shift-rows (confirmed by diagnostic).
+ */
+
+/* ══════════════════════════════════════════════════
+ * CRITICAL: Hidden utility — must use ID selector to beat
+ * the grid row rule that also uses #o100_addon_options + !important
+ * ══════════════════════════════════════════════════ */
+#o100_addon_options .o100-hidden,
+.o100-hidden {
+	display: none !important;
+}
+
+/* ── Option Group Cards ── */
+#o100_addon_options .cmb-repeatable-grouping {
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 10px !important;
+	margin-bottom: 16px !important;
+	overflow: hidden !important;
+	background: #fff !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+	padding: 0 !important;
+}
+
+#o100_addon_options .cmb-group-title {
+	background: #f8fafc !important;
+	padding: 14px 20px !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	color: #1e293b !important;
+	border-bottom: 1px solid #e2e8f0 !important;
+	cursor: pointer !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	margin: 0 !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+/* Collapse indicator arrow */
+#o100_addon_options .cmb-group-title::after {
+	content: '\f142' !important; /* dashicons-arrow-up */
+	font-family: dashicons !important;
+	font-size: 20px !important;
+	color: #94a3b8 !important;
+	transition: transform 0.2s !important;
+}
+#o100_addon_options .cmb-repeatable-grouping.closed .cmb-group-title::after {
+	transform: rotate(180deg) !important;
+}
+
+/* Delete icon injected by JS into the title bar */
+#o100_addon_options .o100-group-delete-btn {
+	background: none !important;
+	border: none !important;
+	color: #cbd5e1 !important;
+	cursor: pointer !important;
+	font-size: 18px !important;
+	padding: 2px 6px !important;
+	line-height: 1 !important;
+	margin-right: 8px !important;
+	order: 2 !important;
+}
+#o100_addon_options .o100-group-delete-btn:hover {
+	color: #ef4444 !important;
+}
+
+/* Hide CMB2/WP native postbox handle (extra white bar with dropdown arrow) */
+#o100_addon_options .cmb-repeatable-grouping > .cmbhandle,
+#o100_addon_options .cmb-repeatable-grouping > .handlediv,
+#o100_addon_options .cmb-repeatable-grouping > button.handlediv,
+#o100_addon_options .cmb-repeatable-grouping > .hndle,
+#o100_addon_options .cmb-repeatable-grouping > .postbox-header,
+#o100_addon_options .cmb-repeatable-grouping.postbox > .handlediv,
+#o100_addon_options .cmb-repeatable-grouping.postbox > button.handlediv,
+#o100_addon_options .cmb-repeatable-grouping.postbox > .hndle {
+	display: none !important;
+}
+
+/* Remove the CMB2 caret toggle icon if present inside title */
+#o100_addon_options .cmb-group-title .cmbhandle-title,
+#o100_addon_options .cmb-group-title > .toggle-indicator {
+	display: none !important;
+}
+
+/* Only apply grid when expanded (not closed) — preserves CMB2 collapse */
+#o100_addon_options .cmb-repeatable-grouping:not(.closed) > .inside {
+	padding: 20px !important;
+	display: grid !important;
+	grid-template-columns: 1fr 1fr !important;
+	gap: 15px !important;
+}
+#o100_addon_options .cmb-repeatable-grouping.closed > .inside {
+	display: none !important;
+}
+
+/* Normal visible rows: flex column */
+#o100_addon_options .cmb-repeatable-grouping > .inside > .cmb-row:not(.o100-hidden) {
+	display: flex !important;
+	flex-direction: column !important;
+	padding: 0 !important;
+	border-bottom: none !important;
+	margin: 0 !important;
+}
+
+#o100_addon_options .cmb-repeatable-grouping > .inside > .cmb-row > .cmb-th {
+	width: 100% !important;
+	padding: 0 0 5px 0 !important;
+	text-align: left !important;
+	float: none !important;
+}
+
+#o100_addon_options .cmb-repeatable-grouping > .inside > .cmb-row > .cmb-th label {
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	color: #1e293b !important;
+}
+
+#o100_addon_options .cmb-repeatable-grouping > .inside > .cmb-row > .cmb-td {
+	width: 100% !important;
+	padding: 0 !important;
+	float: none !important;
+}
+
+#o100_addon_options .cmb-td input.regular-text,
+#o100_addon_options .cmb-td select {
+	width: 100% !important;
+	max-width: 100% !important;
+	height: 36px !important;
+	border: 1px solid #cbd5e1 !important;
+	border-radius: 6px !important;
+	padding: 0 10px !important;
+	font-size: 13px !important;
+	background: #fff !important;
+	color: #334155 !important;
+	box-sizing: border-box !important;
+}
+
+#o100_addon_options .cmb-td input.regular-text:focus,
+#o100_addon_options .cmb-td select:focus {
+	border-color: #6366f1 !important;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+	outline: none !important;
+}
+
+#o100_addon_options .cmb-td p.cmb2-metabox-description {
+	margin: 4px 0 0 !important;
+	font-size: 11px !important;
+	color: #64748b !important;
+	font-style: normal !important;
+}
+
+/* Full width fields */
+#o100_addon_options .o100-addon-name,
+#o100_addon_options .o100-addon-choices,
+#o100_addon_options .o100-addon-pricetype-title {
+	grid-column: 1 / -1 !important;
+}
+
+#o100_addon_options .o100-addon-pricetype-title {
+	background: #fff7ed !important;
+	padding: 15px !important;
+	border-radius: 6px !important;
+	border: 1px solid #fed7aa !important;
+	margin-top: 10px !important;
+}
+
+#o100_addon_options .o100-addon-pricetype-title h5 {
+	margin: 0 !important;
+	font-size: 13px !important;
+	color: #c2410c !important;
+	font-weight: 600 !important;
+}
+
+/* ── Choice Row (price_options custom field) ── */
+.o100-addon-choice-row {
+	display: flex !important;
+	flex-wrap: nowrap !important;
+	gap: 8px !important;
+	align-items: flex-end !important;
+	padding: 10px 0 !important;
+	border-bottom: 1px dashed #e2e8f0 !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.o100-addon-choice-row:last-child {
+	border-bottom: none !important;
+}
+
+.o100-addon-col {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 4px !important;
+}
+
+.o100-addon-col label {
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	color: #64748b !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.5px !important;
+}
+
+/* Drag handle column */
+.o100-addon-col-handle {
+	flex: 0 0 20px !important;
+	cursor: grab !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding-bottom: 10px !important;
+}
+.o100-addon-col-handle .dashicons {
+	font-size: 16px !important;
+	width: 16px !important;
+	height: 16px !important;
+	color: #94a3b8 !important;
+}
+.o100-addon-col-handle:hover .dashicons {
+	color: #475569 !important;
+}
+
+/* Delete button column */
+.o100-addon-col-remove {
+	flex: 0 0 24px !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding-bottom: 8px !important;
+}
+.o100-remove-choice-row {
+	background: none !important;
+	border: none !important;
+	color: #cbd5e1 !important;
+	cursor: pointer !important;
+	font-size: 16px !important;
+	width: 20px !important;
+	height: 20px !important;
+	padding: 0 !important;
+	line-height: 1 !important;
+}
+.o100-remove-choice-row:hover {
+	color: #ef4444 !important;
+}
+
+.o100-addon-col-name {
+	flex: 1 1 0% !important;
+	min-width: 80px !important;
+}
+
+.o100-addon-col-price {
+	flex: 0 0 70px !important;
+}
+
+.o100-addon-col-type {
+	flex: 0 0 90px !important;
+}
+
+.o100-addon-col-def,
+.o100-addon-col-dis {
+	flex: 0 0 50px !important;
+	align-items: center !important;
+}
+
+/* Image column: hidden by default, shown via parent class */
+.o100-addon-col-img {
+	flex: 0 0 100px !important;
+	display: none !important;
+}
+#o100_addon_options .cmb-repeatable-grouping.o100-show-img .o100-addon-col-img {
+	display: flex !important;
+}
+
+/* Min/Max columns: hidden by default, shown via parent class */
+.o100-addon-col-minmax {
+	flex: 0 0 55px !important;
+	display: none !important;
+}
+#o100_addon_options .cmb-repeatable-grouping.o100-show-qty .o100-addon-col-minmax {
+	display: flex !important;
+}
+
+.o100-addon-col input[type="text"],
+.o100-addon-col input[type="number"],
+.o100-addon-col select {
+	height: 36px !important;
+	border: 1px solid #cbd5e1 !important;
+	border-radius: 6px !important;
+	padding: 0 8px !important;
+	font-size: 13px !important;
+	background: #fff !important;
+	color: #334155 !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.o100-addon-col input[type="text"]:focus,
+.o100-addon-col input[type="number"]:focus,
+.o100-addon-col select:focus {
+	border-color: #6366f1 !important;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+	outline: none !important;
+}
+
+.o100-addon-col input[type="checkbox"] {
+	width: 18px !important;
+	height: 18px !important;
+	accent-color: #6366f1 !important;
+}
+
+/* ── Name field in group title ── */
+.o100-addon-name input[type="text"] {
+	font-weight: 600 !important;
+	font-size: 14px !important;
+}
+
+/* ══════════════════════════════════════════════════
+ * Hide CMB2 group shift arrows & group Remove button
+ * ══════════════════════════════════════════════════ */
+#o100_addon_options .cmb-shift-rows {
+	display: none !important;
+}
+
+/* Hide original remove button row — replaced by delete icon in title bar.
+   Use visibility+size trick instead of display:none so jQuery .trigger('click') still works. */
+#o100_addon_options .cmb-remove-group-row {
+	visibility: hidden !important;
+	position: absolute !important;
+	width: 0 !important;
+	height: 0 !important;
+	overflow: hidden !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: none !important;
+}
+
+/* ── Add Group button ── */
+#o100_addon_options .cmb-add-group-row {
+	margin-top: 16px !important;
+}
+
+#o100_addon_options .cmb-add-group-row button {
+	background: #f1f5f9 !important;
+	color: #475569 !important;
+	border: 1px dashed #cbd5e1 !important;
+	padding: 10px 24px !important;
+	border-radius: 8px !important;
+	font-size: 14px !important;
+	font-weight: 500 !important;
+	cursor: pointer !important;
+	box-shadow: none !important;
+}
+
+#o100_addon_options .cmb-add-group-row button:hover {
+	background: #e2e8f0 !important;
+	border-color: #94a3b8 !important;
+}
+
+/* ── Repeatable choices add row ── */
+#o100_addon_options .cmb-repeat .cmb-add-row {
+	margin-top: 8px !important;
+}
+
+#o100_addon_options .cmb-repeat .cmb-add-row button {
+	background: #f8fafc !important;
+	color: #6366f1 !important;
+	border: 1px dashed #c7d2fe !important;
+	padding: 6px 16px !important;
+	border-radius: 6px !important;
+	font-size: 12px !important;
+	box-shadow: none !important;
+	cursor: pointer !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+	.o100-addon-choice-row {
+		flex-wrap: wrap !important;
+	}
+	.o100-addon-col-img {
+		flex: 0 0 100% !important;
+	}
+	.o100-addon-col-name {
+		flex: 1 1 120px !important;
+	}
+	.o100-addon-col-price,
+	.o100-addon-col-type {
+		flex: 0 0 80px !important;
+	}
+}
+@media (max-width: 782px) {
+	#o100_addon_options .cmb-repeatable-grouping:not(.closed) > .inside {
+		grid-template-columns: 1fr !important;
+	}
+	.o100-addon-choice-row {
+		flex-direction: column !important;
+		gap: 12px !important;
+	}
+	.o100-addon-col {
+		width: 100% !important;
+		flex: 1 1 100% !important;
+	}
+	.o100-addon-col-handle {
+		display: none !important;
+	}
+}
+
+

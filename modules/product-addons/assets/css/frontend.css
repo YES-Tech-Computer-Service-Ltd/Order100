@@ -1,0 +1,408 @@
+/**
+ * Product Add-ons — Frontend CSS
+ * @package Order100
+ */
+
+.o100-product-addons {
+	margin: 10px 0;
+	border-top: 1px solid #e5e7eb;
+	padding-top: 12px;
+}
+
+.o100-addon-group {
+	margin-bottom: 16px;
+}
+
+.o100-addon-title {
+	font-size: 16px;
+	font-weight: 600;
+	margin-top: 0 !important;
+	margin-bottom: 2px !important;
+	padding: 0 !important;
+	line-height: 1.2 !important;
+	color: #111827;
+}
+
+.o100-addon-title .required {
+	color: #ef4444;
+	border: none;
+	text-decoration: none;
+}
+
+.o100-addon-choices {
+	display: flex;
+	flex-direction: column;
+	gap: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+.o100-addon-choice-label {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	font-size: 15px;
+	color: #4b5563;
+	width: 100%;
+	padding: 12px 0 !important;
+	margin: 0 !important;
+}
+
+.o100-addon-choice-label input {
+	margin-right: 12px !important;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+	width: 20px !important;
+	height: 20px !important;
+	cursor: pointer;
+}
+
+.o100-addon-op-info {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	flex: 1;
+	text-align: left;
+}
+
+.o100-addon-name {
+	text-align: left;
+	color: #111827;
+	font-weight: 500;
+	line-height: 1.2;
+}
+
+.o100-addon-price {
+	color: #6b7280;
+	font-weight: 400;
+	margin-left: 0 !important;
+	font-size: 13px;
+	margin-top: 4px;
+}
+
+.o100-addon-select {
+	width: 100%;
+	max-width: 400px;
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid #d1d5db;
+	background-color: #fff;
+}
+
+.o100-addon-text,
+.o100-addon-quantity {
+	width: 100%;
+	max-width: 400px;
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid #d1d5db;
+}
+
+.o100-addon-textarea {
+	width: 100%;
+	max-width: 400px;
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid #d1d5db;
+	min-height: 80px;
+}
+
+/* Added for Option Qty Steppers */
+.o100-addon-choice-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 !important;
+	padding: 0 !important;
+	border-bottom: 1px solid #f3f4f6;
+}
+.o100-addon-choice-wrap:last-child {
+	border-bottom: none;
+}
+
+.o100-qty-op,
+.o100-qty-wrap {
+	display: flex;
+	align-items: center;
+	background: #f3f4f6;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.o100-qty-op button,
+.o100-qty-wrap button {
+	background: transparent;
+	border: none;
+	width: 30px;
+	height: 30px;
+	font-size: 16px;
+	cursor: pointer;
+	color: #374151;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.o100-qty-op button:hover,
+.o100-qty-wrap button:hover {
+	background: #e5e7eb;
+}
+
+.o100-qty-op-input,
+.o100-qty-wrap input[type="number"] {
+	width: 40px !important;
+	height: 30px !important;
+	text-align: center;
+	border: none !important;
+	background: transparent !important;
+	padding: 0 !important;
+	font-size: 14px;
+	-moz-appearance: textfield;
+}
+
+.o100-qty-op-input::-webkit-outer-spin-button,
+.o100-qty-op-input::-webkit-inner-spin-button,
+.o100-qty-wrap input[type="number"]::-webkit-outer-spin-button,
+.o100-qty-wrap input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.o100-addon-subtitle {
+	font-size: 13px;
+	margin-top: 0 !important;
+	margin-bottom: 8px !important;
+	padding: 0 !important;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.o100-addon-required-subtitle {
+	color: #d97706; /* Warning/orange color like DoorDash */
+	font-weight: 500;
+	background: #fef3c7;
+	padding: 4px 8px;
+	border-radius: 4px;
+	display: inline-flex;
+}
+
+.o100-addon-optional-subtitle {
+	color: #6b7280;
+}
+
+.o100-req-icon {
+	font-size: 14px;
+}
+
+.o100-addon-limit-text {
+	color: #4b5563;
+	font-weight: 400;
+}
+
+.o100-op-img {
+	width: 40px;
+	height: 40px;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-right: 12px;
+	flex-shrink: 0;
+}
+
+.o100-op-img img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.o100-qty-option .o100-addon-choice-label {
+	width: auto;
+}
+
+/* DoorDash-style Textarea Trigger & Slide Panel */
+.o100-textarea-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 10px 0;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.o100-textarea-trigger-text {
+    flex: 1;
+    text-align: left;
+}
+
+.o100-textarea-slide-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.o100-slide-panel-header {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.o100-slide-panel-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111827;
+}
+
+.o100-slide-panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+}
+
+.o100-slide-panel-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.o100-slide-panel-subtitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 12px;
+}
+
+.o100-slide-panel-body .o100-addon-textarea {
+    width: 100%;
+    max-width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #f3f4f6;
+    background-color: #f9fafb;
+    font-size: 15px;
+    color: #9ca3af;
+    resize: none;
+}
+
+.o100-slide-panel-body .o100-addon-textarea:focus {
+    outline: none;
+    border-color: #e5e7eb;
+}
+
+.o100-slide-panel-footer {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.o100-slide-panel-save {
+    width: 100%;
+    box-sizing: border-box;
+    background: #eb1700;
+    color: #fff;
+    border: none;
+    padding: 15px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+}
+
+.o100-slide-panel-save:hover {
+    background: #cc1400;
+}
+
+/* Custom Confirm Modal */
+.o100-confirm-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+.o100-confirm-overlay.o100-active {
+    opacity: 1;
+    visibility: visible;
+}
+.o100-confirm-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 320px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    text-align: center;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+.o100-confirm-overlay.o100-active .o100-confirm-modal {
+    transform: scale(1);
+}
+.o100-confirm-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+}
+.o100-confirm-message {
+    font-size: 15px;
+    color: #4b5563;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+.o100-confirm-actions {
+    display: flex;
+    gap: 12px;
+}
+.o100-confirm-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 25px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+.o100-confirm-discard {
+    background: #f3f4f6;
+    color: #374151;
+}
+.o100-confirm-discard:hover {
+    background: #e5e7eb;
+}
+.o100-confirm-save {
+    background: #eb1700;
+    color: #fff;
+}
+.o100-confirm-save:hover {
+    background: #cc1400;
+}
+

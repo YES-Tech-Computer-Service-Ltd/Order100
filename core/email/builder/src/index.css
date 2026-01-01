@@ -1,0 +1,522 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f3f4f6;
+}
+
+.o100ne-builder-container {
+  height: calc(100vh - 32px);
+  width: 100%;
+}
+
+/* Light Theme overrides for GrapesJS */
+.gjs-cv-canvas {
+  background-color: #f3f4f6 !important;
+}
+
+/* Base panel backgrounds */
+.gjs-one-bg { background-color: #ffffff !important; color: #334155 !important; }
+.gjs-two-color { color: #475569 !important; }
+.gjs-three-bg { background-color: #6A4BFF !important; color: white !important; }
+.gjs-four-color, .gjs-four-color-h:hover { color: #6A4BFF !important; }
+
+/* Panels and borders */
+.panel__right { border-left: 1px solid #e2e8f0 !important; background-color: #ffffff !important; }
+.gjs-pn-panel { border-bottom: 1px solid #e2e8f0 !important; }
+.gjs-sm-sector { border-bottom: 1px solid #e2e8f0 !important; }
+.gjs-sm-title { background-color: #f8fafc !important; color: #334155 !important; border-bottom: 1px solid #e2e8f0 !important; }
+.gjs-sm-property { color: #475569 !important; }
+
+/* Blocks */
+.gjs-blocks-c { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff !important; }
+.gjs-block {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  background-color: #fff !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+  margin: 0 !important;
+  width: 100% !important;
+  padding: 15px 5px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+.gjs-block:hover {
+  border-color: #6A4BFF !important;
+  color: #6A4BFF !important;
+  box-shadow: 0 4px 6px rgba(106, 75, 255, 0.1) !important;
+}
+.gjs-block-label {
+  color: #475569;
+  font-size: 12px !important;
+  margin-top: 8px;
+  font-weight: 500;
+}
+.gjs-block:hover .gjs-block-label { color: #6A4BFF; }
+
+/* Fix huge icons in MJML blocks */
+.gjs-block svg {
+  width: 24px !important;
+  height: 24px !important;
+  fill: #64748b !important;
+}
+.gjs-block:hover svg { fill: #6A4BFF !important; }
+
+/* Fix Topbar devices fix - hide all GrapesJS default panels! */
+.gjs-pn-panel { 
+  display: none !important; 
+}
+
+/* UNIFIED CATEGORY STYLING (Blocks, Styles, Global) */
+.gjs-block-category, .gjs-sm-sector, .o100ne-category {
+  border-bottom: 1px solid #e2e8f0 !important;
+  margin-bottom: 0 !important;
+}
+
+.gjs-block-category .gjs-title, .gjs-sm-title, .gjs-sm-sector-title, .o100ne-category-title {
+  padding: 12px 15px !important;
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  border-bottom: none !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.gjs-block-category .gjs-title:hover, .gjs-sm-title:hover, .gjs-sm-sector-title:hover, .o100ne-category-title:hover {
+  background-color: #f1f5f9 !important;
+  color: #6A4BFF !important;
+}
+
+/* Fix native carets in GrapesJS so they match our style */
+.gjs-block-category .gjs-caret-icon, .gjs-sm-sector-caret {
+  width: 12px !important;
+  height: 12px !important;
+  margin-right: 8px !important;
+  opacity: 0.7;
+}
+
+/* Custom caret ONLY for our React Global Tab */
+.o100ne-category-title::before {
+  content: "▸";
+  margin-right: 8px;
+  font-size: 12px;
+  color: #64748b;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.o100ne-category.open .o100ne-category-title::before {
+  transform: rotate(90deg);
+}
+
+.gjs-block-category.gjs-open .gjs-title, .gjs-sm-sector.gjs-sm-open .gjs-sm-title, .gjs-sm-sector.gjs-sm-open .gjs-sm-sector-title {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* =========================================
+   Standard Numeric Inputs (Matches Global Settings)
+   ========================================= */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-field,
+.gjs-field-integer {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  padding: 0 !important;
+  height: 32px !important;
+}
+
+/* Input Container */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-input-holder,
+.gjs-field-integer .gjs-input-holder,
+.gjs-field-integer > span:first-child {
+  flex: 1 !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+.gjs-sm-property.gjs-sm-integer .gjs-sm-input-holder input,
+.gjs-field-integer input {
+  text-align: center !important;
+  border: none !important;
+  padding: 0 16px 0 0 !important; /* padding to avoid overlapping arrows on hover */
+  height: 32px !important;
+  line-height: 32px !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  color: #334155 !important;
+  background: transparent !important;
+}
+
+/* Unit Box Area (Right side, grey background) */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-unit-holder,
+.gjs-field-integer .gjs-field-units {
+  position: relative !important; /* To center the ::after pseudo-element */
+  width: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #f8fafc !important;
+  border-left: 1px solid #cbd5e1 !important;
+  pointer-events: none !important; /* Disable clicking the dropdown */
+}
+
+/* Hide select dropdown text globally */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-unit-holder select,
+.gjs-field-integer .gjs-field-units select {
+  color: transparent !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  pointer-events: none !important;
+}
+.gjs-sm-property.gjs-sm-integer .gjs-sel-arrow,
+.gjs-field-units .gjs-sel-arrow {
+  display: none !important;
+}
+
+/* Inject 'px' globally to replace '-' and center it */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-unit-holder::after,
+.gjs-field-integer .gjs-field-units::after {
+  content: 'px' !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #64748b !important;
+  font-size: 13px !important;
+  pointer-events: none !important;
+}
+
+/* Hover Arrows (Mimic native type="number" arrows) */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-arrows,
+.gjs-field-integer .gjs-field-arrows {
+  position: absolute !important;
+  right: 32px !important; /* Left of the unit box */
+  top: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 16px !important;
+  height: 100% !important;
+  background: #ffffff !important;
+  border-left: 1px solid #e2e8f0 !important;
+  opacity: 0 !important;
+  transition: opacity 0.15s ease-in-out !important;
+}
+.gjs-sm-property.gjs-sm-integer .gjs-sm-field:hover .gjs-sm-arrows,
+.gjs-field-integer:hover .gjs-field-arrows {
+  opacity: 1 !important; /* Show on hover */
+}
+
+/* Arrow containers */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-up,
+.gjs-field-integer .gjs-field-arrow-u,
+.gjs-sm-property.gjs-sm-integer .gjs-sm-down,
+.gjs-field-integer .gjs-field-arrow-d {
+  position: static !important;
+  flex: 1 !important;
+  width: 100% !important;
+  height: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  border: none !important; /* Clear native GrapesJS CSS borders */
+}
+
+/* Rebuild Up Arrow with CSS Triangle */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-up::after,
+.gjs-field-integer .gjs-field-arrow-u::after {
+  content: '' !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 4px solid transparent !important;
+  border-right: 4px solid transparent !important;
+  border-bottom: 4px solid #64748b !important;
+}
+
+/* Rebuild Down Arrow with CSS Triangle */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-down::after,
+.gjs-field-integer .gjs-field-arrow-d::after {
+  content: '' !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 4px solid transparent !important;
+  border-right: 4px solid transparent !important;
+  border-top: 4px solid #64748b !important;
+}
+
+/* Hide SVGs if present in older GrapesJS versions */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-up svg,
+.gjs-sm-property.gjs-sm-integer .gjs-sm-down svg,
+.gjs-field-integer .gjs-field-arrow-u svg,
+.gjs-field-integer .gjs-field-arrow-d svg {
+  display: none !important;
+}
+
+/* Hover states for arrows */
+.gjs-sm-property.gjs-sm-integer .gjs-sm-up:hover,
+.gjs-sm-property.gjs-sm-integer .gjs-sm-down:hover,
+.gjs-field-integer .gjs-field-arrow-u:hover,
+.gjs-field-integer .gjs-field-arrow-d:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Hide main composite unit dropdowns */
+.gjs-sm-property.gjs-sm-composite > .gjs-sm-field > .gjs-sm-unit-holder,
+.gjs-sm-property.gjs-sm-composite > .gjs-field > .gjs-field-units {
+  display: none !important;
+}
+
+/* Compress composite box padding */
+.gjs-sm-property.gjs-sm-composite .gjs-sm-properties,
+.gjs-sm-composite .gjs-sm-properties {
+  padding: 8px !important;
+}
+.gjs-sm-property.gjs-sm-composite .gjs-sm-property,
+.gjs-sm-composite .gjs-sm-property {
+  padding: 4px !important;
+}
+
+/* Settings Tab Layout */
+#traits-container .gjs-trt-traits {
+  padding: 10px;
+}
+#traits-container .gjs-trt-trait {
+  margin-bottom: 15px;
+}
+#traits-container .gjs-label-wrp {
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.gjs-blocks-c {
+  background: #ffffff !important;
+}
+
+.gjs-sm-properties, .o100ne-category-content {
+  padding: 15px !important;
+  background: #ffffff !important;
+}
+.gjs-field {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+}
+.gjs-field input, .gjs-field select {
+  color: #334155 !important;
+}
+.gjs-sm-property__label {
+  color: #475569 !important;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.gjs-sm-property {
+  margin-bottom: 12px !important;
+}
+
+/* Asset Manager / Modal Restyling */
+.gjs-mdl-dialog {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+  background-color: #ffffff !important;
+  color: #334155 !important;
+}
+.gjs-mdl-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+  color: #334155 !important;
+  padding: 15px 20px !important;
+}
+.gjs-mdl-title {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+}
+.gjs-mdl-btn-close {
+  color: #64748b !important;
+}
+/* Hide the confusing URL input on the right side of the Asset Manager */
+.gjs-am-add-asset {
+  display: none !important;
+}
+/* Make the drop zone take full width and look nicer */
+.gjs-am-file-uploader {
+  width: 100% !important;
+  float: none !important;
+  border: 2px dashed #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #f8fafc !important;
+  padding: 40px !important;
+  text-align: center !important;
+  color: #475569 !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+}
+.gjs-am-file-uploader:hover {
+  border-color: #6A4BFF !important;
+  background: #f1f5f9 !important;
+}
+/* Hide the gallery grid because we auto-insert on upload */
+.gjs-am-assets-cont {
+  display: none !important;
+}
+
+.o100ne-top-btn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  padding: 6px 12px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  position: relative;
+}
+.o100ne-top-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+/* Tooltip implementation */
+.o100ne-top-btn::before,
+.o100ne-top-btn::after {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Tooltip arrow */
+.o100ne-top-btn::before {
+  content: '';
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 5px 5px 5px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+  margin-top: 2px;
+}
+
+/* Tooltip text */
+.o100ne-top-btn::after {
+  content: attr(data-tooltip);
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-top: 7px;
+}
+
+.o100ne-top-btn:hover::before,
+.o100ne-top-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* =========================================
+   Toggle Switch Styling for GrapesJS Checkboxes
+   ========================================= */
+.gjs-field-checkbox {
+  position: relative !important;
+  width: 36px !important;
+  height: 20px !important;
+  border-radius: 10px !important;
+  background-color: #cbd5e1 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+/* Hide any inner SVG checkmarks GrapesJS places inside it */
+.gjs-field-checkbox .gjs-chk-icon {
+  display: none !important;
+}
+
+/* Create the sliding circle */
+.gjs-field-checkbox::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  width: 16px !important;
+  height: 16px !important;
+  background-color: #ffffff !important;
+  border-radius: 50% !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+  transition: transform 0.2s ease !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+/* Make the invisible actual checkbox fill the space */
+.gjs-field-checkbox input[type="checkbox"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  z-index: 3 !important;
+  margin: 0 !important;
+}
+
+/* When checked, slide the circle and change the container background */
+.gjs-field-checkbox:has(input[type="checkbox"]:checked) {
+  background-color: #6A4BFF !important;
+}
+
+.gjs-field-checkbox:has(input[type="checkbox"]:checked)::before {
+  transform: translateX(16px) !important;
+}
+
+/* Alignment fixes for trait rows containing checkboxes */
+.gjs-trt-trait.gjs-trt-checkbox {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+.gjs-trt-trait.gjs-trt-checkbox .gjs-label-wrp {
+  margin-bottom: 0 !important;
+}
+

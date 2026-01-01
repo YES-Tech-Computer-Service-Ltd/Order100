@@ -1,0 +1,93 @@
+--- Editor.tsx	2026-04-29 14:00:00.000000000 -0600
++++ Editor.tsx	2026-04-29 14:00:00.000000000 -0600
+@@ -400,6 +400,28 @@
+   const saveTemplate = () => {
+     if (!editor || !templateNumericId) return;
+ 
++    // Temporarily replace preview tables with shortcodes before exporting
++    const wrapper = editor.getWrapper();
++    const orderSubtotals = wrapper.find('.woo-order-subtotal');
++    const previews: any = {};
++    orderSubtotals.forEach((comp: any) => {
++      let textComp = comp.get('type') === 'mj-text' ? comp : comp.find('mj-text')[0];
++      if (textComp) {
++        previews[comp.getId()] = textComp.components().models.map((m: any) => m.toHTML()).join('');
++        const attrs = comp.getAttributes();
++        let shortcode = '[o100_order_subtotal';
++        if (attrs['data-text-subtotal']) shortcode += ` text_subtotal="${attrs['data-text-subtotal']}"`;
++        if (attrs['data-text-shipping']) shortcode += ` text_shipping="${attrs['data-text-shipping']}"`;
++        if (attrs['data-text-discount']) shortcode += ` text_discount="${attrs['data-text-discount']}"`;
++        if (attrs['data-text-tax']) shortcode += ` text_tax="${attrs['data-text-tax']}"`;
++        if (attrs['data-text-refund']) shortcode += ` text_refund="${attrs['data-text-refund']}"`;
++        if (attrs['data-text-fee']) shortcode += ` text_fee="${attrs['data-text-fee']}"`;
++        shortcode += ']';
++        textComp.components(shortcode);
++      }
++    });
++
+     (window as any).isExporting = true;
+     const mjmlCode = editor.runCommand('mjml-get-code');
+     const mjml = mjmlCode ? mjmlCode.mjml : editor.getHtml();
+@@ -408,6 +430,14 @@
+     console.log('--- SAVING TEMPLATE ---');
+     console.log(mjml);
+ 
++    // Restore preview tables after export
++    orderSubtotals.forEach((comp: any) => {
++      let textComp = comp.get('type') === 'mj-text' ? comp : comp.find('mj-text')[0];
++      if (textComp && previews[comp.getId()]) {
++        textComp.components(previews[comp.getId()]);
++      }
++    });
++
+     if (!mjml) return;
+ 
+     const restPath = (window as any).o100neData?.rest_path || {};
+@@ -670,16 +700,26 @@
+     if (!textComp) return;
+ 
+     const attrs = component.getAttributes();
+-    let shortcode = '[o100_order_subtotal';
+-    if (attrs['data-text-subtotal']) shortcode += ` text_subtotal="${attrs['data-text-subtotal']}"`;
+-    if (attrs['data-text-shipping']) shortcode += ` text_shipping="${attrs['data-text-shipping']}"`;
+-    if (attrs['data-text-discount']) shortcode += ` text_discount="${attrs['data-text-discount']}"`;
+-    if (attrs['data-text-tax']) shortcode += ` text_tax="${attrs['data-text-tax']}"`;
+-    if (attrs['data-text-refund']) shortcode += ` text_refund="${attrs['data-text-refund']}"`;
+-    if (attrs['data-text-fee']) shortcode += ` text_fee="${attrs['data-text-fee']}"`;
+-    shortcode += ']';
++    const orderData = (window as any)._previewOrderData || DUMMY_ORDER_DATA;
+ 
+-    textComp.components(shortcode);
++    if (orderData && orderData.item_totals) {
++      let subHtml = '<table width="100%" style="font-size:14px;color:#333;">';
++      Object.keys(orderData.item_totals).forEach(key => {
++        if (key === 'order_total' || key === 'payment_method') return;
++        
++        let label = orderData.item_totals[key].label;
++        if (key === 'cart_subtotal' && attrs['data-text-subtotal']) label = attrs['data-text-subtotal'];
++        if (key === 'shipping' && attrs['data-text-shipping']) label = attrs['data-text-shipping'];
++        if (key === 'discount' && attrs['data-text-discount']) label = attrs['data-text-discount'];
++        if (key === 'tax' && attrs['data-text-tax']) label = attrs['data-text-tax'];
++        if (key === 'fee' && attrs['data-text-fee']) label = attrs['data-text-fee'];
++        if (key === 'refund' && attrs['data-text-refund']) label = attrs['data-text-refund'];
++
++        subHtml += `<tr><td style="padding:4px 0;text-align:left;width:60%;">${label}</td><td style="padding:4px 0;text-align:right;width:40%;">${orderData.item_totals[key].value}</td></tr>`;
++      });
++      subHtml += '</table>';
++      textComp.components(subHtml);
++    }
+   };
+ 
+   const updatePreviewData = () => {
+@@ -717,7 +757,10 @@
+       });
+     }
+ 
+-    // Removed orderSubtotal override so the shortcode is preserved in the canvas.
++    const orderSubtotal = wrapper.find('.woo-order-subtotal');
++    if (orderSubtotal && orderSubtotal.length > 0) {
++      orderSubtotal.forEach(renderOrderSubtotal);
++    }
+ 
+     const orderTotal = wrapper.find('.woo-order-total');
+     if (orderTotal && orderTotal.length > 0 && orderData.total) {

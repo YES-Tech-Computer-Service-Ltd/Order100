@@ -1,0 +1,17 @@
+--- EARN CAMPAIGNS ---
+ID: 51
+Name: Birthday Program
+Active: 1
+Point Rule: Array
+(
+    [earn_type] => fixed
+    [earn_point] => 100
+    [birthday_message] => 🎂 生日快乐！Happy Birthday! 
+感谢您一直以来对 Newtown 的支持。我们为您准备了一份 10% OFF 的生日专属礼物，快来点一份您最爱的美食吧！
+Enjoy your special 10% OFF birthday treat! Cheers to a delicious year ahead!
+    [birthday_earn_type] => on_their_birthday
+    [earn_reward] => 13
+)
+
+
+--- REWARDS ---

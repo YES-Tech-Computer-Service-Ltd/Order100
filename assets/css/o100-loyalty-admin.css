@@ -1,0 +1,972 @@
+/* 
+ * WFA Loyalty Admin CSS
+ * Matches the design system of the Discount module
+ */
+
+.o100-loyalty-wrap {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	display: block;
+	min-height: 600px;
+}
+
+/* Horizontal Subtabs */
+.o100-loyalty-subtabs {
+	border-bottom: 1px solid #ccd0d4;
+	background: #f9f9f9;
+	margin: 0;
+	padding: 10px 20px 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+.o100-loyalty-subtabs li {
+	margin: 0;
+}
+.o100-loyalty-subtabs li a {
+	display: flex;
+	padding: 12px 20px;
+	text-decoration: none;
+	color: #50575e;
+	font-weight: 500;
+	transition: all 0.2s;
+	align-items: center;
+	gap: 8px;
+	border: 1px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 3px 3px 0 0;
+}
+.o100-loyalty-subtabs li a:hover {
+	color: #2271b1;
+}
+.o100-loyalty-subtabs li a.active {
+	background: #fff;
+	color: #2271b1;
+	border-color: #ccd0d4;
+	border-bottom-color: #fff;
+	font-weight: 600;
+}
+.o100-loyalty-subtabs li a .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+/* Nested Tabs inside Advanced */
+.o100-loyalty-nested-tabs {
+	border-bottom: 1px solid #ccd0d4;
+	margin-bottom: 20px;
+	padding-bottom: 0;
+}
+.o100-loyalty-nested-tabs a {
+	display: inline-block;
+	padding: 10px 15px;
+	text-decoration: none;
+	color: #646970;
+	border: 1px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 3px 3px 0 0;
+}
+.o100-loyalty-nested-tabs a.active {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-bottom-color: #fff;
+	color: #2271b1;
+	font-weight: 600;
+}
+
+/* Content Area */
+.o100-loyalty-subtab-content {
+	flex-grow: 1;
+	padding: 20px 30px;
+	background: #fff;
+	overflow-y: auto;
+}
+.o100-loyalty-nested-content {
+	display: none;
+}
+.o100-loyalty-nested-content.active {
+	display: block;
+}
+
+/* Dashboard Stats Grid */
+.o100-loyalty-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 20px;
+	margin-bottom: 30px;
+}
+.o100-loyalty-stat-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 20px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.o100-loyalty-stat-card .stat-icon {
+	background: #f0f0f1;
+	color: #2271b1;
+	border-radius: 50%;
+	width: 48px;
+	height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.o100-loyalty-stat-card .stat-icon .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+.o100-loyalty-stat-card .stat-body {
+	display: flex;
+	flex-direction: column;
+}
+.o100-loyalty-stat-card .stat-value {
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+.o100-loyalty-stat-card .stat-label {
+	font-size: 13px;
+	color: #646970;
+}
+
+/* Tables */
+.o100-loyalty-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+/* Button Icon Alignment */
+.o100-loyalty-wrap .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: auto;
+	min-height: 32px;
+}
+.o100-loyalty-wrap .button .dashicons {
+	margin-top: 0;
+	margin-left: -2px;
+	vertical-align: middle;
+}
+
+/* Responsive Table Layout */
+.o100-campaigns-table {
+    table-layout: fixed;
+    width: 100%;
+}
+@media screen and (max-width: 782px) {
+    .o100-campaigns-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Override WP native mobile table behavior */
+    .o100-campaigns-container .wp-list-table tr {
+        display: table-row !important;
+    }
+    .o100-campaigns-container .wp-list-table th,
+    .o100-campaigns-container .wp-list-table td {
+        display: table-cell !important;
+    }
+    .o100-campaigns-table {
+        min-width: 900px !important;
+    }
+    .o100-campaigns-container .wp-list-table thead, 
+    .o100-campaigns-container .wp-list-table tbody {
+        display: table-row-group !important;
+    }
+}
+.o100-loyalty-table th,
+.o100-loyalty-table td {
+	padding: 12px 15px;
+	text-align: left;
+	border-bottom: 1px solid #f0f0f1;
+}
+.o100-loyalty-table th {
+	background: #f9f9f9;
+	font-weight: 600;
+	color: #2c3338;
+	vertical-align: middle;
+}
+.o100-loyalty-table th.sortable {
+    user-select: none;
+}
+.o100-loyalty-table th.sortable .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    margin-left: 4px;
+    color: #94a3b8;
+}
+.o100-loyalty-empty {
+	text-align: center;
+	padding: 30px !important;
+	color: #646970;
+}
+.points-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+}
+.points-badge.positive {
+	background: #e5f5e5;
+	color: #007017;
+}
+.points-badge.negative {
+	background: #fcebeb;
+	color: #d63638;
+}
+
+/* Settings Form */
+.o100-loyalty-settings-section {
+	margin-bottom: 30px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #f0f0f1;
+}
+.o100-loyalty-settings-section:last-child {
+	border-bottom: none;
+}
+.o100-loyalty-settings-section h3 {
+	margin: 0 0 5px 0;
+	font-size: 16px;
+}
+.section-desc {
+	color: #646970;
+	margin: 0 0 15px 0;
+}
+.o100-loyalty-form-row {
+	display: flex;
+	gap: 20px;
+	margin-bottom: 15px;
+}
+.o100-loyalty-form-col {
+	flex: 1;
+}
+.o100-loyalty-form-col label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+}
+.field-desc {
+	font-size: 12px;
+	color: #646970;
+	margin: 0 0 10px 0;
+}
+.o100-loyalty-checkbox-group {
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid #ddd;
+	padding: 10px;
+	background: #f9f9f9;
+}
+.o100-loyalty-checkbox-label {
+	display: block;
+	margin-bottom: 5px;
+	font-weight: 400 !important;
+}
+.o100-loyalty-form-actions {
+	padding-top: 15px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+.o100-loyalty-save-status {
+	font-weight: 500;
+}
+.o100-loyalty-save-status.success {
+	color: #007017;
+}
+.o100-loyalty-save-status.error {
+	color: #d63638;
+}
+
+/* Placeholder */
+.o100-loyalty-placeholder {
+	padding: 40px;
+	text-align: center;
+	background: #f9f9f9;
+	border: 1px dashed #ccc;
+	border-radius: 4px;
+	color: #646970;
+}
+
+/* ========================================================= */
+/* CAMPAIGNS & REWARDS MODULE STYLES                         */
+/* ========================================================= */
+
+.o100-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.o100-view-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.o100-view-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+.o100-search-box {
+    position: relative;
+}
+.o100-search-box input {
+    padding: 6px 15px 6px 30px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    width: 250px;
+}
+.o100-search-box::before {
+    content: "\f179"; /* dashicons-search */
+    font-family: dashicons;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+}
+
+/* Campaign Type Grid */
+.o100-back-header a {
+    text-decoration: none;
+    font-weight: 600;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.o100-page-description {
+    font-size: 14px;
+    color: #646970;
+    margin-bottom: 25px;
+}
+.o100-campaign-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+.o100-campaign-type-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 8px;
+    padding: 25px 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.o100-campaign-type-card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border-color: #5b46f5; /* Theme focus color */
+}
+.o100-type-icon {
+    width: 60px;
+    height: 60px;
+    background: #f4f5f7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+.o100-type-icon .dashicons {
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+    color: #5b46f5;
+}
+.o100-campaign-type-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #1d2327;
+}
+.o100-campaign-type-card p {
+    color: #646970;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+.o100-btn-select-type {
+    border-radius: 4px !important;
+    padding: 5px 20px !important;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Coupon/Reward Specific Grid */
+.o100-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+.o100-type-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+.o100-type-card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border-color: #5b46f5;
+}
+.o100-type-card .o100-type-icon {
+    width: 70px;
+    height: 70px;
+    background: #f4f5f7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.o100-type-card .o100-type-icon .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #5b46f5;
+}
+.o100-type-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+.o100-type-card p {
+    color: #646970;
+    font-size: 14px;
+    margin-bottom: 25px;
+    flex-grow: 1;
+}
+
+.o100-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.o100-badge-point {
+    background: #eff6ff;
+    color: #2563eb;
+}
+.o100-badge-direct {
+    background: #fcf6e5;
+    color: #d97706;
+}
+
+.o100-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #9ca3af;
+}
+.o100-empty-state p {
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+/* Editor Layout */
+.o100-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 15px 25px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.o100-editor-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+.o100-editor-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.o100-status-label {
+    font-weight: 600;
+    color: #5b46f5;
+}
+.o100-editor-actions {
+    display: flex;
+    gap: 10px;
+}
+.o100-editor-body {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+.o100-editor-main {
+    flex: 1;
+    background: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.o100-editor-sidebar {
+    width: 350px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e4e7;
+    position: sticky;
+    top: 50px;
+}
+.o100-form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.o100-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.o100-form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #3c434a;
+}
+.o100-form-group input[type="text"], 
+.o100-form-group input[type="number"], 
+.o100-form-group input[type="date"], 
+.o100-form-group select, 
+.o100-form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border-color: #dcdcde;
+    border-radius: 4px;
+}
+.o100-image-upload-wrap {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px dashed #dcdcde;
+    padding: 15px;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+/* Conditions Sidebar */
+.o100-conditions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e2e4e7;
+    padding-bottom: 10px;
+}
+.o100-conditions-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+.o100-add-condition-btn {
+    padding: 2px 10px !important;
+}
+.o100-conditions-match-type {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+.o100-condition-block {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    position: relative;
+}
+.o100-condition-block .o100-form-group {
+    margin-bottom: 10px;
+}
+.o100-condition-block label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #646970;
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+.o100-condition-block select, 
+.o100-condition-block input[type="text"],
+.o100-condition-block input[type="number"] {
+    height: 32px !important;
+    font-size: 13px !important;
+    padding: 2px 8px !important;
+}
+.o100-condition-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #d63638;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.o100-condition-remove:hover {
+    opacity: 1;
+}
+.o100-condition-block .select2-container .select2-selection--single {
+    height: 32px !important;
+}
+.o100-condition-block .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 30px !important;
+    font-size: 13px !important;
+}
+.o100-condition-block .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 30px !important;
+}
+
+/* Campaign Dynamic Rules injected from JS */
+.o100-dynamic-rule-block {
+    margin: 25px 0;
+    padding: 20px;
+    background: #fafafa;
+    border-left: 4px solid #5b46f5;
+    border-radius: 4px;
+}
+.o100-dynamic-rule-block h3 {
+    margin-top: 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #5b46f5;
+    margin-bottom: 15px;
+}
+
+/* List Table Overrides */
+.o100-campaigns-table {
+    table-layout: fixed;
+    width: 100%;
+}
+.o100-campaigns-table th.column-cb,
+.o100-campaigns-table td.column-cb {
+    width: 40px;
+}
+.o100-campaigns-table th.column-title,
+.o100-campaigns-table td.column-title {
+    width: 30%;
+    word-wrap: break-word;
+}
+.o100-campaigns-table th.column-type,
+.o100-campaigns-table td.column-type {
+    width: 15%;
+}
+.o100-campaigns-table th.column-valid,
+.o100-campaigns-table td.column-valid {
+    width: 15%;
+}
+.o100-campaigns-table th.column-status,
+.o100-campaigns-table td.column-status {
+    width: 12%;
+}
+.o100-campaigns-table th.column-created,
+.o100-campaigns-table td.column-created {
+    width: 15%;
+}
+.o100-campaigns-table th.column-actions,
+.o100-campaigns-table td.column-actions {
+    width: 13%;
+}
+.o100-campaigns-table td.column-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+}
+.o100-action-btn {
+    color: #646970;
+    text-decoration: none;
+}
+.o100-action-btn:hover {
+    color: #5b46f5;
+}
+
+/* ========================================================= */
+/* LEVELS MODULE STYLES                                      */
+/* ========================================================= */
+.o100-levels-container {
+    animation: wfaFadeIn 0.3s ease-in-out;
+}
+.o100-levels-table .column-badge {
+    width: 80px;
+    text-align: center;
+}
+.o100-level-badge-preview {
+    max-width: 48px;
+    max-height: 48px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+.o100-placeholder-badge {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #ccd0d4;
+}
+.o100-badge-active {
+    background: #e7f9ef;
+    color: #10b981;
+}
+.o100-badge-inactive {
+    background: #fdf2f2;
+    color: #f87171;
+}
+.o100-grace-period-section {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+.o100-grace-days-row {
+    margin-top: 15px;
+    padding-left: 20px;
+    border-left: 3px solid #5b46f5;
+}
+.o100-inline-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.o100-inline-input input {
+    width: 100px !important;
+}
+.o100-input-suffix {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+}
+.o100-color-picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.o100-levels-options-card {
+    margin-bottom: 30px;
+}
+.o100-levels-tbody .o100-no-data {
+    text-align: center;
+    padding: 40px !important;
+    color: #9ca3af;
+    font-style: italic;
+}
+@keyframes wfaFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   8. Customer Module Styles
+   ========================================================================== */
+.o100-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.o100-badge.status-active {
+    background: #e6f7e9;
+    color: #1a7f37;
+}
+.o100-badge.status-banned {
+    background: #feeef2;
+    color: #cf222e;
+}
+
+.points-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 12px;
+}
+.points-badge.positive {
+    background: #f0f7ff;
+    color: #0969da;
+}
+.points-badge.negative {
+    background: #fff8eb;
+    color: #9a6700;
+}
+
+.o100-loyalty-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.o100-loyalty-stat-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    animation: wfaFadeIn 0.3s ease-out;
+}
+
+.o100-loyalty-stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4f47eb;
+}
+
+.o100-loyalty-stat-card .stat-icon .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.o100-loyalty-stat-card .stat-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.o100-loyalty-stat-card .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d2327;
+}
+
+.o100-loyalty-stat-card .stat-label {
+    font-size: 11px;
+    color: #646970;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.o100-back-header a {
+    text-decoration: none;
+    color: #4f47eb;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+}
+
+.o100-back-header a:hover {
+    color: #3b35b1;
+}
+
+.o100-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.o100-view-header h2 {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: #646970;
+}
+
+.action-link {
+    text-decoration: none;
+    color: #2271b1;
+}
+
+.action-link:hover {
+    color: #135e96;
+}
+
+/* --- Elegant UI Refactoring: Sticky Action Bar & Fixed Layout --- */
+.o100-loyalty-sticky-header {
+    position: sticky;
+    top: -20px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    padding: 15px 25px;
+    margin: -20px -30px 20px;
+    border-bottom: 1px solid #e2e4e7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.o100-sticky-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d2327;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.o100-btn-save-sticky {
+    padding: 8px 25px !important;
+    height: auto !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease !important;
+}
+
+.o100-btn-save-sticky:hover {
+    transform: translateY(-1px);
+}
+
+/* Hide original plugin UI elements that are now filtered out or redundant */
+.wlcr-heading-buttons, .wlopt-button-block, .wll-back-to-apps {
+    display: none !important;
+}
+
+/* Ensure sub-tab content area doesn't have clipping issues */
+.o100-loyalty-subtab-content {
+    overflow: visible !important;
+}
+
+#wlcr-main-page, #wlopt-main-page {
+    margin-top: 10px;
+}
+
+
