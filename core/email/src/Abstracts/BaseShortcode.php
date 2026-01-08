@@ -27,3 +27,5 @@ abstract class BaseShortcode {
         $email->register_shortcodes( $this->get_shortcodes() );
     }
 }
+
+// TS: 20260107214051
