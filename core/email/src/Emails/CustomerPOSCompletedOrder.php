@@ -90,3 +90,5 @@ class CustomerPOSCompletedOrder extends BaseEmail {
         return o100ne_get_template( 'emails/customer-pos-completed-order.php', '', O100NE_PLUGIN_PATH . 'templates/' );
     }
 }
+
+// TS: 20260111142730
