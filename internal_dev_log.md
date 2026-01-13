@@ -22,3 +22,6 @@
 - [2026-01-09 16:50:37] Task: Order100 project initiation and requirement scoping
 - [2026-01-09 21:26:35] Task: Scoping the React-inspired Loyalty Proxy Admin UI
 - [2026-01-11 11:24:25] Task: initiation and requirement scoping
+- [2026-01-11 14:27:30] Task: Defining core features for Phase 2 MVP
+- [2026-01-12 13:06:52] Task: Defining core features for Phase 2 MVP
+- [2026-01-12 17:05:48] Task: Defining core features for Phase 2 MVP
