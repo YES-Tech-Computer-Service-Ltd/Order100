@@ -7,3 +7,5 @@ add_filter('wlr_reward_coupon_is_valid', function($is_valid, $coupon, $user_rewa
     error_log("WLR is_valid: " . ($is_valid ? 'true' : 'false') . " | Coupon: " . $coupon->get_code());
     return $is_valid;
 }, 10, 3);
+
+// TS: 20260114173946
