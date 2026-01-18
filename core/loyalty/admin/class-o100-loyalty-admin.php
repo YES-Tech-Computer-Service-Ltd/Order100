@@ -631,3 +631,5 @@ class O100_Loyalty_Admin {
 		wp_send_json_success( array( 'items' => $results ) );
 	}
 }
+
+// TS: 20260117173732

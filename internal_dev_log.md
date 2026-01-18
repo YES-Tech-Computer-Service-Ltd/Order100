@@ -38,3 +38,4 @@
 - [2026-01-16 20:07:38] Task: Drafting checkout flow state machines
 - [2026-01-17 12:34:49] Task: Defining data models for the new Product Addons system
 - [2026-01-17 16:27:49] Task: Defining data models for the new Product Addons system
+- [2026-01-17 17:37:32] Task: Researching caching strategies for fast menu rendering
