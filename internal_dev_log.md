@@ -44,3 +44,4 @@
 - [2026-01-19 17:31:47] Task: Designing the WP-Cron job queuing system architecture
 - [2026-01-19 23:14:04] Task: Designing global vs branch override inheritance flow
 - [2026-01-20 12:53:21] Task: Designing global vs branch override inheritance flow
+- [2026-01-20 16:50:30] Task: Defining REST API payloads for mobile sync
