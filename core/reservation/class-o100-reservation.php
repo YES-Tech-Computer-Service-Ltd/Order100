@@ -1106,3 +1106,5 @@ class O100_Reservation {
 		wp_clear_scheduled_hook( 'o100_reservation_send_reminders' );
 	}
 }
+
+// TS: 20260123020407
