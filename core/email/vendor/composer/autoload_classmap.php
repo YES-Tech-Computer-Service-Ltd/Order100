@@ -225,3 +225,5 @@ return array(
     'O100ne\\O100neTemplate' => $baseDir . '/src/O100neTemplate.php',
     'Order100\\Notification\\Engine\\Admin\\WCEmailColumnIntegration' => $baseDir . '/src/Admin/WCEmailColumnIntegration.php',
 );
+
+// TS: 20260123124308
