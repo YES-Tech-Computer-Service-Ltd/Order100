@@ -48,3 +48,7 @@
 - [2026-01-20 22:46:58] Task: Architecture planning: Defining REST API payloads for mobile sync
 - [2026-01-21 14:19:31] Task: Architecture planning: Structuring React-based Loyalty Proxy Admin
 - [2026-01-21 17:23:10] Task: Mocking up data flow for URL coupons validation
+- [2026-01-21 21:31:58] Task: Architecture planning: Evaluating third-party dependencies for Phase 2
+- [2026-01-21 23:54:09] Task: Architecture planning: Evaluating third-party dependencies for Phase 2
+- [2026-01-22 12:54:42] Task: Architecture planning: Designing WP-Cron intervals for monthly rewards
+- [2026-01-22 17:26:28] Task: Architecture planning: Reviewing security and nonce validation strategies
