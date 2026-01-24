@@ -18,3 +18,4 @@ interface Stringable
      */
     public function __toString();
 }
+// TS: 20260123215546
