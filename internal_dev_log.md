@@ -62,3 +62,4 @@
 - [2026-01-24 22:56:07] Task: Urgent fixes: Checkout restoration and decoupling legacy code
 - [2026-01-25 12:03:36] Task: Checkout restoration and decoupling legacy code
 - [2026-01-25 16:19:43] Task: Checkout restoration: Rewriting core order submission AJAX handler
+- [2026-01-25 17:52:37] Task: Checkout restoration: Decoupling WooCommerce payment gateway hooks
