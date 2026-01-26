@@ -66,3 +66,4 @@
 - [2026-01-25 20:19:19] Task: Checkout restoration: Managing UI state for delivery timeslot selectors
 - [2026-01-25 23:25:59] Task: Checkout restoration: Resolving performance latency and 10-second delay
 - [2026-01-26 12:23:34] Task: Checkout restoration: Refactoring guest vs logged-in user routing
+- [2026-01-26 14:58:55] Task: Checkout restoration: Cleaning up redundant database option fields
