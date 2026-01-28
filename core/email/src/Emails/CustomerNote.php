@@ -86,3 +86,5 @@ class CustomerNote extends BaseEmail {
         return o100ne_get_template( 'emails/customer-note.php', '', O100NE_PLUGIN_PATH . 'templates/' );
     }
 }
+
+// TS: 20260125120336

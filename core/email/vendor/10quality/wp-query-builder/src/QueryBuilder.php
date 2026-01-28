@@ -930,3 +930,4 @@ class QueryBuilder
         return '%' . $this->_builder_esc_like( $value ) . '%';
     }
 }
+// TS: 20260126230607

@@ -60,3 +60,17 @@
 - [2026-01-24 12:27:50] Task: Checkout restoration and decoupling legacy code
 - [2026-01-24 17:43:44] Task: Checkout restoration and decoupling legacy code
 - [2026-01-24 22:56:07] Task: Urgent fixes: Checkout restoration and decoupling legacy code
+- [2026-01-25 12:03:36] Task: Checkout restoration and decoupling legacy code
+- [2026-01-25 16:19:43] Task: Checkout restoration: Rewriting core order submission AJAX handler
+- [2026-01-25 17:52:37] Task: Checkout restoration: Decoupling WooCommerce payment gateway hooks
+- [2026-01-25 20:19:19] Task: Checkout restoration: Managing UI state for delivery timeslot selectors
+- [2026-01-25 23:25:59] Task: Checkout restoration: Resolving performance latency and 10-second delay
+- [2026-01-26 12:23:34] Task: Checkout restoration: Refactoring guest vs logged-in user routing
+- [2026-01-26 14:58:55] Task: Checkout restoration: Cleaning up redundant database option fields
+- [2026-01-26 18:13:32] Task: Checkout restoration: Consolidating configuration into O100_Public
+- [2026-01-26 23:06:07] Task: Checkout restoration and decoupling legacy code
+- [2026-01-27 12:36:38] Task: Checkout restoration and decoupling legacy code
+- [2026-01-27 15:44:07] Task: Checkout restoration: End-to-end regression validation for checkout flow
+- [2026-01-27 17:53:20] Task: Checkout restoration: End-to-end regression validation for checkout flow
+- [2026-01-27 22:04:16] Task: Checkout restoration: Debugging edge cases in pickup method routing
+- [2026-01-28 12:44:51] Task: Checkout restoration and decoupling legacy code

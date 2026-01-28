@@ -173,3 +173,5 @@ jQuery(document).ready(function($) {
         }, 1500); // Slight delay to let WC initialize
     }
 });
+
+/* TS: 20260126122334 */
