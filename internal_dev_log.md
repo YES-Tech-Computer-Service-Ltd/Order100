@@ -73,3 +73,4 @@
 - [2026-01-27 15:44:07] Task: Checkout restoration: End-to-end regression validation for checkout flow
 - [2026-01-27 17:53:20] Task: Checkout restoration: End-to-end regression validation for checkout flow
 - [2026-01-27 22:04:16] Task: Checkout restoration: Debugging edge cases in pickup method routing
+- [2026-01-28 12:44:51] Task: Checkout restoration and decoupling legacy code
