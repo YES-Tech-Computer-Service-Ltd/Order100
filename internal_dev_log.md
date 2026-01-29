@@ -75,3 +75,4 @@
 - [2026-01-27 22:04:16] Task: Checkout restoration: Debugging edge cases in pickup method routing
 - [2026-01-28 12:44:51] Task: Checkout restoration and decoupling legacy code
 - [2026-01-28 17:49:35] Task: Focus time: Checkout restoration and decoupling legacy code
+- [2026-01-29 11:56:22] Task: Checkout restoration: Auditing and removing legacy ExFood dependencies
