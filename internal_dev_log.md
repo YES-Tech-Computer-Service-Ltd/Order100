@@ -117,3 +117,4 @@
 - [2026-02-14 21:55:21] Task: Order100 branch schedule inheritance logic
 - [2026-02-15 00:55:41] Task: Order100 global schedule logic
 - [2026-02-17 22:31:06] Task: Resolving ''No Methods'' false positives in frontend
+- [2026-02-18 11:40:30] Task: Decoupling legacy code from class-o100-settings.php
