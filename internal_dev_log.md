@@ -121,3 +121,5 @@
 - [2026-02-18 14:16:18] Task: Decoupling legacy code from class-o100-settings.php
 - [2026-02-18 17:16:13] Task: Validating end-to-end configuration saving flow
 - [2026-02-18 21:14:18] Task: Validating end-to-end configuration saving flow
+- [2026-02-19 11:25:04] Task: Handling edge cases when global schedule is disabled
+- [2026-02-19 14:22:30] Task: Handling edge cases when global schedule is disabled
