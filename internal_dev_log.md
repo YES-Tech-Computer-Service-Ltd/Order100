@@ -136,3 +136,5 @@
 - [2026-02-23 12:20:44] Task: Implementing live preview mockup for Advocate Email
 - [2026-02-23 17:50:06] Task: Resolving footer overlap issue in the WordPress dashboard
 - [2026-02-23 22:34:50] Task: Resolving footer overlap issue in the WordPress dashboard
+- [2026-02-24 01:07:07] Task: Syncing global primary brand colors into the UI state
+- [2026-02-24 11:55:34] Task: Syncing global primary brand colors into the UI state
