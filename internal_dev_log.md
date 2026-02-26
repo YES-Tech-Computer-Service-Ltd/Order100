@@ -142,3 +142,4 @@
 - [2026-02-24 17:43:16] Task: Sanitizing WordPress focus styles to prevent UI leakage
 - [2026-02-24 22:43:03] Task: Building the Monthly Recurring Rewards configuration wizard
 - [2026-02-25 12:04:20] Task: Discount Rules React-inspired UI structure
+- [2026-02-25 22:09:18] Task: Discount Rules UI: Prototyping the BOGO and Percentage discount toggles
