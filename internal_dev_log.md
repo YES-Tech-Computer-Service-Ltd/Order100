@@ -144,3 +144,4 @@
 - [2026-02-25 12:04:20] Task: Discount Rules React-inspired UI structure
 - [2026-02-25 22:09:18] Task: Discount Rules UI: Prototyping the BOGO and Percentage discount toggles
 - [2026-02-26 12:10:01] Task: Developing the condition builder (Cart subtotal vs Item count)
+- [2026-02-26 16:43:03] Task: Building the Monthly Recurring Rewards configuration wizard
