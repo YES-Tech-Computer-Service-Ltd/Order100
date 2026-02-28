@@ -148,3 +148,4 @@
 - [2026-02-26 19:59:40] Task: Integrating WP nonce and AJAX save endpoints for campaigns
 - [2026-02-26 22:46:06] Task: Overtime: Loyalty Proxy Admin React-inspired UI structure
 - [2026-02-27 12:13:03] Task: Integrating URL coupon code generation fields
+- [2026-02-27 17:10:28] Task: Handling state transitions between campaign types
