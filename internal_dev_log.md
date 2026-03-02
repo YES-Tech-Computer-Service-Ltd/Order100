@@ -151,3 +151,4 @@
 - [2026-02-27 17:10:28] Task: Handling state transitions between campaign types
 - [2026-02-27 22:23:49] Task: Developing the 'Target Audience' selection dropdown logic
 - [2026-03-02 11:23:38] Task: Setting up expiration date and usage limit inputs
+- [2026-03-02 14:44:11] Task: Setting up expiration date and usage limit inputs
