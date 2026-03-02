@@ -150,3 +150,4 @@
 - [2026-02-27 12:13:03] Task: Integrating URL coupon code generation fields
 - [2026-02-27 17:10:28] Task: Handling state transitions between campaign types
 - [2026-02-27 22:23:49] Task: Developing the 'Target Audience' selection dropdown logic
+- [2026-03-02 11:23:38] Task: Setting up expiration date and usage limit inputs
