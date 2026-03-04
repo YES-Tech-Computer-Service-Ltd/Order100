@@ -154,3 +154,4 @@
 - [2026-03-02 14:44:11] Task: Setting up expiration date and usage limit inputs
 - [2026-03-02 17:55:56] Task: Connecting the frontend state to the backend saving logic
 - [2026-03-02 23:34:43] Task: Connecting the frontend state to the backend saving logic
+- [2026-03-04 11:28:59] Task: Designing the underlying JSON schema for campaign rules
