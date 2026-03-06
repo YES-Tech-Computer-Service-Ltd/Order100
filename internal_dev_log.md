@@ -158,3 +158,4 @@
 - [2026-03-05 16:37:13] Task: Connecting dynamic variables (e.g. {coupon_code}) to previews
 - [2026-03-06 01:22:25] Task: Abstracting template components for reuse in admin UI
 - [2026-03-06 13:52:12] Task: Connecting dynamic variables (e.g. {coupon_code}) to previews
+- [2026-03-06 16:41:19] Task: Loyalty frontend panel settings
