@@ -163,3 +163,4 @@
 - [2026-03-08 14:20:20] Task: Creating secure AJAX endpoints for saving configurations
 - [2026-03-08 23:49:41] Task: Integrating WP Nonce validation for admin saves
 - [2026-03-11 12:36:25] Task: Handling dynamic form field serialization
+- [2026-03-11 16:13:18] Task: Retrieving and hydrating global promo rules on page load
