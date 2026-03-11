@@ -164,3 +164,4 @@
 - [2026-03-08 23:49:41] Task: Integrating WP Nonce validation for admin saves
 - [2026-03-11 12:36:25] Task: Handling dynamic form field serialization
 - [2026-03-11 16:13:18] Task: Retrieving and hydrating global promo rules on page load
+- [2026-03-11 17:34:30] Task: Standardizing error handling and success toasts
