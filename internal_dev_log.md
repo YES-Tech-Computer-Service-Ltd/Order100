@@ -162,3 +162,4 @@
 - [2026-03-08 11:23:57] Task: Mapping React state to wp_options schema
 - [2026-03-08 14:20:20] Task: Creating secure AJAX endpoints for saving configurations
 - [2026-03-08 23:49:41] Task: Integrating WP Nonce validation for admin saves
+- [2026-03-11 12:36:25] Task: Handling dynamic form field serialization
