@@ -174,3 +174,4 @@
 - [2026-03-13 12:25:50] Task: Designing the WP-Cron schedule interval logic
 - [2026-03-13 16:18:13] Task: Registering the 'O100_Loyalty_Cron' background hook
 - [2026-03-13 17:07:37] Task: Monthly recurring rewards WP-Cron setup
+- [2026-03-13 21:04:10] Task: Writing SQL queries to fetch eligible target audiences
