@@ -206,3 +206,4 @@
 - [2026-03-24 11:53:43] Task: Storing validated coupon codes securely in user session/cookies
 - [2026-03-24 13:56:32] Task: Auto-applying the session coupon during WooCommerce checkout
 - [2026-03-24 23:14:16] Task: Auto-applying the session coupon during WooCommerce checkout
+- [2026-03-25 11:39:13] Task: Handling edge cases for expired or fully-redeemed URL links
