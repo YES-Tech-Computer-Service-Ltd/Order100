@@ -208,3 +208,4 @@
 - [2026-03-24 23:14:16] Task: Auto-applying the session coupon during WooCommerce checkout
 - [2026-03-25 11:39:13] Task: Handling edge cases for expired or fully-redeemed URL links
 - [2026-03-25 15:06:56] Task: Building the admin UI to generate unique promotion links
+- [2026-03-25 22:45:07] Task: Testing URL parameters parsing and security sanitization
