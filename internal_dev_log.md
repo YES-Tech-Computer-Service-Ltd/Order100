@@ -218,3 +218,4 @@
 - [2026-03-29 20:34:35] Task: Testing URL application with Guest vs Logged-In roles
 - [2026-03-30 16:43:30] Task: Handling cart total recalculation via AJAX after URL apply
 - [2026-03-31 00:42:00] Task: Removing URL parameters from browser history post-apply
+- [2026-03-31 17:12:47] Task: Removing URL parameters from browser history post-apply
