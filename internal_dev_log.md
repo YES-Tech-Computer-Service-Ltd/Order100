@@ -216,3 +216,4 @@
 - [2026-03-29 13:02:31] Task: Adding success/error toast notifications on link click
 - [2026-03-29 16:52:22] Task: Adding success/error toast notifications on link click
 - [2026-03-29 20:34:35] Task: Testing URL application with Guest vs Logged-In roles
+- [2026-03-30 16:43:30] Task: Handling cart total recalculation via AJAX after URL apply
