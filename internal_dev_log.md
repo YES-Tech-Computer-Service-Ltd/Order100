@@ -219,3 +219,5 @@
 - [2026-03-30 16:43:30] Task: Handling cart total recalculation via AJAX after URL apply
 - [2026-03-31 00:42:00] Task: Removing URL parameters from browser history post-apply
 - [2026-03-31 17:12:47] Task: Removing URL parameters from browser history post-apply
+- [2026-03-31 20:43:20] Task: Integrating QR code generator for the promotional links
+- [2026-04-02 11:39:37] Task: Integrating QR code generator for the promotional links
