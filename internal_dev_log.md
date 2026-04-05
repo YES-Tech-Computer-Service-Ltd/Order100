@@ -225,3 +225,4 @@
 - [2026-04-02 23:27:30] Task: Validating URL expiration boundaries across timezones
 - [2026-04-03 22:22:06] Task: Writing the logic to attribute guest orders to referrers
 - [2026-04-05 13:37:05] Task: Writing the logic to attribute guest orders to referrers
+- [2026-04-05 17:06:20] Task: Defining the rules for 'Friend Reward' vs 'Advocate Reward'
