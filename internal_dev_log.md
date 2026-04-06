@@ -227,3 +227,4 @@
 - [2026-04-05 13:37:05] Task: Writing the logic to attribute guest orders to referrers
 - [2026-04-05 17:06:20] Task: Defining the rules for 'Friend Reward' vs 'Advocate Reward'
 - [2026-04-06 02:08:09] Task: Defining the rules for 'Friend Reward' vs 'Advocate Reward'
+- [2026-04-06 13:57:13] Task: Handling edge cases (e.g., users referring themselves)
