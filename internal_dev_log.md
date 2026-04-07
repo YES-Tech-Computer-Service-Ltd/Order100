@@ -230,3 +230,4 @@
 - [2026-04-06 13:57:13] Task: Handling edge cases (e.g., users referring themselves)
 - [2026-04-06 17:14:31] Task: Integrating referral code input field in the checkout flow
 - [2026-04-07 01:48:01] Task: Hooking 'checkout_order_processed' to attribute sales
+- [2026-04-07 14:47:35] Task: Revoking Advocate rewards if the Friend's order is refunded
