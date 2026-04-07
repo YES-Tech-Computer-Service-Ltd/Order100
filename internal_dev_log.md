@@ -229,3 +229,4 @@
 - [2026-04-06 02:08:09] Task: Defining the rules for 'Friend Reward' vs 'Advocate Reward'
 - [2026-04-06 13:57:13] Task: Handling edge cases (e.g., users referring themselves)
 - [2026-04-06 17:14:31] Task: Integrating referral code input field in the checkout flow
+- [2026-04-07 01:48:01] Task: Hooking 'checkout_order_processed' to attribute sales
