@@ -232,3 +232,4 @@
 - [2026-04-07 01:48:01] Task: Hooking 'checkout_order_processed' to attribute sales
 - [2026-04-07 14:47:35] Task: Revoking Advocate rewards if the Friend's order is refunded
 - [2026-04-07 17:05:37] Task: Building the admin metrics dashboard (Total Referrals, Earned)
+- [2026-04-08 12:42:42] Task: Creating automated email templates for successful referrals
