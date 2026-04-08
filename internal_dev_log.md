@@ -231,3 +231,4 @@
 - [2026-04-06 17:14:31] Task: Integrating referral code input field in the checkout flow
 - [2026-04-07 01:48:01] Task: Hooking 'checkout_order_processed' to attribute sales
 - [2026-04-07 14:47:35] Task: Revoking Advocate rewards if the Friend's order is refunded
+- [2026-04-07 17:05:37] Task: Building the admin metrics dashboard (Total Referrals, Earned)
