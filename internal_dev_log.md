@@ -246,3 +246,5 @@
 - [2026-04-12 16:56:31] Task: Syncing referral activity logs to the user's loyalty history UI
 - [2026-04-13 16:37:18] Task: Designing the CSS grid layout for the base modal wrapper
 - [2026-04-13 21:35:07] Task: Designing the CSS grid layout for the base modal wrapper
+- [2026-04-15 11:53:08] Task: Styling radio buttons, checkboxes, and quantity selectors
+- [2026-04-15 17:11:48] Task: Styling radio buttons, checkboxes, and quantity selectors
