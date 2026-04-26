@@ -267,3 +267,4 @@
 - [2026-04-25 17:17:15] Task: Removing hardcoded height values causing the overlap
 - [2026-04-25 21:29:54] Task: Ensuring compatibility with the left-hand WP admin menu toggle
 - [2026-04-26 00:31:07] Task: Applying CSS media queries for mobile admin responsiveness
+- [2026-04-26 13:21:08] Task: Admin UI Polish: Implementing a ResizeObserver to dynamically recalculate height
