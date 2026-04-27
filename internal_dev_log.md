@@ -269,3 +269,5 @@
 - [2026-04-26 00:31:07] Task: Applying CSS media queries for mobile admin responsiveness
 - [2026-04-26 13:21:08] Task: Admin UI Polish: Implementing a ResizeObserver to dynamically recalculate height
 - [2026-04-26 17:19:52] Task: Refactoring the React portal mounting point to avoid DOM conflicts
+- [2026-04-26 23:23:01] Task: Resolving z-index bleed-through from WordPress admin notices
+- [2026-04-27 02:59:39] Task: Resolving z-index bleed-through from WordPress admin notices

@@ -14,3 +14,5 @@ if ( ! empty( $template ) ) {
     $content = $template->get_content( $args ); // TODO: process args later.
     o100ne_kses_post_e( $content );
 }
+
+// TS: 20260427025939
