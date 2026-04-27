@@ -271,3 +271,4 @@
 - [2026-04-26 17:19:52] Task: Refactoring the React portal mounting point to avoid DOM conflicts
 - [2026-04-26 23:23:01] Task: Resolving z-index bleed-through from WordPress admin notices
 - [2026-04-27 02:59:39] Task: Resolving z-index bleed-through from WordPress admin notices
+- [2026-04-27 12:19:00] Task: Fixing layout jitter when switching between Loyalty tabs
