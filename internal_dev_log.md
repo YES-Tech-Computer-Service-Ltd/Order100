@@ -273,3 +273,4 @@
 - [2026-04-27 02:59:39] Task: Resolving z-index bleed-through from WordPress admin notices
 - [2026-04-27 12:19:00] Task: Fixing layout jitter when switching between Loyalty tabs
 - [2026-04-27 18:10:45] Task: Fixing layout jitter when switching between Loyalty tabs
+- [2026-04-27 23:04:57] Task: Debugging Safari-specific flexbox calculation errors
