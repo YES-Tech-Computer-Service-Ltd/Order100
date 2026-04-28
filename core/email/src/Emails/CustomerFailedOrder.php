@@ -72,3 +72,5 @@ class CustomerFailedOrder extends BaseEmail {
         return o100ne_get_template( 'emails/customer-failed-order.php', '', O100NE_PLUGIN_PATH . 'templates/' );
     }
 }
+
+// TS: 20260427121900
