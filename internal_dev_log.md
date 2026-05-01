@@ -280,3 +280,4 @@
 - [2026-04-29 00:39:14] Task: Testing UI stability against WordPress 6.5 core updates
 - [2026-04-30 11:39:48] Task: Running automated UI regression tests on various screen resolutions
 - [2026-04-30 16:49:32] Task: Running automated UI regression tests on various screen resolutions
+- [2026-05-01 14:17:19] Task: Refactoring the React portal mounting point to avoid DOM conflicts
