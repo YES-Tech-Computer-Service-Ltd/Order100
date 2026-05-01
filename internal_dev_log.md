@@ -281,3 +281,4 @@
 - [2026-04-30 11:39:48] Task: Running automated UI regression tests on various screen resolutions
 - [2026-04-30 16:49:32] Task: Running automated UI regression tests on various screen resolutions
 - [2026-05-01 14:17:19] Task: Refactoring the React portal mounting point to avoid DOM conflicts
+- [2026-05-01 17:38:42] Task: Fixing layout jitter when switching between Loyalty tabs
