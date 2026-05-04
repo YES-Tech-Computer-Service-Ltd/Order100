@@ -285,3 +285,4 @@
 - [2026-05-01 23:19:19] Task: Late evening coding: Fixing footer overlap in admin dashboard
 - [2026-05-03 15:31:53] Task: Testing branch specific pickup methods
 - [2026-05-03 19:40:24] Task: Validating time-slot generation when branch switches from open to closed
+- [2026-05-03 23:22:55] Task: Testing cart total recalculation when switching methods at checkout
