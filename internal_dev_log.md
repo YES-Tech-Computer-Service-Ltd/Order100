@@ -291,3 +291,4 @@
 - [2026-05-05 00:32:33] Task: Resolving JS console warnings triggered by rapid location switching
 - [2026-05-07 14:34:25] Task: Verifying email receipt reflects the chosen branch address and method
 - [2026-05-07 18:47:15] Task: Checking that branch-specific minimum order amounts block checkout
+- [2026-05-07 23:19:20] Task: Checking that branch-specific minimum order amounts block checkout
