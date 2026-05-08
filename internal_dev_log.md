@@ -289,3 +289,4 @@
 - [2026-05-04 01:51:17] Task: Overtime: Testing branch specific pickup methods
 - [2026-05-04 16:47:24] Task: Ensuring 'Next Available' time is calculated correctly per branch timezone
 - [2026-05-05 00:32:33] Task: Resolving JS console warnings triggered by rapid location switching
+- [2026-05-07 14:34:25] Task: Verifying email receipt reflects the chosen branch address and method
