@@ -293,3 +293,4 @@
 - [2026-05-07 18:47:15] Task: Checking that branch-specific minimum order amounts block checkout
 - [2026-05-07 23:19:20] Task: Checking that branch-specific minimum order amounts block checkout
 - [2026-05-08 02:29:05] Task: Overtime: Testing branch specific pickup methods
+- [2026-05-08 13:39:30] Task: Simulating high latency network conditions to test AJAX loading spinner
