@@ -298,3 +298,4 @@
 - [2026-05-09 00:11:48] Task: Reservation Function Develop
 - [2026-05-10 16:46:11] Task: Integrating Google Maps API for delivery distance calculation
 - [2026-05-10 22:19:58] Task: Integrating Google Maps API for delivery distance calculation
+- [2026-05-12 13:33:16] Task: Writing backend logic to restrict checkout based on delivery radius
