@@ -300,3 +300,4 @@
 - [2026-05-10 22:19:58] Task: Integrating Google Maps API for delivery distance calculation
 - [2026-05-12 13:33:16] Task: Writing backend logic to restrict checkout based on delivery radius
 - [2026-05-13 02:09:51] Task: Writing backend logic to restrict checkout based on delivery radius
+- [2026-05-13 13:27:40] Task: Debugging API key restrictions for Google Distance Matrix
