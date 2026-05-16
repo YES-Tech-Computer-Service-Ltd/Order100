@@ -305,3 +305,5 @@
 - [2026-05-14 02:20:44] Task: Abstracting the core Reservation/Booking widget logic
 - [2026-05-15 12:18:30] Task: Designing the React-style floating side-cart UI components
 - [2026-05-15 17:09:52] Task: Handling AJAX side-cart updates without full page reloads
+- [2026-05-15 20:52:25] Task: Building the conditional logic engine for Product Addons
+- [2026-05-15 23:27:20] Task: Building the conditional logic engine for Product Addons
