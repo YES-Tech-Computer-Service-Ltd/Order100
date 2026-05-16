@@ -304,3 +304,4 @@
 - [2026-05-13 18:04:04] Task: Refactoring the legacy ExFood delivery fee calculation matrix
 - [2026-05-14 02:20:44] Task: Abstracting the core Reservation/Booking widget logic
 - [2026-05-15 12:18:30] Task: Designing the React-style floating side-cart UI components
+- [2026-05-15 17:09:52] Task: Handling AJAX side-cart updates without full page reloads
