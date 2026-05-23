@@ -313,3 +313,4 @@
 - [2026-05-19 16:50:12] Task: Building the React-inspired UI structure for Loyalty Proxy Admin
 - [2026-05-19 23:38:49] Task: Writing AJAX handlers for dynamic product addons price calculations
 - [2026-05-21 16:44:29] Task: Implementing live preview mockup for the Advocate Email template
+- [2026-05-22 13:46:26] Task: Debugging the distance-based delivery fee matrix calculation
