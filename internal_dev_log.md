@@ -320,3 +320,4 @@
 - [2026-05-25 20:21:02] Task: Building the backend logic for O100_Loyalty_Cron to auto-dispatch rewards
 - [2026-05-26 03:11:04] Task: Building the backend logic for O100_Loyalty_Cron to auto-dispatch rewards
 - [2026-05-26 13:51:02] Task: Integrating the campaign saving logic to persist custom rules
+- [2026-05-26 18:13:00] Task: Enabling high-fidelity real-time mockups for Advocate Email templates
