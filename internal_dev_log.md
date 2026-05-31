@@ -322,3 +322,6 @@
 - [2026-05-26 13:51:02] Task: Integrating the campaign saving logic to persist custom rules
 - [2026-05-26 18:13:00] Task: Enabling high-fidelity real-time mockups for Advocate Email templates
 - [2026-05-27 00:40:25] Task: Enabling high-fidelity real-time mockups for Advocate Email templates
+- [2026-05-27 12:44:24] Task: Developing unique, dynamic coupon issuance logic for eligible users
+- [2026-05-27 16:30:33] Task: Developing unique, dynamic coupon issuance logic for eligible users
+- [2026-05-28 00:21:08] Task: Developing unique, dynamic coupon issuance logic for eligible users
