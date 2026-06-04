@@ -335,3 +335,4 @@
 - [2026-06-02 12:07:33] Task: Executing diagnostic scripts to monitor cookie headers (o100-diag-session)
 - [2026-06-02 22:37:14] Task: Executing diagnostic scripts to monitor cookie headers (o100-diag-session)
 - [2026-06-03 19:30:00] Task: Implementing Product Impact Registry - Enhance the Active Campaigns portal to provide transparent, granular, and actionable product impact reporting.
+- [2026-06-03 23:00:00] Task: Implementing Product Impact Registry - Replace generic rule descriptions in the Insights tab with specific, data-driven details.
