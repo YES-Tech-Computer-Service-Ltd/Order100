@@ -64,9 +64,3 @@ class SettingController extends BaseController {
     }
 }
 
-
-// TS: 20260407170537
-
-// TS: 20260415115308
-
-// Update TS: 20260608143000
