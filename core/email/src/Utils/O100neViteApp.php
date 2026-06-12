@@ -32,7 +32,7 @@ class O100neViteApp {
         ];
     }
 
-    public function wp_enqueue_scripts() {
+    public function wp_enqueue_scripts() { error_log("O100neViteApp::wp_enqueue_scripts RUNNING! Entries: " . count($this->entries));
         if ( empty( $this->entries ) ) {
             return;
         }
@@ -168,5 +168,3 @@ class O100neViteApp {
 
 
 
-
-// TS: 20260210123810
