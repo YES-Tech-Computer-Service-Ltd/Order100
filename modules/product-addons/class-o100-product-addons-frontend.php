@@ -73,13 +73,28 @@ class O100_Product_Addons_Frontend {
 				if ( 'all' === $apply_to ) {
 					$applies = true;
 				} elseif ( 'categories' === $apply_to ) {
-					$assigned_cats = isset( $group['_category_ids'] ) ? $group['_category_ids'] : array();
-					if ( ! empty( array_intersect( $product_terms, $assigned_cats ) ) ) {
+					$assigned_cats = isset( $group['_category_ids'] ) ? $group['_category_ids'] : '';
+					if ( is_string( $assigned_cats ) && $assigned_cats !== '' ) {
+						$assigned_cats = array_unique( array_map( 'intval', array_filter( explode( ',', $assigned_cats ) ) ) );
+					} elseif ( is_array( $assigned_cats ) ) {
+						$assigned_cats = array_unique( array_map( 'intval', $assigned_cats ) );
+					} else {
+						$assigned_cats = array();
+					}
+					// $product_terms is already int[] from wp_get_post_terms
+					if ( ! empty( $assigned_cats ) && ! empty( array_intersect( $product_terms, $assigned_cats ) ) ) {
 						$applies = true;
 					}
 				} elseif ( 'products' === $apply_to ) {
-					$assigned_prods = isset( $group['_product_ids'] ) ? array_filter( array_map( 'trim', explode( ',', $group['_product_ids'] ) ) ) : array();
-					if ( in_array( $product_id, $assigned_prods ) ) {
+					$prod_str = isset( $group['_product_ids'] ) ? $group['_product_ids'] : '';
+					if ( is_string( $prod_str ) && $prod_str !== '' ) {
+						$assigned_prods = array_map( 'intval', array_filter( explode( ',', $prod_str ) ) );
+					} elseif ( is_array( $prod_str ) ) {
+						$assigned_prods = array_map( 'intval', $prod_str );
+					} else {
+						$assigned_prods = array();
+					}
+					if ( in_array( (int) $product_id, $assigned_prods, true ) ) {
 						$applies = true;
 					}
 				}
@@ -90,12 +105,9 @@ class O100_Product_Addons_Frontend {
 			}
 
 			// Filter by product-level "Include Specific Modifiers" whitelist
-			$has_include_saved = metadata_exists( 'post', $product_id, 'o100_addon_include' );
-			if ( $has_include_saved ) {
-				$include_ids = get_post_meta( $product_id, 'o100_addon_include', true );
-				if ( ! is_array( $include_ids ) ) {
-					$include_ids = array();
-				}
+			// Only apply if the whitelist is non-empty; an empty array means "no restriction"
+			$include_ids = get_post_meta( $product_id, 'o100_addon_include', true );
+			if ( is_array( $include_ids ) && ! empty( $include_ids ) ) {
 				$options = array_filter( $options, function( $group ) use ( $include_ids ) {
 					$gid = isset( $group['_id'] ) ? $group['_id'] : '';
 					return in_array( $gid, $include_ids, true );
@@ -124,6 +136,13 @@ class O100_Product_Addons_Frontend {
 		foreach ( $final_options as $opt ) {
 			if ( ! isset( $opt['_id'] ) ) continue;
 			if ( ! in_array( $opt['_id'], $seen ) ) {
+				// Final safety check: ensure _options is an array
+				if ( isset( $opt['_options'] ) && is_string( $opt['_options'] ) ) {
+					$decoded = json_decode( stripslashes( $opt['_options'] ), true );
+					$opt['_options'] = is_array( $decoded ) ? $decoded : array();
+				} elseif ( ! isset( $opt['_options'] ) || ! is_array( $opt['_options'] ) ) {
+					$opt['_options'] = array();
+				}
 				$unique_options[] = $opt;
 				$seen[] = $opt['_id'];
 			}
@@ -143,20 +162,35 @@ class O100_Product_Addons_Frontend {
 		if ( empty( $options ) ) return;
 
 		echo '<div class="o100-product-addons">';
+		wp_nonce_field( 'o100_addon_cart', 'o100_addon_nonce' );
 		
 		foreach ( $options as $index => $group ) {
+			if ( isset( $group['_is_woo_var'] ) && $group['_is_woo_var'] === 'yes' ) {
+				$display = isset( $group['_display_type'] ) ? $group['_display_type'] : '';
+				$price_disp = isset( $group['_price_display'] ) ? $group['_price_display'] : 'diff';
+				echo '<div class="o100-woo-var-settings hidden" style="display:none;" data-display-type="' . esc_attr($display) . '" data-price-display="' . esc_attr($price_disp) . '"></div>';
+				continue;
+			}
+			
 			$id   = isset( $group['_id'] ) ? $group['_id'] : 'o100_op_' . $index;
-			$type = isset( $group['_type'] ) ? $group['_type'] : ''; // default checkbox
+			$type = isset( $group['_type'] ) && $group['_type'] !== '' ? $group['_type'] : 'checkbox';
 			$name = isset( $group['_name'] ) ? $group['_name'] : '';
+			$opts = isset( $group['_options'] ) && is_array( $group['_options'] ) ? $group['_options'] : array();
 			$req  = isset( $group['_required'] ) && $group['_required'] === 'yes';
+
+			// Skip empty groups (no name and no options)
+			if ( empty( $name ) && empty( $opts ) ) continue;
 
 			$display = isset( $group['_display_type'] ) ? $group['_display_type'] : '';
 
-			$classes = array( 'o100-addon-group', 'o100-addon-type-' . ( $type ? $type : 'checkbox' ) );
+			$classes = array( 'o100-addon-group', 'o100-addon-type-' . $type );
 			if ( $req ) $classes[] = 'o100-required';
 			if ( $display === 'accor' ) {
 				$classes[] = 'o100-pm-addon-group';
 				$classes[] = 'o100-pm-accordion-mode';
+			} elseif ( $display === 'inline' ) {
+				$classes[] = 'o100-pm-addon-group';
+				$classes[] = 'o100-pm-inline-mode';
 			}
 
 			$min_req = isset( $group['_min_op'] ) && $group['_min_op'] !== '' ? $group['_min_op'] : '';
@@ -164,12 +198,20 @@ class O100_Product_Addons_Frontend {
 			$min_opqty = isset( $group['_min_opqty'] ) && $group['_min_opqty'] !== '' ? $group['_min_opqty'] : '';
 			$max_opqty = isset( $group['_max_opqty'] ) && $group['_max_opqty'] !== '' ? $group['_max_opqty'] : '';
 
-			$enb_logic = isset( $group['_enb_logic'] ) ? $group['_enb_logic'] : '';
-			if ( $enb_logic === 'on' ) {
-				$classes[] = 'o100-logic-on';
+			$enb_logic = isset( $group['_enb_logic'] ) ? $group['_enb_logic'] : 'no';
+			$con_tlogic = isset( $group['_con_tlogic'] ) ? $group['_con_tlogic'] : 'any';
+			$rules_attr = '';
+			$style_attr = '';
+			if ( $enb_logic === 'yes' && ! empty( $group['_con_logic'] ) ) {
+				$classes[] = 'o100-has-conditions';
+				$classes[] = 'o100-condition-hidden';
+				$rules_attr = ' data-rules="' . esc_attr( wp_json_encode( $group['_con_logic'] ) ) . '" data-rules-match="' . esc_attr( $con_tlogic ) . '"';
+				$style_attr = ' style="display:none;"';
 			}
 
-			echo '<div class="' . esc_attr( implode( ' ', $classes ) ) . '" id="' . esc_attr( $id ) . '" data-id="' . esc_attr( $id ) . '" data-minsl="' . esc_attr( $min_req ) . '" data-maxsl="' . esc_attr( $max_req ) . '" data-minopqty="' . esc_attr( $min_opqty ) . '" data-maxopqty="' . esc_attr( $max_opqty ) . '">';
+			$price_disp = isset( $group['_price_display'] ) ? $group['_price_display'] : 'diff';
+
+			echo '<div class="' . esc_attr( implode( ' ', $classes ) ) . '" id="' . esc_attr( $id ) . '" data-id="' . esc_attr( $id ) . '" data-minsl="' . esc_attr( $min_req ) . '" data-maxsl="' . esc_attr( $max_req ) . '" data-minopqty="' . esc_attr( $min_opqty ) . '" data-maxopqty="' . esc_attr( $max_opqty ) . '" data-price-display="' . esc_attr( $price_disp ) . '"' . $rules_attr . $style_attr . '>';
 			
 			if ( $display === 'accor' ) {
 				echo '<div class="o100-pm-accordion-header">';
@@ -208,23 +250,29 @@ class O100_Product_Addons_Frontend {
 				// Selection limits (checkboxes)
 				if ( $max_op > 0 ) {
 					if ( $min_req == $max_op ) {
-						$limits[] = 'Choose exactly ' . $max_op;
+						/* translators: %d: number of choices */
+						$limits[] = sprintf( __( 'Choose exactly %d', 'order100' ), $max_op );
 					} else {
-						$limits[] = 'Choose up to ' . $max_op;
+						/* translators: %d: max number of choices */
+						$limits[] = sprintf( __( 'Choose up to %d', 'order100' ), $max_op );
 					}
 				} elseif ( $min_req > 0 ) {
-					$limits[] = 'Choose at least ' . $min_req;
+					/* translators: %d: min number of choices */
+					$limits[] = sprintf( __( 'Choose at least %d', 'order100' ), $min_req );
 				}
 
 				// Total Quantity limits
 				if ( $max_opqty > 0 ) {
 					if ( $min_opqty == $max_opqty ) {
-						$limits[] = 'Total qty exactly ' . $max_opqty;
+						/* translators: %d: exact total quantity */
+						$limits[] = sprintf( __( 'Total qty exactly %d', 'order100' ), $max_opqty );
 					} else {
-						$limits[] = 'Total qty up to ' . $max_opqty;
+						/* translators: %d: max total quantity */
+						$limits[] = sprintf( __( 'Total qty up to %d', 'order100' ), $max_opqty );
 					}
 				} elseif ( $min_opqty > 0 ) {
-					$limits[] = 'Total qty at least ' . $min_opqty;
+					/* translators: %d: min total quantity */
+					$limits[] = sprintf( __( 'Total qty at least %d', 'order100' ), $min_opqty );
 				}
 
 				$max_text = '';
@@ -233,9 +281,9 @@ class O100_Product_Addons_Frontend {
 				}
 
 				if ( $req ) {
-					echo '<div class="o100-addon-subtitle o100-addon-required-subtitle"><span class="o100-req-icon">&#9888;</span> Required' . $max_text . '</div>';
+					echo '<div class="o100-addon-subtitle o100-addon-required-subtitle"><span class="o100-req-icon">&#9888;</span> ' . esc_html__( 'Required', 'order100' ) . $max_text . '</div>';
 				} else {
-					echo '<div class="o100-addon-subtitle o100-addon-optional-subtitle">(Optional)' . $max_text . '</div>';
+					echo '<div class="o100-addon-subtitle o100-addon-optional-subtitle">(' . esc_html__( 'Optional', 'order100' ) . ')' . $max_text . '</div>';
 				}
 				
 				if ( 'textarea' === $type ) {
@@ -252,8 +300,8 @@ class O100_Product_Addons_Frontend {
 				echo '<div class="o100-pm-addon-body" style="display:none;">';
 			}
 
-			$enb_img = ( in_array( $type, array( '', 'checkbox', 'radio' ) ) && isset( $group['_enb_img'] ) ) ? $group['_enb_img'] === 'yes' : false;
-			$enb_qty = ( in_array( $type, array( '', 'checkbox', 'radio' ) ) && isset( $group['_enb_qty'] ) ) ? $group['_enb_qty'] === 'yes' : false;
+			$enb_img = ( in_array( $type, array( 'checkbox', 'radio' ) ) && isset( $group['_enb_img'] ) ) ? $group['_enb_img'] === 'yes' : false;
+			$enb_qty = ( in_array( $type, array( 'checkbox', 'radio' ) ) && isset( $group['_enb_qty'] ) ) ? $group['_enb_qty'] === 'yes' : false;
 
 			$container_classes = array( 'o100-addon-choices' );
 			if ( $enb_img ) $container_classes[] = 'o100-img-option';
@@ -262,32 +310,47 @@ class O100_Product_Addons_Frontend {
 			echo '<div class="' . esc_attr( implode( ' ', $container_classes ) ) . '">';
 			
 			// Render Choices
-			if ( in_array( $type, array( '', 'radio', 'select' ) ) ) {
+			if ( in_array( $type, array( 'checkbox', 'radio', 'select' ) ) ) {
 				$choices = isset( $group['_options'] ) && is_array( $group['_options'] ) ? $group['_options'] : array();
 				
 				if ( 'select' === $type ) {
 					echo '<select name="o100_addon_' . esc_attr( $id ) . '[]" class="o100-addon-select o100-options">';
-					echo '<option value="">' . __( 'Choose an option', 'order100' ) . '</option>';
+					echo '<option value="">' . esc_html__( 'Select an option...', 'order100' ) . '</option>';
 					foreach ( $choices as $key => $choice ) {
 						if ( isset( $choice['dis'] ) && 'yes' === $choice['dis'] ) continue;
 						$price_val = isset( $choice['price'] ) && is_numeric( $choice['price'] ) ? floatval( $choice['price'] ) : 0;
-						$price_text = $price_val > 0 ? ' (+' . $this->format_addon_price_html( $price_val ) . ')' : '';
+						$sale_price_val = isset( $choice['sale_price'] ) && is_numeric( $choice['sale_price'] ) ? floatval( $choice['sale_price'] ) : '';
+						$actual_price = ($sale_price_val !== '' && $sale_price_val < $price_val) ? $sale_price_val : $price_val;
+						
+						$prefix = $price_disp === 'actual' ? '' : '+';
+						$price_text = $actual_price > 0 ? ' (' . $prefix . $this->format_addon_price_html( $actual_price ) . ')' : '';
+						
 						$op_type = isset( $choice['type'] ) ? $choice['type'] : '';
-						echo '<option value="' . esc_attr( $key ) . '" data-price="' . esc_attr( $price_val ) . '" data-type="' . esc_attr( $op_type ) . '">' . esc_html( $choice['name'] ) . wp_strip_all_tags( $price_text ) . '</option>';
+						$opt_selected = ( isset( $choice['def'] ) && $choice['def'] === 'yes' ) ? ' selected' : '';
+						echo '<option value="' . esc_attr( $key ) . '" data-price="' . esc_attr( $actual_price ) . '" data-type="' . esc_attr( $op_type ) . '" data-label="' . esc_attr( $choice['name'] ) . '"' . $opt_selected . '>' . esc_html( $choice['name'] ) . wp_strip_all_tags( $price_text ) . '</option>';
 					}
 					echo '</select>';
 				} else {
-					$input_type = 'radio' === $type ? 'radio' : 'checkbox';
+					$input_type = ( 'radio' === $type ) ? 'radio' : 'checkbox';
 					foreach ( $choices as $key => $choice ) {
 						if ( isset( $choice['dis'] ) && 'yes' === $choice['dis'] ) continue;
 						$input_id = esc_attr( $id . '_' . $key );
 						$price_val = isset( $choice['price'] ) && is_numeric( $choice['price'] ) ? floatval( $choice['price'] ) : 0;
-						$price_text = $price_val > 0 ? ' <span class="o100-addon-price">+' . $this->format_addon_price_html( $price_val ) . '</span>' : '';
+						$sale_price_val = isset( $choice['sale_price'] ) && is_numeric( $choice['sale_price'] ) ? floatval( $choice['sale_price'] ) : '';
+						$actual_price = ($sale_price_val !== '' && $sale_price_val < $price_val) ? $sale_price_val : $price_val;
+						
+						$prefix = $price_disp === 'actual' ? '' : '+';
+						if ( $sale_price_val !== '' && $sale_price_val < $price_val ) {
+							$price_text = ' <span class="o100-addon-price"><del style="color:#94a3b8; font-weight:400; margin-right:0.25rem;">' . $prefix . $this->format_addon_price_html( $price_val ) . '</del><span style="color:#dc2626;">' . $prefix . $this->format_addon_price_html( $sale_price_val ) . '</span></span>';
+						} else {
+							$price_text = $price_val > 0 ? ' <span class="o100-addon-price">' . $prefix . $this->format_addon_price_html( $price_val ) . '</span>' : '';
+						}
 						$op_type = isset( $choice['type'] ) ? $choice['type'] : '';
 						
 						echo '<div class="o100-addon-choice-wrap">';
 						echo '<label class="o100-addon-choice-label" for="' . $input_id . '">';
-						echo '<input type="' . $input_type . '" class="o100-options" id="' . $input_id . '" name="o100_addon_' . esc_attr( $id ) . '[]" value="' . esc_attr( $key ) . '" data-price="' . esc_attr( $price_val ) . '" data-type="' . esc_attr( $op_type ) . '">';
+						$checked = ( isset( $choice['def'] ) && $choice['def'] === 'yes' ) ? ' checked' : '';
+						echo '<input type="' . $input_type . '" class="o100-options" id="' . $input_id . '" name="o100_addon_' . esc_attr( $id ) . '[]" value="' . esc_attr( $key ) . '" data-price="' . esc_attr( $actual_price ) . '" data-type="' . esc_attr( $op_type ) . '" data-label="' . esc_attr( $choice['name'] ) . '"' . $checked . '>';
 						
 						$img_op = isset( $choice['image'] ) ? $choice['image'] : '';
 						if ( $enb_img && $img_op ) {
@@ -321,16 +384,16 @@ class O100_Product_Addons_Frontend {
 					echo '<div class="o100-textarea-slide-panel" style="transform: translateX(100%);">';
 					echo '<div class="o100-slide-panel-header">';
 					echo '<div class="o100-slide-panel-back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>';
-					echo '<h3 class="o100-slide-panel-title">' . esc_html( $name ? $name : 'User Preferences' ) . '</h3>';
+					echo '<h3 class="o100-slide-panel-title">' . esc_html( $name ? $name : __( 'User Preferences', 'order100' ) ) . '</h3>';
 					echo '</div>';
 					
 					echo '<div class="o100-slide-panel-body">';
-					echo '<div class="o100-slide-panel-subtitle">Add Special Instructions</div>';
+					echo '<div class="o100-slide-panel-subtitle">' . esc_html__( 'Add Special Instructions', 'order100' ) . '</div>';
 					echo '<textarea name="o100_addon_' . esc_attr( $id ) . '" class="o100-addon-textarea o100-options" data-price="' . esc_attr( $price_val ) . '" data-pricetype="' . esc_attr( $price_type ) . '"></textarea>';
 					echo '</div>';
 					
 					echo '<div class="o100-slide-panel-footer">';
-					echo '<div class="o100-slide-panel-save">Save</div>';
+					echo '<div class="o100-slide-panel-save">' . esc_html__( 'Save', 'order100' ) . '</div>';
 					echo '</div>';
 					echo '</div>';
 				} elseif ( 'quantity' === $type ) {
@@ -354,16 +417,26 @@ class O100_Product_Addons_Frontend {
 	 * 2. Validate add to cart
 	 */
 	public function validate_add_to_cart( $passed, $product_id, $quantity, $variation_id = false ) {
+		// D-1: Nonce verification
+		if ( ! isset( $_POST['o100_addon_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['o100_addon_nonce'] ) ), 'o100_addon_cart' ) ) {
+			return $passed; // Silent return – don't block add-to-cart
+		}
+
 		$options = $this->get_product_options( $product_id );
 		if ( empty( $options ) ) return $passed;
 
 		foreach ( $options as $index => $group ) {
+			// Skip WooCommerce native variations (they are validated by WooCommerce core)
+			if ( isset( $group['_is_woo_var'] ) && $group['_is_woo_var'] === 'yes' ) {
+				continue;
+			}
+
 			$id  = isset( $group['_id'] ) && !empty( $group['_id'] ) ? $group['_id'] : 'o100_op_' . $index;
 			$req = isset( $group['_required'] ) && $group['_required'] === 'yes';
 			$val = isset( $_POST['o100_addon_' . $id] ) ? $_POST['o100_addon_' . $id] : null;
-			$type = isset( $group['_type'] ) ? $group['_type'] : '';
+			$type = isset( $group['_type'] ) && $group['_type'] !== '' ? $group['_type'] : 'checkbox';
 
-			$name = isset( $group['_name'] ) ? $group['_name'] : 'Option';
+			$name = isset( $group['_name'] ) ? $group['_name'] : __( 'Option', 'order100' );
 
 			if ( $req ) {
 				if ( empty( $val ) && $val !== '0' ) {
@@ -375,7 +448,17 @@ class O100_Product_Addons_Frontend {
 				}
 			}
 
-			if ( in_array( $type, array( '', 'checkbox' ) ) && ! empty( $val ) && is_array( $val ) ) {
+			// D-5: Required quantity type must have qty >= 1
+			if ( $req && $type === 'quantity' ) {
+				$qty_val = isset( $_POST['o100_addon_' . $id] ) ? absint( $_POST['o100_addon_' . $id] ) : 0;
+				if ( $qty_val < 1 ) {
+					/* translators: %s: addon group name */
+					wc_add_notice( sprintf( __( '"%s" requires a quantity of at least 1.', 'order100' ), $name ), 'error' );
+					$passed = false;
+				}
+			}
+
+			if ( $type === 'checkbox' && ! empty( $val ) && is_array( $val ) ) {
 				$c_item = count( $val );
 				$min_req = isset( $group['_min_op'] ) && $group['_min_op'] !== '' ? intval( $group['_min_op'] ) : 0;
 				$max_req = isset( $group['_max_op'] ) && $group['_max_op'] !== '' ? intval( $group['_max_op'] ) : 0;
@@ -397,7 +480,7 @@ class O100_Product_Addons_Frontend {
 					$qty_tt = 0;
 					foreach ( $val as $v ) {
 						$qty_key = 'o100_addon_' . $id . '_' . $v . '_qty';
-						$qty_op = isset( $_POST[$qty_key] ) && is_numeric( $_POST[$qty_key] ) ? intval( $_POST[$qty_key] ) : 1;
+						$qty_op = isset( $_POST[ $qty_key ] ) && is_numeric( sanitize_text_field( wp_unslash( $_POST[ $qty_key ] ) ) ) ? intval( $_POST[ $qty_key ] ) : 1;
 						$qty_tt += $qty_op;
 					}
 					if ( $min_opqty > 0 && $qty_tt < $min_opqty ) {
@@ -426,13 +509,14 @@ class O100_Product_Addons_Frontend {
 
 		foreach ( $options as $index => $group ) {
 			$id  = isset( $group['_id'] ) && !empty( $group['_id'] ) ? $group['_id'] : 'o100_op_' . $index;
-			$val = isset( $_POST['o100_addon_' . $id] ) ? $_POST['o100_addon_' . $id] : null;
+			$raw_val = isset( $_POST['o100_addon_' . $id] ) ? wp_unslash( $_POST['o100_addon_' . $id] ) : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$val = is_array( $raw_val ) ? array_map( 'sanitize_text_field', $raw_val ) : ( is_string( $raw_val ) ? sanitize_text_field( $raw_val ) : null );
 			
 			if ( empty( $val ) ) continue;
 
-			$type = isset( $group['_type'] ) ? $group['_type'] : '';
+			$type = isset( $group['_type'] ) && $group['_type'] !== '' ? $group['_type'] : 'checkbox';
 
-			if ( in_array( $type, array( '', 'radio', 'select', 'checkbox' ) ) ) {
+			if ( in_array( $type, array( 'checkbox', 'radio', 'select' ) ) ) {
 				$choices = isset( $group['_options'] ) && is_array( $group['_options'] ) ? $group['_options'] : array();
 				$selected = is_array( $val ) ? $val : array( $val );
 				$enb_qty = isset( $group['_enb_qty'] ) && $group['_enb_qty'] === 'yes';
@@ -440,13 +524,17 @@ class O100_Product_Addons_Frontend {
 				foreach ( $selected as $key ) {
 					if ( isset( $choices[$key] ) ) {
 						$price = isset( $choices[$key]['price'] ) && is_numeric( $choices[$key]['price'] ) ? floatval( $choices[$key]['price'] ) : 0;
+						$sale_price = isset( $choices[$key]['sale_price'] ) && is_numeric( $choices[$key]['sale_price'] ) ? floatval( $choices[$key]['sale_price'] ) : '';
+						if ( $sale_price !== '' && $sale_price < $price ) {
+							$price = $sale_price;
+						}
 						$val_op = $choices[$key]['name'];
 						$qty_op = 1;
 
 						if ( $enb_qty ) {
 							$qty_key = 'o100_addon_' . $id . '_' . $key . '_qty';
-							if ( isset( $_POST[$qty_key] ) && is_numeric( $_POST[$qty_key] ) ) {
-								$qty_op = intval( $_POST[$qty_key] );
+							if ( isset( $_POST[ $qty_key ] ) && is_numeric( sanitize_text_field( wp_unslash( $_POST[ $qty_key ] ) ) ) ) {
+								$qty_op = absint( $_POST[ $qty_key ] );
 								if ( $qty_op > 1 ) {
 									$price = $price * $qty_op;
 									$val_op = $val_op . ' x ' . $qty_op;
@@ -486,7 +574,7 @@ class O100_Product_Addons_Frontend {
 					} else {
 						$addon_data[] = array(
 							'name'  => $group['_name'],
-							'value' => wp_strip_all_tags( $val ),
+							'value' => sanitize_text_field( $val ),
 							'price' => $price,
 							'type'  => $price_type,
 							'_type' => $type,
@@ -515,8 +603,8 @@ class O100_Product_Addons_Frontend {
 			foreach ( $cart_item['o100_addons'] as $addon ) {
 				if ( isset( $addon['price'] ) && $addon['price'] > 0 ) {
 					if ( isset( $addon['type'] ) && $addon['type'] === 'fixed' ) {
-						// fixed price across total quantity = price / qty
-						$extra_price += $addon['price'] / $qty;
+						// D-4: fixed price across total quantity = price / qty, with precision
+						$extra_price += round( (float) $addon['price'] / $qty, wc_get_price_decimals() );
 					} else {
 						// qty based = price applies per item
 						$extra_price += $addon['price'];
@@ -586,27 +674,29 @@ class O100_Product_Addons_Frontend {
 	}
 
 	public function enqueue_assets() {
-		if ( ! is_admin() ) {
-			$css_path = O100_ADDONS_PATH . 'assets/css/frontend.css';
-			$js_path = O100_ADDONS_PATH . 'assets/js/frontend.js';
-			
-			$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : O100_VERSION;
-			$js_ver = file_exists( $js_path ) ? filemtime( $js_path ) : O100_VERSION;
+		// D-7: Only load on product-related pages
+		if ( is_admin() ) return;
+		if ( ! is_product() && ! is_shop() && ! is_product_category() ) return;
 
-			wp_enqueue_style(
-				'o100-product-addons-front',
-				O100_ADDONS_URL . 'assets/css/frontend.css',
-				array(),
-				$css_ver
-			);
-			wp_enqueue_script(
-				'o100-product-addons-front',
-				O100_ADDONS_URL . 'assets/js/frontend.js',
-				array( 'jquery' ),
-				$js_ver,
-				true
-			);
-		}
+		$css_path = O100_ADDONS_PATH . 'assets/css/frontend.css';
+		$js_path = O100_ADDONS_PATH . 'assets/js/frontend.js';
+		
+		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : O100_VERSION;
+		$js_ver = file_exists( $js_path ) ? filemtime( $js_path ) : O100_VERSION;
+
+		wp_enqueue_style(
+			'o100-product-addons-front',
+			O100_ADDONS_URL . 'assets/css/frontend.css',
+			array(),
+			$css_ver
+		);
+		wp_enqueue_script(
+			'o100-product-addons-front',
+			O100_ADDONS_URL . 'assets/js/frontend.js',
+			array( 'jquery' ),
+			$js_ver,
+			true
+		);
 	}
 
 	public function format_addon_price_html( $price_val ) {
@@ -639,9 +729,3 @@ class O100_Product_Addons_Frontend {
 
 
 
-
-// TS: 20260114173946
-
-// TS: 20260326224405
-
-// TS: 20260514022044

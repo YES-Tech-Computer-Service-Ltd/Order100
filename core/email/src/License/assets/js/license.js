@@ -193,7 +193,3 @@ jQuery(document).ready(function () {
   }
 });
 
-
-/* TS: 20260311123625 */
-
-/* TS: 20260317162141 */
