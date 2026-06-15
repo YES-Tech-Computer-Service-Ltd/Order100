@@ -17,6 +17,11 @@ if ( ! function_exists( 'o100_get_emails' ) ) {
      * @return BaseEmail[]
      */
     function o100ne_get_emails() {
+        static $cached_emails = null;
+        if ( $cached_emails !== null ) {
+            return $cached_emails;
+        }
+
         $o100ne_emails     = O100neEmails::get_instance()->get_emails();
         $emails_default     = [];
         $emails_third_party = [];
@@ -29,6 +34,7 @@ if ( ! function_exists( 'o100_get_emails' ) ) {
             }
         }
         $sorted_emails = array_merge( $emails_default, $emails_third_party );
+        $cached_emails = $sorted_emails;
         return $sorted_emails;
     }
 }//end if
@@ -321,12 +327,13 @@ if ( ! function_exists( 'o100_get_email_shortcodes' ) ) {
      */
     function o100ne_get_email_shortcodes( $email_id ) {
         $find_email = o100ne_get_email( $email_id );
-
         if ( ! $find_email ) {
+            error_log('o100ne_get_email_shortcodes: find_email is false for ' . print_r($email_id, true));
             return [];
         }
-
-        return $find_email->get_shortcodes();
+        $shortcodes = $find_email->get_shortcodes();
+        error_log('o100ne_get_email_shortcodes: found ' . count((array)$shortcodes) . ' shortcodes for ' . $email_id);
+        return $shortcodes;
     }
 }
 
@@ -436,11 +443,3 @@ if ( ! function_exists( 'o100_get_template' ) ) {
 }
 
 
-
-// TS: 20260106125033
-
-// TS: 20260218171613
-
-// TS: 20260409224720
-
-// TS: 20260417133330

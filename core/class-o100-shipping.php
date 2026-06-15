@@ -19,6 +19,23 @@ if ( ! defined( 'WPINC' ) ) {
 class O100_Shipping {
 
 	/**
+	 * Singleton instance
+	 * @var O100_Shipping
+	 */
+	private static $instance = null;
+
+	/**
+	 * Get singleton instance
+	 * @return O100_Shipping
+	 */
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+	/**
 	 * Cached delivery options
 	 * @var array|null
 	 */
@@ -273,6 +290,37 @@ class O100_Shipping {
 				$is_free = true;
 				$this->waived_original_fee = $original_fee;
 				$fee = 0;
+			}
+
+			// CRM VIP Free Delivery Check
+			if ( ! $is_free && class_exists( 'O100_Customers_DB' ) && is_user_logged_in() ) {
+				$free_tags_str = isset( $opts['o100_delivery_free_tags'] ) ? $opts['o100_delivery_free_tags'] : '';
+				if ( ! empty( $free_tags_str ) ) {
+					$current_user_tags = O100_Customers_DB::get_customer_tags( get_current_user_id() );
+					if ( ! empty( $current_user_tags ) ) {
+						$free_tags = array_map('trim', explode(',', $free_tags_str));
+						if ( array_intersect( $current_user_tags, $free_tags ) ) {
+							$is_free = true;
+							$this->waived_original_fee = $original_fee;
+							$fee = 0;
+						}
+					}
+				}
+
+				// Advanced CRM Rules Engine Integration (Order100 v2)
+				if ( ! $is_free && class_exists( 'O100_Privilege_Manager' ) ) {
+					$context = array(
+						'branch'     => $this->get_selected_location_id(),
+						'order_type' => $order_method,
+						'subtotal'   => $subtotal,
+						'timestamp'  => current_time( 'timestamp' ),
+					);
+					if ( O100_Privilege_Manager::has_privilege( get_current_user_id(), 'delivery', 'free_shipping', $context ) ) {
+						$is_free = true;
+						$this->waived_original_fee = $original_fee;
+						$fee = 0;
+					}
+				}
 			}
 
 			$tax_on_fee = apply_filters( 'o100_delivery_fee_taxable', true );
@@ -575,6 +623,35 @@ class O100_Shipping {
 	 * @return float|null
 	 */
 	private function get_effective_minimum() {
+		// CRM VIP Bypass Check
+		if ( class_exists( 'O100_Customers_DB' ) && is_user_logged_in() ) {
+			$opts = $this->get_delivery_opts();
+			$bypass_tags_str = isset( $opts['o100_delivery_bypass_min_tags'] ) ? $opts['o100_delivery_bypass_min_tags'] : '';
+			if ( ! empty( $bypass_tags_str ) ) {
+				$current_user_tags = O100_Customers_DB::get_customer_tags( get_current_user_id() );
+				if ( ! empty( $current_user_tags ) ) {
+					$bypass_tags = array_map('trim', explode(',', $bypass_tags_str));
+					if ( array_intersect( $current_user_tags, $bypass_tags ) ) {
+						return null; // VIPs have no minimum order limit
+					}
+				}
+			}
+
+			// Advanced CRM Rules Engine Integration (Order100 v2)
+			if ( class_exists( 'O100_Privilege_Manager' ) ) {
+				$context = array(
+					'branch'     => $this->get_selected_location_id(),
+					'order_type' => $this->get_order_method(),
+					'subtotal'   => apply_filters( 'exwf_total_cart_price_fee', WC()->cart ? WC()->cart->get_subtotal() : 0 ),
+					'timestamp'  => current_time( 'timestamp' ),
+				);
+				$lower_min = O100_Privilege_Manager::get_privilege( get_current_user_id(), 'delivery', 'lower_min_order', $context );
+				if ( $lower_min !== null && $lower_min !== '' ) {
+					return floatval( $lower_min );
+				}
+			}
+		}
+
 		$order_method = $this->get_order_method();
 		$minimum = null;
 
@@ -871,7 +948,3 @@ class O100_Shipping {
 	}
 }
 
-
-// TS: 20260127154407
-
-// TS: 20260406171431

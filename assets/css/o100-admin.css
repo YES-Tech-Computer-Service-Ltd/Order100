@@ -2,7 +2,8 @@
 body.toplevel_page_exwoofood_options, body.toplevel_page_exwoofood_options #wpbody-content {
 	background-color: #f3f4f6;
 }
-/* Hide WordPress core admin footer version */
+/* Hide WordPress core admin footer version globally */
+#wpfooter,
 body.toplevel_page_exwoofood_options #footer-upgrade {
 	display: none !important;
 }
@@ -54,7 +55,7 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 	align-items: center;
 }
 .o100-master-links a .dashicons { font-size: 16px; margin-left: 2px; }
-.o100-master-links a:hover { color: #4f46e5; }
+.o100-master-links a:hover { color: #F59322; }
 
 /* Top Level Tabs Container */
 .o100-tabs-nav {
@@ -91,10 +92,10 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 	color: inherit;
 	font-size: 18px;
 }
-.o100-tabs-nav a:hover { color: #4f46e5; }
+.o100-tabs-nav a:hover { color: #F59322; }
 .o100-tabs-nav a.o100-tab-active {
-	color: #4f46e5;
-	border-bottom-color: #4f46e5;
+	color: #F59322;
+	border-bottom-color: #F59322;
 }
 
 /* Responsive Tabs */
@@ -159,7 +160,7 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 }
 
 /* Pills & Elements */
-.o100-pill { background: #eef2ff; color: #4f46e5; padding: 4px 10px; border-radius: 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.o100-pill { background: #fff7ed; color: #F59322; padding: 4px 10px; border-radius: 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .o100-pill .o100-close { cursor: pointer; font-weight: bold; }
 
 /* CMB2 Titles inside Cards */
@@ -269,14 +270,14 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 	box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .cmb-type-checkbox input[type="checkbox"]:checked {
-	background-color: #4f46e5;
+	background-color: #F59322;
 	background-image: none !important; /* Force removal of CMB2 JS bindings */
 }
 .cmb-type-checkbox input[type="checkbox"]:checked::after {
 	transform: translateX(20px);
 }
 .cmb-type-checkbox input[type="checkbox"]:focus {
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+	box-shadow: 0 0 0 3px rgba(245, 147, 34, 0.2);
 }
 
 /* Injected Enable / Disable text */
@@ -318,6 +319,42 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 	padding: 0 !important;
 }
 
+/* ── Global Input Suffix ────────────────────────────────────── */
+.cmb-td:has(> .o100-input-suffix) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+}
+.cmb-td > input:has(~ .o100-input-suffix) {
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    width: 120px !important;
+    border-radius: 6px 0 0 6px !important;
+    border-right: none !important;
+    margin: 0 !important;
+}
+.cmb-td > .o100-input-suffix {
+    order: 2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: none !important;
+    padding: 0 15px !important;
+    height: auto !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    border-radius: 0 6px 6px 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+.cmb-td:has(> .o100-input-suffix) > .cmb2-metabox-description {
+    order: 3 !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+}
+
 /* Discount subtab content should NOT inherit CMB flex rules */
 .o100-discount-subtab-content {
 	padding: 24px;
@@ -353,8 +390,8 @@ body.toplevel_page_exwoofood_options #footer-upgrade {
 .cmb-type-text input[type="text"]:focus, 
 .cmb-type-textarea textarea:focus,
 .cmb-type-select select:focus {
-	border-color: #4f46e5;
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+	border-color: #F59322;
+	box-shadow: 0 0 0 3px rgba(245, 147, 34, 0.1);
 	outline: none;
 }
 
@@ -378,8 +415,9 @@ p.submit,
 .cmb2-options-page p.submit input[type="submit"].button-primary,
 .cmb2-options-page .submit input[type="submit"],
 .cmb2-wrap input[type="submit"].button-primary,
-.cmb2-wrap input[type="submit"] {
-	background: #4f46e5 !important;
+.cmb2-wrap input[type="submit"],
+.cmb2-wrap button.o100-save-btn {
+	background: #F59322 !important;
 	color: #ffffff !important;
 	border: none !important;
 	padding: 12px 28px !important;
@@ -389,7 +427,7 @@ p.submit,
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 	letter-spacing: 0.3px;
 	cursor: pointer;
-	box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.45) !important;
+	box-shadow: 0 4px 12px -2px rgba(245, 147, 34, 0.45) !important;
 	transition: all 0.2s ease !important;
 	text-shadow: none !important;
 	line-height: 1.4 !important;
@@ -399,19 +437,22 @@ p.submit,
 .cmb2-options-page p.submit input[type="submit"].button-primary:hover,
 .cmb2-options-page .submit input[type="submit"]:hover,
 .cmb2-wrap input[type="submit"].button-primary:hover,
-.cmb2-wrap input[type="submit"]:hover {
-	background: #4338ca !important;
+.cmb2-wrap input[type="submit"]:hover,
+.cmb2-wrap button.o100-save-btn:hover {
+	background: #d97b06 !important;
 	transform: translateY(-2px);
-	box-shadow: 0 6px 16px -2px rgba(79, 70, 229, 0.55) !important;
+	box-shadow: 0 6px 16px -2px rgba(245, 147, 34, 0.55) !important;
 }
 .cmb2-options-page p.submit input[type="submit"].button-primary:active,
-.cmb2-wrap input[type="submit"].button-primary:active {
+.cmb2-wrap input[type="submit"].button-primary:active,
+.cmb2-wrap button.o100-save-btn:active {
 	transform: translateY(0);
-	box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3) !important;
+	box-shadow: 0 2px 6px rgba(245, 147, 34, 0.3) !important;
 }
 .cmb2-options-page p.submit input[type="submit"].button-primary:focus,
-.cmb2-wrap input[type="submit"].button-primary:focus {
-	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #4f46e5 !important;
+.cmb2-wrap input[type="submit"].button-primary:focus,
+.cmb2-wrap button.o100-save-btn:focus {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #F59322 !important;
 }
 
 /* Fix specifically for Discount Tab layout overflow */
@@ -607,11 +648,7 @@ p.submit,
 
 /* Notification Wrap Card */
 .o100-notify-wrap {
-	background: #ffffff;
-	border: 1px solid #e5e7eb;
-	border-radius: 10px;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-	overflow: hidden;
+	/* Removed background and border to match Customer module layout */
 }
 
 /* Notification Sub-tabs Navigation */
@@ -646,11 +683,15 @@ p.submit,
 	height: 16px;
 }
 .o100-notify-subtabs a:hover {
-	color: #4f46e5;
+	color: #F59322;
+}
+.o100-notify-subtabs a:focus {
+	outline: none;
+	box-shadow: none;
 }
 .o100-notify-subtabs a.o100-subtab-active {
-	color: #4f46e5;
-	border-bottom-color: #4f46e5;
+	color: #F59322;
+	border-bottom-color: #F59322;
 	font-weight: 600;
 	background: #ffffff;
 }
@@ -682,7 +723,7 @@ p.submit,
 }
 .o100-notify-status-icon .dashicons {
 	font-size: 22px;
-	color: #4f46e5;
+	color: #F59322;
 	width: 22px;
 	height: 22px;
 }
@@ -694,11 +735,11 @@ p.submit,
 }
 .o100-notify-status-text strong {
 	font-size: 14px;
-	color: #312e81;
+	color: #9a5c06;
 }
 .o100-notify-status-text span {
 	font-size: 13px;
-	color: #4338ca;
+	color: #d97b06;
 }
 
 /* Badge */
@@ -755,8 +796,45 @@ p.submit,
 	font-size: 18px;
 	width: 18px;
 	height: 18px;
-	color: #4f46e5;
+	color: #F59322;
 }
+.o100-mcd-loader {
+	padding: 14px 16px;
+	color: #64748b;
+	font-size: 13px;
+	text-align: center;
+	font-style: italic;
+}
+
+/* Tag Grouping and Coloring Styles */
+.o100-mcd-group-header {
+	padding: 8px 12px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: #64748b;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+	margin-top: 4px;
+}
+.o100-mcd-group-header:first-child {
+	margin-top: 0;
+}
+.o100-mcd-item.o100-tag-system {
+	background-color: #f0fdf4 !important;
+	border-left: 3px solid #22c55e !important;
+}
+.o100-mcd-item.o100-tag-system:hover {
+	background-color: #dcfce7 !important;
+}
+.o100-mcd-item.o100-tag-manual {
+	background-color: #fff !important;
+	border-left: 3px solid #cbd5e1 !important;
+}
+.o100-mcd-item.o100-tag-manual:hover {
+	background-color: #f1f5f9 !important;
+}
+
 .o100-notify-section-desc {
 	padding: 12px 24px 0;
 	margin: 0;
@@ -851,16 +929,16 @@ p.submit,
 	font-size: 12px !important;
 	border-radius: 6px !important;
 	text-decoration: none !important;
-	color: #4f46e5 !important;
+	color: #F59322 !important;
 	border: 1px solid #c7d2fe !important;
 	background: #f5f3ff !important;
 	transition: all 0.15s ease;
 	cursor: pointer;
 }
 .o100-notify-edit-btn:hover {
-	background: #4f46e5 !important;
+	background: #F59322 !important;
 	color: #ffffff !important;
-	border-color: #4f46e5 !important;
+	border-color: #F59322 !important;
 }
 .o100-notify-edit-btn:disabled {
 	opacity: 0.5 !important;
@@ -896,8 +974,8 @@ p.submit,
 .o100-notify-shortcode-code {
 	font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
 	font-size: 11.5px;
-	color: #4f46e5;
-	background: #eef2ff;
+	color: #F59322;
+	background: #fff7ed;
 	padding: 3px 8px;
 	border-radius: 4px;
 	white-space: nowrap;
@@ -961,6 +1039,15 @@ p.submit,
 	border-radius: 10px;
 	box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 	overflow: hidden;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+}
+.o100-tab-seo {
+	min-width: 0 !important;
+	max-width: 100% !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
 }
 
 /* Step Navigation */
@@ -987,12 +1074,12 @@ p.submit,
 	flex-shrink: 0;
 }
 .o100-seo-step-link:hover {
-	color: #4f46e5;
-	background: rgba(79, 70, 229, 0.04);
+	color: #F59322;
+	background: rgba(245, 147, 34, 0.04);
 }
 .o100-seo-step-link.is-active {
-	color: #4f46e5;
-	border-bottom-color: #4f46e5;
+	color: #F59322;
+	border-bottom-color: #F59322;
 	font-weight: 600;
 	background: #ffffff;
 }
@@ -1010,7 +1097,7 @@ p.submit,
 	flex-shrink: 0;
 }
 .o100-seo-step-link.is-active .o100-seo-step-num {
-	background: #4f46e5;
+	background: #F59322;
 	color: #ffffff;
 }
 .o100-seo-step-link .dashicons {
@@ -1086,7 +1173,7 @@ p.submit,
 	box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .o100-seo-toggle input:checked + .o100-seo-toggle-slider {
-	background-color: #4f46e5;
+	background-color: #F59322;
 }
 .o100-seo-toggle input:checked + .o100-seo-toggle-slider::after {
 	transform: translateX(20px);
@@ -1111,7 +1198,7 @@ p.submit,
 	transition: color 0.2s;
 }
 .o100-seo-help-toggle:hover .dashicons {
-	color: #4f46e5;
+	color: #F59322;
 }
 .o100-seo-help-panel {
 	margin-top: 12px;
@@ -1190,8 +1277,8 @@ p.submit,
 	box-sizing: border-box;
 }
 .o100-seo-rule-input:focus {
-	border-color: #4f46e5;
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+	border-color: #F59322;
+	box-shadow: 0 0 0 3px rgba(245, 147, 34, 0.1);
 	outline: none;
 }
 textarea.o100-seo-rule-input {
@@ -1233,26 +1320,26 @@ textarea.o100-seo-rule-input {
 }
 .o100-seo-btn-outline {
 	background: #ffffff;
-	color: #4f46e5;
+	color: #F59322;
 	border: 1px solid #c7d2fe;
 }
 .o100-seo-btn-outline:hover {
-	background: #eef2ff;
-	border-color: #4f46e5;
+	background: #fff7ed;
+	border-color: #F59322;
 }
 .o100-seo-btn-primary,
 .o100-seo-btn-primary:focus,
 .o100-seo-btn-primary:active {
-	background: #4f46e5 !important;
+	background: #F59322 !important;
 	color: #ffffff !important;
-	box-shadow: 0 2px 8px -2px rgba(79, 70, 229, 0.4) !important;
+	box-shadow: 0 2px 8px -2px rgba(245, 147, 34, 0.4) !important;
 	border: none !important;
 }
 .o100-seo-btn-primary:hover {
-	background: #4338ca !important;
+	background: #d97b06 !important;
 	color: #ffffff !important;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.5) !important;
+	box-shadow: 0 4px 12px -2px rgba(245, 147, 34, 0.5) !important;
 }
 .o100-seo-btn:disabled {
 	opacity: 0.5;
@@ -1287,7 +1374,7 @@ textarea.o100-seo-rule-input {
 	align-items: center;
 	gap: 8px;
 	font-size: 14px;
-	color: #4f46e5;
+	color: #F59322;
 	font-style: italic;
 }
 
@@ -1353,7 +1440,7 @@ textarea.o100-seo-rule-input {
 	overflow: hidden;
 }
 .o100-seo-progress .o100-progress-fill {
-	background: #4f46e5;
+	background: #F59322;
 	height: 100%;
 	width: 0%;
 	transition: width 0.3s ease;
@@ -1477,7 +1564,7 @@ textarea.o100-seo-rule-input {
 	border-color: #9ca3af;
 }
 .o100-mcd-wrapper.is-open .o100-mcd-header {
-	border-color: #3b82f6;
+	border-color: #F59322;
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .o100-mcd-header-text {
@@ -1518,7 +1605,7 @@ textarea.o100-seo-rule-input {
 }
 .o100-mcd-more {
 	font-size: 13px;
-	color: #3b82f6;
+	color: #F59322;
 	font-weight: 400;
 }
 .o100-mcd-header .dashicons-arrow-down-alt2 {
@@ -1566,7 +1653,7 @@ textarea.o100-seo-rule-input {
 	box-sizing: border-box !important;
 }
 .o100-mcd-search input[type="text"]:focus {
-	border-color: #3b82f6 !important;
+	border-color: #F59322 !important;
 }
 .o100-mcd-search .dashicons-search {
 	position: absolute;
@@ -1608,8 +1695,8 @@ textarea.o100-seo-rule-input {
 	flex-shrink: 0;
 }
 .o100-mcd-item input[type="checkbox"]:checked {
-	background-color: #3b82f6 !important; /* Blue accent */
-	border-color: #3b82f6 !important;
+	background-color: #F59322 !important; /* Blue accent */
+	border-color: #F59322 !important;
 }
 .o100-mcd-item.is-selected {
 	background-color: #f0fdf4 !important; /* light green background for selected row */
@@ -1642,280 +1729,481 @@ textarea.o100-seo-rule-input {
 	color: #6b7280;
 }
 
-/* =========================================
-   CMB2 Repeater Group Styling for Cards
-========================================= */
-.o100-settings-group-card .cmb-repeatable-group {
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important; /* Remove native CMB2 border that causes the top line */
-}
-.o100-settings-group-card .cmb-repeatable-grouping.postbox {
-    background: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    margin-bottom: 16px !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-    padding: 0 !important; /* Force override native postbox padding */
-    overflow: hidden !important; /* Ensure children don't bleed past rounded corners */
 }
 
-/* Hide the native handle if it causes vertical gap */
-.o100-settings-group-card .cmb-repeatable-grouping.postbox > .cmbhandle {
-    display: none !important;
-}
-
-/* The Group Title Bar */
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-group-title {
-    margin: 0 !important;
-    padding: 14px 24px !important;
-    background: #f8fafc !important;
-    border: none !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    /* Since parent has overflow hidden, we don't strictly need border-radius here, but we keep it safe */
-    border-radius: 8px 8px 0 0 !important;
-}
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-group-title h4 {
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    color: #111827 !important;
-    margin: 0 !important;
-}
-/* Hide the native up/down buttons */
-.o100-settings-group-card .cmb-shift-rows {
-    display: none !important;
-}
-
-/* The inner data rows (fields) */
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-row:not(.cmb-type-title):not(.cmb-remove-group-row) {
-    padding: 0 24px !important;
-    border-bottom: none !important;
-    background: transparent !important;
-    margin-top: 16px !important;
-    margin-bottom: 16px !important;
-}
-
-/* Hide the native top right dashicon remove button completely! 
-   We use button[title="Remove Rule"] or .dashicons-before to out-specify the block rule. */
-.o100-settings-group-card .cmb-repeatable-grouping > button.cmb-remove-group-row.dashicons-before {
-    display: none !important;
-}
-
-/* Remove Rule Button positioned in the footer (bottom of the group) */
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-row button.cmb-remove-group-row {
-    display: block !important;
-    text-align: center;
-    background: #fef2f2 !important;
-    border: 1px solid #fee2e2 !important;
-    color: #ef4444 !important;
-    border-radius: 6px !important;
-    padding: 10px !important;
-    font-weight: 600 !important;
-    cursor: pointer;
-    font-size: 0 !important; /* Hide the native "Remove Rule" text */
-    transition: all 0.2s ease !important;
-    width: 100% !important; /* Now 100% because container provides padding */
-    margin-left: 0 !important;
-    margin-top: 8px !important;
-    margin-bottom: 16px !important;
-}
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-row button.cmb-remove-group-row:hover {
-    background: #fee2e2 !important;
-    color: #dc2626 !important;
-}
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-row button.cmb-remove-group-row::before {
-    display: none !important; /* Hide dashicon */
-}
-/* Inject custom text cleanly */
-.o100-settings-group-card .cmb-repeatable-grouping .cmb-row button.cmb-remove-group-row::after {
-    content: 'Remove Date Rule' !important;
-    font-size: 14px !important;
-}
-
-/* Add button */
-.o100-settings-group-card .cmb-add-row {
-    margin-top: 16px !important;
-}
-
-/* Flex Row for Assign To */
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-bottom: 16px;
-    padding: 0 !important; /* container handles padding */
-}
-
-/* Aggressively remove any stray horizontal lines from CMB2 internals */
-.o100-settings-group-card .cmb-repeatable-group,
-.o100-settings-group-card .cmb-repeatable-grouping,
-.o100-settings-group-card .cmb-repeat-row,
-.o100-settings-group-card .cmb-row,
-.o100-settings-group-card hr {
-    border-top: none !important;
-    border-bottom: none !important;
-}
-.o100-settings-group-card hr {
-    display: none !important;
-}
-/* Color Configuration sub-sections */
-.o100-settings-group-card hr.o100-color-divider {
-    display: block !important;
-    border: none !important;
-    border-top: 1px solid #e5e7eb !important;
-    margin: 20px 0 !important;
-}
-.o100-color-section {
-    padding: 2px 0;
-}
-.o100-color-section-header {
-    font-size: 14px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 2px;
-    letter-spacing: -0.01em;
-}
-.o100-color-section-desc {
-    font-size: 13px;
-    color: #64748b;
-    margin: 0 0 8px 0;
-    line-height: 1.5;
-}
-
-/* ═══ WordPress Colorpicker Override ═══ */
-.o100-settings-group-card .wp-picker-container {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-}
-.o100-settings-group-card .wp-color-result {
-    border: 2px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    min-width: auto !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-    transition: border-color 0.15s, box-shadow 0.15s !important;
-    margin: 0 !important;
-}
-.o100-settings-group-card .wp-color-result:hover {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
-}
-.o100-settings-group-card .wp-color-result .wp-color-result-text {
-    background: #f8fafc !important;
-    color: #475569 !important;
-    border-left: 1px solid #e2e8f0 !important;
-    border-radius: 0 6px 6px 0 !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    padding: 0 12px !important;
-    line-height: 30px !important;
-    transition: all 0.15s !important;
-}
-.o100-settings-group-card .wp-color-result:hover .wp-color-result-text {
-    background: #eef2ff !important;
-    color: #4338ca !important;
-}
-.o100-settings-group-card .wp-picker-input-wrap {
-    margin-top: 0 !important;
-}
-.o100-settings-group-card .wp-picker-input-wrap input[type="text"].wp-color-picker {
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 6px !important;
-    padding: 6px 10px !important;
-    font-size: 13px !important;
-    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace !important;
-    color: #374151 !important;
-    width: 90px !important;
-}
-.o100-settings-group-card .wp-picker-input-wrap input[type="text"].wp-color-picker:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
-    outline: none !important;
-}
-.o100-settings-group-card .wp-picker-input-wrap .wp-picker-clear,
-.o100-settings-group-card .wp-picker-input-wrap .wp-picker-default {
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 6px !important;
-    background: #f8fafc !important;
-    color: #64748b !important;
-    font-size: 12px !important;
-    padding: 5px 10px !important;
-    cursor: pointer !important;
-    transition: all 0.15s !important;
-}
-.o100-settings-group-card .wp-picker-input-wrap .wp-picker-clear:hover,
-.o100-settings-group-card .wp-picker-input-wrap .wp-picker-default:hover {
-    background: #eef2ff !important;
-    border-color: #c7d2fe !important;
-    color: #4338ca !important;
-}
-
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row .cmb-row {
-    flex: 1;
-    min-width: 250px;
-    margin-bottom: 0 !important;
-}
-
-/* Unify Native Select and Custom MCD Heights/Borders */
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row select,
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row .o100-mcd-header {
-    height: 42px !important;
-    min-height: 42px !important;
-    border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
-    background-color: #ffffff !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-    line-height: 1.5 !important;
+/* Minimal layout for Food Labels Repeater */
+.o100-food-labels-repeater .cmb-repeatable-grouping {
     display: flex;
     align-items: center;
-    box-sizing: border-box !important;
+    gap: 15px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row select {
-    padding: 0 12px !important;
+.o100-food-labels-repeater .cmb-row {
+    border: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
 }
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row .o100-mcd-header {
-    padding: 0 12px !important;
-    width: 100% !important;
-}
-/* Ensure the wrapper stretches */
-.o100-settings-group-card .cmb-repeatable-grouping .o100-assign-flex-row .o100-mcd-wrapper {
-    width: 100% !important;
-}
-
-/* For multicheck inline (Weekdays) */
-.cmb-type-multicheck-inline ul.cmb2-radio-list {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 12px 24px !important;
-    margin: 12px 0 0 0 !important;
-    padding: 0 !important;
-}
-.cmb-type-multicheck-inline ul.cmb2-radio-list li {
-    margin: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-}
-/* Select all button inside multicheck */
-.cmb-type-multicheck-inline .cmb-multicheck-toggle {
-    display: inline-block !important;
-    background: #eff6ff !important;
-    border: 1px solid #bfdbfe !important;
-    color: #2563eb !important;
-    padding: 6px 12px !important;
-    border-radius: 6px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    margin-bottom: 8px !important;
-    transition: all 0.2s ease !important;
-    text-decoration: none !important;
-}
-.cmb-type-multicheck-inline .cmb-multicheck-toggle:hover {
-    background: #dbeafe !important;
-    color: #1d4ed8 !important;
+.o100-food-labels-repeater .cmb-type-text { flex: 0 0 150px; }
+.o100-food-labels-repeater .cmb-type-colorpicker { flex: 0 0 auto; }
+.o100-food-labels-repeater .cmb-remove-row {
+    flex: 0 0 auto;
 }
 
-/* TS: 20260206144028 */
+
+/* Standard Table Layout & Actions for SPA */
+.o100-table-responsive-wrapper {
+	position: relative;
+	z-index: 1;
+}
+.o100-col-fixed-left {
+	position: sticky !important;
+	left: 0;
+	z-index: 10 !important;
+	background-color: inherit;
+	box-shadow: inset -1px 0 0 #e2e8f0 !important;
+}
+.o100-col-fixed-right {
+	position: sticky !important;
+	right: 0;
+	z-index: 10 !important;
+	background-color: inherit;
+	box-shadow: inset 1px 0 0 #e2e8f0 !important;
+}
+thead .o100-col-fixed-left, 
+thead .o100-col-fixed-right {
+	background-color: #f8fafc !important;
+	z-index: 20 !important;
+}
+tbody tr {
+	background-color: #ffffff;
+}
+tbody td.o100-col-fixed-left,
+tbody td.o100-col-fixed-right {
+	background-color: #ffffff !important;
+}
+tbody tr:hover,
+tbody tr:hover td.o100-col-fixed-left,
+tbody tr:hover td.o100-col-fixed-right {
+	background-color: #f8fafc !important;
+}
+/* Fix tooltip occlusion by bringing hovered row above thead */
+tbody tr:hover td.o100-col-fixed-right {
+	z-index: 30 !important;
+}
+.o100-action-btn-group {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+}
+.o100-action-btn {
+	position: relative;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	box-sizing: border-box !important;
+	border-radius: 6px;
+	color: #64748b;
+	background: transparent;
+	transition: all 0.2s;
+	border: none;
+	cursor: pointer;
+}
+.o100-action-btn:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+.o100-action-btn.delete:hover {
+	background: #fee2e2;
+	color: #dc2626;
+}
+.o100-action-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+.o100-tooltip {
+	position: absolute;
+	right: 100%;
+	top: 50%;
+	transform: translateY(-50%) translateX(-4px);
+	margin-right: 6px;
+	background: #1e293b;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: nowrap;
+	opacity: 0;
+	visibility: hidden;
+	transition: all 0.2s;
+	pointer-events: none;
+	z-index: 50;
+}
+.o100-tooltip::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 100%;
+	margin-top: -4px;
+	border-width: 4px;
+	border-style: solid;
+	border-color: transparent transparent transparent #1e293b;
+}
+.o100-action-btn:hover .o100-tooltip {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(-50%) translateX(-8px);
+}
+
+/* Standard Action Button Library */
+.o100-action-icon-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 32px !important;
+	height: 32px !important;
+	border-radius: 6px;
+	background: transparent;
+	transition: all 0.2s;
+	border: none;
+	cursor: pointer;
+	position: relative;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+.o100-action-icon-btn svg {
+	width: 18px;
+	height: 18px;
+	pointer-events: none;
+}
+.o100-action-icon-btn.edit { color: #F59322; }
+.o100-action-icon-btn.edit:hover { background: #eff6ff; color: #1e3a8a; }
+
+.o100-action-icon-btn.duplicate { color: #F59322; }
+.o100-action-icon-btn.duplicate:hover { background: #fff7ed; color: #9a5c06; }
+
+.o100-action-icon-btn.delete,
+.o100-action-icon-btn.o100-delete-btn { color: #dc2626; }
+.o100-action-icon-btn.delete:hover,
+.o100-action-icon-btn.o100-delete-btn:hover { background: #fef2f2; color: #7f1d1d; }
+
+/* Pure CSS Tooltip */
+.o100-action-icon-btn[data-tooltip]::before,
+.o100-action-icon-btn[data-tooltip]::after {
+	position: absolute;
+	opacity: 0;
+	visibility: hidden;
+	transition: all 0.2s ease;
+	pointer-events: none;
+	z-index: 10000;
+}
+.o100-action-icon-btn[data-tooltip]::after {
+	content: attr(data-tooltip);
+	background: #1e293b;
+	color: #fff;
+	font-size: 12px;
+	padding: 4px 8px;
+	border-radius: 4px;
+	white-space: nowrap;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%) translateY(4px);
+	margin-bottom: 6px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.o100-action-icon-btn[data-tooltip]::before {
+	content: '';
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%) translateY(4px);
+	margin-bottom: 2px;
+	border-width: 4px;
+	border-style: solid;
+	border-color: #1e293b transparent transparent transparent;
+}
+.o100-action-icon-btn:hover[data-tooltip]::before,
+.o100-action-icon-btn:hover[data-tooltip]::after {
+	opacity: 1;
+	visibility: visible;
+	transform: translateX(-50%) translateY(0);
+}
+
+/* =========================================
+   GLOBAL REPEATER STYLES (Order100)
+   ========================================= */
+/* Remove any outer row border that CMB2 might apply */
+			.cmb-form div.cmb-row.cmb-type-group {
+				border-top: none !important;
+				border-bottom: none !important;
+				box-shadow: none !important;
+			}
+			/* Kill any CMB2 native border on the TD */
+			.cmb-form div.cmb-row.cmb-type-group > .cmb-td {
+				border: none !important;
+			}
+			/* Reset native CMB2 outer group wrapper padding/border */
+			.cmb-form div.cmb-repeatable-group,
+			div.cmb-td > .cmb-form div.cmb-repeatable-group {
+				padding: 0 !important;
+				margin: 0 !important;
+				border: none !important;
+				background: transparent !important;
+				box-shadow: none !important;
+				outline: none !important;
+			}
+			/* Kill the native CMB2 border-top on repeatable group rows */
+			.cmb-form div.cmb-repeatable-group > .cmb-row,
+			.cmb-form div.cmb-repeatable-group > .cmb-repeatable-grouping {
+				border-top: none !important;
+			}
+			/* Super high specificity (0,0,5,1) to guarantee no padding */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping:not(.empty-row):not(.hidden) {
+				position: relative !important;
+				border: 1px solid #e2e8f0 !important;
+				border-radius: 8px !important;
+				margin-bottom: 24px !important;
+				background: #fff !important;
+				box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+				padding: 0 !important; /* Force reset native padding */
+				overflow: hidden !important; /* contain child radius */
+			}
+			/* Prevent pseudo elements from creating 1px gaps */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping::before,
+			.cmb-form div.cmb-row.cmb-repeatable-grouping::after {
+				display: none !important;
+			}
+			/* Closed State Group */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping.closed:not(.empty-row):not(.hidden) {
+				border-bottom: 1px solid #e2e8f0 !important;
+			}
+			/* Custom Radio Button Styling */
+			.cmb-form input[type="radio"] {
+				-webkit-appearance: none;
+				appearance: none;
+				width: 18px;
+				height: 18px;
+				border: 2px solid #cbd5e1;
+				border-radius: 50%;
+				outline: none;
+				cursor: pointer;
+				position: relative;
+				vertical-align: middle;
+				margin-top: -2px;
+				margin-right: 6px;
+				background-color: #fff;
+				transition: border-color 0.2s, background-color 0.2s;
+			}
+			/* Kill the native WP blue dot */
+			.cmb-form input[type="radio"]::before {
+				display: none !important;
+			}
+			.cmb-form input[type="radio"]:checked {
+				border-color: #F59322;
+				border-width: 5px;
+				background-color: #fff;
+			}
+			.cmb-form input[type="radio"]:hover:not(:checked) {
+				border-color: #94a3b8;
+			}
+			.cmb-form ul.cmb2-radio-list li {
+				margin-bottom: 8px;
+			}
+			.cmb-form ul.cmb2-radio-list li:last-child {
+				margin-bottom: 0;
+			}
+			/* Reduce excessive whitespace below Title rows in repeaters */
+			.cmb-form div.cmb-row.cmb-type-title {
+				padding-bottom: 8px !important;
+				border-bottom: none !important;
+			}
+			.cmb-form div.cmb-row.cmb-type-title .cmb2-metabox-description {
+				margin-bottom: 0 !important;
+			}
+			.cmb-form div.cmb-row.cmb-repeatable-grouping.closed:not(.empty-row):not(.hidden) > h3.cmb-group-title {
+				border-bottom: none !important;
+			}
+			/* Group Title Bar */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping:not(.empty-row):not(.hidden) > h3.cmb-group-title {
+				background: #f1f5f9 !important; /* Make header distinctly grey */
+				padding: 12px 45px 12px 20px !important;
+				margin: 0 !important;
+				border: none !important;
+				border-bottom: 1px solid #e2e8f0 !important;
+				border-radius: 0 !important;
+				font-size: 15px !important;
+				font-weight: 600 !important;
+				color: #0f172a !important;
+				outline: none !important;
+				box-shadow: none !important; /* Remove any inset shadows */
+				width: 100% !important;
+				max-width: 100% !important;
+				box-sizing: border-box !important;
+				display: block !important;
+				position: relative !important;
+				cursor: pointer !important; /* Make it look clickable */
+			}
+			/* Accordion Arrow Icon */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping:not(.empty-row):not(.hidden) > h3.cmb-group-title::after {
+				content: "\f142"; /* dashicons-arrow-up-alt2 for open state */
+				font-family: dashicons;
+				position: absolute;
+				right: 20px;
+				top: 50%;
+				transform: translateY(-50%);
+				color: #64748b;
+				font-size: 20px;
+				pointer-events: none;
+			}
+			/* Accordion Arrow Icon (Closed State) */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping.closed:not(.empty-row):not(.hidden) > h3.cmb-group-title::after {
+				content: "\f140"; /* dashicons-arrow-down-alt2 for closed state */
+			}
+			/* Explicitly hide the inner remove button and ensure it takes no space */
+			.cmb-form div.cmb-row.cmb-repeatable-grouping > button.cmb-remove-group-row {
+				display: none !important;
+				height: 0 !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+			.cmb-form div.cmb-row.cmb-repeatable-grouping .cmbhandle {
+
+				position: absolute !important;
+				top: 5px !important;
+				right: 12px !important;
+				width: 32px !important;
+				height: 32px !important;
+				display: flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+				cursor: pointer !important;
+				color: #64748b !important;
+			}
+			.cmb-repeatable-grouping .cmbhandle:hover {
+				color: #0f172a !important;
+			}
+
+			/* General Remove Button (Hidden in favor of custom inline one) */
+			.cmb-repeatable-grouping > button.cmb-remove-group-row {
+				display: none !important;
+			}
+			.cmb-add-group-row {
+				background: #f1f5f9 !important;
+				color: #334155 !important;
+				border: 1px dashed #cbd5e1 !important;
+				padding: 12px 24px !important;
+				border-radius: 6px !important;
+				font-weight: 600 !important;
+				cursor: pointer !important;
+				display: inline-block !important;
+				margin-top: 10px !important;
+				transition: all 0.2s !important;
+				box-shadow: none !important;
+				text-shadow: none !important;
+			}
+			.cmb-add-group-row:hover {
+				background: #e2e8f0 !important;
+				border-color: #94a3b8 !important;
+			}
+			/* Apply padding to the fields inside the group */
+			.cmb-repeatable-grouping .cmb-row:not(.cmb-remove-field-row) {
+				padding: 16px 20px !important;
+				border-bottom: 1px solid #e2e8f0 !important;
+				background: #fff !important;
+				margin: 0 !important;
+			}
+			.cmb-repeatable-grouping .cmb-row:not(.cmb-remove-field-row):last-of-type {
+				border-bottom: none !important;
+			}
+			/* The native remove row button container at the bottom */
+			.cmb-repeatable-grouping .cmb-remove-field-row {
+				padding: 16px 20px !important;
+				background: #f8fafc !important;
+				border-top: 1px solid #e2e8f0 !important;
+				margin: 0 !important;
+			}
+			.cmb-repeatable-grouping .cmb-remove-field-row .cmb-remove-row {
+				display: flex !important;
+				align-items: center !important;
+				width: 100% !important;
+			}
+			/* Remove Rule Button */
+			button.cmb-remove-group-row-button {
+				color: #ef4444 !important;
+				border: 1px solid #ef4444 !important;
+				background: #fff !important;
+				border-radius: 6px !important;
+				font-weight: 500 !important;
+				padding: 4px 12px !important;
+				transition: all 0.2s !important;
+				box-shadow: none !important;
+				text-shadow: none !important;
+				margin-left: auto !important; /* Pushes button to the right */
+			}
+			button.cmb-remove-group-row-button:hover {
+				background: #fef2f2 !important;
+				color: #dc2626 !important;
+				border-color: #dc2626 !important;
+			}
+			/* Shift Rows (Up/Down arrows) */
+			a.cmb-shift-rows {
+				display: inline-flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+				width: 32px !important;
+				height: 32px !important;
+				padding: 0 !important;
+				border-radius: 6px !important;
+				border: 1px solid #cbd5e1 !important;
+				background: #fff !important;
+				color: #475569 !important;
+				box-shadow: none !important;
+				text-decoration: none !important;
+				margin-right: 8px !important;
+			}
+			a.cmb-shift-rows:hover {
+				background: #f1f5f9 !important;
+				border-color: #94a3b8 !important;
+			}
+			a.cmb-shift-rows .dashicons {
+				font-size: 18px !important;
+				width: 18px !important;
+				height: 18px !important;
+			}
+			
+/* Fix toggle alignment */
+.cmb-form .cmb-row.cmb-type-checkbox {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 12px 0 !important;
+	margin: 0 0 8px 0 !important;
+	border: none !important;
+}
+.cmb-form .cmb-type-checkbox .cmb-th {
+	flex: 1 !important;
+	padding: 0 !important;
+	float: none !important;
+	width: auto !important;
+}
+.cmb-form .cmb-type-checkbox .cmb-td {
+	flex: 0 0 auto !important;
+	width: auto !important;
+	padding: 0 !important;
+	float: none !important;
+	display: flex !important;
+	align-items: center !important;
+}
+.cmb-form .cmb-type-checkbox .cmb-td label {
+	display: none !important;
+}

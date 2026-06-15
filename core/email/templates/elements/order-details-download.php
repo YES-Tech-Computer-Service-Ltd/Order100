@@ -78,11 +78,3 @@ ob_start();
 $element_content = ob_get_clean();
 TemplateHelpers::wrap_element_content( $element_content, $element, $wrapper_style );
 
-
-// TS: 20260102170518
-
-// TS: 20260405133705
-
-// TS: 20260425140710
-
-// TS: 20260527124424
