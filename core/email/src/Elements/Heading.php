@@ -107,5 +107,3 @@ class Heading extends BaseElement {
 
 
 
-
-// TS: 20260126230607

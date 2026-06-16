@@ -117,7 +117,3 @@ class SocialIcon extends BaseElement {
     }
 }
 
-
-// TS: 20260105114254
-
-// TS: 20260315113716
