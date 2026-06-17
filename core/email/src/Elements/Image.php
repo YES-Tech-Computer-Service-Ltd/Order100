@@ -100,7 +100,3 @@ class Image extends BaseElement {
     }
 }
 
-
-// TS: 20260331004200
-
-// TS: 20260412123715
