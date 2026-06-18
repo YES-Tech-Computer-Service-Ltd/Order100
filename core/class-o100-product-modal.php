@@ -15,6 +15,49 @@ class O100_Product_Modal {
 		add_action( 'wp_ajax_o100_product_modal_info', array( $this, 'ajax_get_product_info' ) );
 		add_action( 'wp_ajax_nopriv_o100_product_modal_info', array( $this, 'ajax_get_product_info' ) );
 		add_action( 'wp_footer', array( $this, 'output_modal_assets' ) );
+		
+		// Intercept AJAX add to cart from modal to eliminate race conditions
+		add_action( 'wp_loaded', array( $this, 'intercept_ajax_add_to_cart' ), 99 );
+		add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'disable_redirect_for_ajax' ), 99, 1 );
+	}
+
+	public function disable_redirect_for_ajax( $url ) {
+		if ( isset( $_POST['o100_ajax_add_to_cart'] ) ) {
+			return false;
+		}
+		return $url;
+	}
+
+	public function intercept_ajax_add_to_cart() {
+		if ( isset( $_POST['o100_ajax_add_to_cart'] ) && $_POST['o100_ajax_add_to_cart'] === '1' ) {
+			// DIAGNOSTIC LOG
+			$log_file = dirname(__FILE__) . '/diag_post.txt';
+			$log_data = date('Y-m-d H:i:s') . "\n";
+			$log_data .= "POST DATA:\n" . print_r($_POST, true) . "\n";
+			$log_data .= "WooCommerce Notices Before Clear:\n" . print_r(wc_get_notices('error'), true) . "\n-----------------------\n";
+			file_put_contents($log_file, $log_data, FILE_APPEND);
+
+			if ( ! function_exists('WC') || ! WC()->cart ) {
+				wp_send_json( array( 'error' => 'WooCommerce not initialized.' ) );
+			}
+			if ( wc_notice_count( 'error' ) > 0 ) {
+				$errors = wc_get_notices( 'error' );
+				wc_clear_notices();
+				wp_send_json( array(
+					'error' => wp_strip_all_tags( $errors[0]['notice'] )
+				) );
+			}
+			wc_clear_notices();
+			
+			// Recalculate totals to be absolutely sure the fragments are up-to-date
+			WC()->cart->calculate_totals();
+
+			wp_send_json( array(
+				'success'   => true,
+				'fragments' => apply_filters( 'woocommerce_add_to_cart_fragments', array() ),
+				'cart_hash' => apply_filters( 'woocommerce_add_to_cart_hash', WC()->cart->get_cart_hash() ),
+			) );
+		}
 	}
 
 	public function output_modal_assets() {
@@ -63,7 +106,7 @@ class O100_Product_Modal {
 			
 			// DoorDash Style Add To Cart Footer Logic
 			function updateModalFooter($modal) {
-				var $form = $modal.find('form.cart');
+				var $form = $modal.find('form.cart, form.variations_form').first();
 				if ($form.length === 0) return;
 				
 				var missingReq = 0;
@@ -108,9 +151,37 @@ class O100_Product_Modal {
 
 				// Calculate Total Price
 				var basePrice = parseFloat($form.closest('.woocommerce').data('base-price')) || 0;
-				// If variation is selected, get its price
-				var varPrice = $form.data('variation-price');
-				if (varPrice !== undefined) basePrice = parseFloat(varPrice);
+				// Manually find variation price if it's a variable product
+				var varPrice = undefined;
+				if ($form.hasClass('variations_form')) {
+					var variations = $form.data('product_variations');
+					if (variations && variations.length) {
+						var currentSelections = {};
+						$form.find('.variations select').each(function() {
+							var attrName = $(this).data('attribute_name') || $(this).attr('name');
+							currentSelections[attrName] = $(this).val();
+						});
+						$.each(variations, function(i, v) {
+							var isMatch = true;
+							for (var attrName in currentSelections) {
+								if (v.attributes[attrName] !== undefined && v.attributes[attrName] !== '' && v.attributes[attrName] !== currentSelections[attrName]) {
+									isMatch = false;
+									break;
+								}
+							}
+							if (isMatch) {
+								varPrice = v.display_price;
+								return false;
+							}
+						});
+					}
+				}
+				if (varPrice !== undefined) {
+					basePrice = parseFloat(varPrice);
+				} else {
+					var fallbackPrice = $form.data('variation-price');
+					if (fallbackPrice !== undefined) basePrice = parseFloat(fallbackPrice);
+				}
 
 				var additionalPrice = parseFloat($form.find('.o100-product-addons').data('calculated-price')) || 0;
 
@@ -201,7 +272,7 @@ class O100_Product_Modal {
 			 * - Multi attribute: Level-1 rows navigate into a sliding Level-2 panel
 			 */
 			function convertVariationsToModifiers($modal) {
-				var $vForm = $modal.find('.variations_form');
+				var $vForm = $modal.find('form.variations_form, form.cart').first();
 				if (!$vForm.length) return;
 
 				var variations = $vForm.data('product_variations');
@@ -221,8 +292,8 @@ class O100_Product_Modal {
 				// Collect attribute info
 				var attrs = [];
 				$table.find('tr').each(function() {
-					var $label = $(this).find('td.label label');
-					var $select = $(this).find('td.value select');
+					var $label = $(this).find('.label label');
+					var $select = $(this).find('.value select');
 					if (!$select.length) return;
 					var dataAttrName = $select.data('attribute_name') || $select.attr('name');
 					var label = $label.text().trim();
@@ -236,20 +307,34 @@ class O100_Product_Modal {
 				});
 				if (!attrs.length) return;
 
-				// Hide native elements
+				// Hide ALL native WOO variation elements to eliminate whitespace
 				$table.hide();
 				$vForm.find('.reset_variations').hide();
+				$vForm.find('.reset_variations_alert').hide();
 				$vForm.find('.single_variation_wrap .woocommerce-variation').hide();
 				$vForm.find('.single_variation_wrap .woocommerce-variation-price').hide();
+				// Collapse all native spacing
+				$table.css({'margin':'0','padding':'0','height':'0','overflow':'hidden'});
+				$vForm.find('.reset_variations_alert').css({'margin':'0','padding':'0','height':'0','overflow':'hidden'});
 
 				var isMulti = attrs.length > 1;
+
+				var $settingsDiv = $modal.find('.o100-woo-var-settings');
+				var displayType = $settingsDiv.length ? $settingsDiv.data('display-type') : '';
+				var priceDisplay = $settingsDiv.length ? $settingsDiv.data('price-display') : 'diff';
+				var baseGroupClass = 'o100-addon-group o100-addon-type-radio o100-required o100-var-group';
+				if ( displayType === 'accor' ) {
+					baseGroupClass += ' o100-pm-addon-group o100-pm-accordion-mode';
+				} else if ( displayType === 'inline' ) {
+					baseGroupClass += ' o100-pm-addon-group o100-pm-inline-mode';
+				}
 
 				// ══════════════════════════════════════════
 				// SINGLE ATTRIBUTE — simple radio group
 				// ══════════════════════════════════════════
 				if (!isMulti) {
 					var attr0 = attrs[0];
-					var $group = $('<div class="o100-addon-group o100-addon-type-radio o100-required o100-var-group"></div>');
+					var $group = $('<div class="' + baseGroupClass + '"></div>');
 					$group.append('<div class="o100-addon-header-text"><h4 class="o100-addon-title">' + attr0.label + '</h4><div class="o100-addon-subtitle o100-addon-required-subtitle"><span class="o100-req-icon">&#9888;</span> Required &bull; Choose 1</div></div>');
 
 					var $choices = $('<div class="o100-addon-choices"></div>');
@@ -258,8 +343,12 @@ class O100_Product_Modal {
 						var priceDiff = '';
 						$.each(variations, function(vi, v) {
 							if (v.attributes[attr0.name] === opt.value || v.attributes[attr0.name] === '') {
-								var diff = v.display_price - globalBase;
-								if (diff > 0) priceDiff = '<span class="o100-addon-price">+' + currencySymbol + diff.toFixed(2) + '</span>';
+								if ( priceDisplay === 'actual' ) {
+									priceDiff = '<span class="o100-addon-price">' + currencySymbol + v.display_price.toFixed(2) + '</span>';
+								} else {
+									var diff = v.display_price - globalBase;
+									if (diff > 0) priceDiff = '<span class="o100-addon-price">+' + currencySymbol + diff.toFixed(2) + '</span>';
+								}
 								return false;
 							}
 						});
@@ -271,7 +360,18 @@ class O100_Product_Modal {
 
 					var $container = $('<div class="o100-var-modifier-container"></div>').append($group);
 					var $addons = $vForm.closest('form.cart').find('.o100-product-addons');
-					if ($addons.length) $container.insertBefore($addons); else $vForm.after($container);
+					if ($addons.length) {
+						$container.insertBefore($addons);
+					} else {
+						var $singleVarWrap = $vForm.find('.single_variation_wrap');
+						if ($singleVarWrap.length) {
+							$container.insertBefore($singleVarWrap);
+						} else {
+							var $paddedWrapper = $vForm.find('.o100-pm-scrollable > div').last();
+							if ($paddedWrapper.length) $paddedWrapper.append($container);
+							else $vForm.append($container);
+						}
+					}
 
 					// Sync radio → WooCommerce
 					$container.on('change', '.o100-var-radio', function() {
@@ -310,7 +410,7 @@ class O100_Product_Modal {
 
 				// ── Level 1 Panel ──
 				var $level1 = $('<div class="o100-var-panel o100-var-panel-1 o100-var-panel-active"></div>');
-				var $g1 = $('<div class="o100-addon-group o100-addon-type-radio o100-required o100-var-group"></div>');
+				var $g1 = $('<div class="' + baseGroupClass + '"></div>');
 				$g1.append('<div class="o100-addon-header-text"><h4 class="o100-addon-title">' + attr1.label + '</h4><div class="o100-addon-subtitle o100-addon-required-subtitle"><span class="o100-req-icon">&#9888;</span> Required &bull; Choose 1</div></div>');
 
 				var $choices1 = $('<div class="o100-addon-choices"></div>');
@@ -348,7 +448,7 @@ class O100_Product_Modal {
 						'</div>'
 					);
 
-					var $g2 = $('<div class="o100-addon-group o100-addon-type-radio o100-required o100-var-group"></div>');
+					var $g2 = $('<div class="' + baseGroupClass + '"></div>');
 					$g2.append('<div class="o100-addon-header-text"><h4 class="o100-addon-title">' + attr2.label + '</h4><div class="o100-addon-subtitle o100-addon-required-subtitle"><span class="o100-req-icon">&#9888;</span> Required &bull; Choose 1</div></div>');
 
 					var $choices2 = $('<div class="o100-addon-choices"></div>');
@@ -392,7 +492,18 @@ class O100_Product_Modal {
 
 				// Insert
 				var $addons = $vForm.closest('form.cart').find('.o100-product-addons');
-				if ($addons.length) $container.insertBefore($addons); else $vForm.after($container);
+				if ($addons.length) {
+					$container.insertBefore($addons);
+				} else {
+					var $singleVarWrap = $vForm.find('.single_variation_wrap');
+					if ($singleVarWrap.length) {
+						$container.insertBefore($singleVarWrap);
+					} else {
+						var $paddedWrapper = $vForm.find('.o100-pm-scrollable > div').last();
+						if ($paddedWrapper.length) $paddedWrapper.append($container);
+						else $vForm.append($container);
+					}
+				}
 
 				// ── Navigation: Level 1 → Level 2 ──
 				$container.on('click', '.o100-var-l1-trigger', function() {
@@ -445,7 +556,13 @@ class O100_Product_Modal {
 
 			// Initialization when modal opens
 			$(document).on('o100_modal_loaded', function(e, $modal) {
-				var $form = $modal.find('form.cart');
+				var $form = $modal.find('form.cart, form.variations_form').first();
+				
+				// Initialize WooCommerce variations script on the AJAX-loaded form
+				if ($form.hasClass('variations_form') && typeof $.fn.wc_variation_form === 'function') {
+					$form.wc_variation_form();
+				}
+
 				if ($form.length > 0 && $modal.find('.o100-pm-scrollable').length === 0) {
 					// Make modal fixed flex column
 					$modal.css({
@@ -489,7 +606,7 @@ class O100_Product_Modal {
 					$scrollable.append($modal.find('.o100-pm-content'));
 
 					// Move addons into padded wrapper inside scrollable
-					var $addonsWrapper = $('<div style="padding: 0 20px 20px;"></div>');
+					var $addonsWrapper = $('<div style="padding: 0 20px;"></div>');
 					$form.children().each(function() {
 						$addonsWrapper.append($(this));
 					});
@@ -525,24 +642,53 @@ class O100_Product_Modal {
 						var originalText = $btn.text();
 						$btn.prop('disabled', true).text('Adding...');
 
-						var serializedData = $thisForm.serialize();
-						// For simple products, ensure button name/value is included
-						if ($btn.attr('name') && $btn.attr('value')) {
-							serializedData += '&' + encodeURIComponent($btn.attr('name')) + '=' + encodeURIComponent($btn.attr('value'));
+						// Fallback: If this is a variable product, ensure variation_id is set
+						var variations = $thisForm.data('product_variations');
+						var $varIdInput = $thisForm.find('input[name="variation_id"]');
+						if (variations && variations.length && $varIdInput.length) {
+							if (!$varIdInput.val() || $varIdInput.val() === '0') {
+								// Manually find matching variation
+								var currentSelections = {};
+								$thisForm.find('.variations select').each(function() {
+									var attrName = $(this).data('attribute_name') || $(this).attr('name');
+									currentSelections[attrName] = $(this).val();
+								});
+								$.each(variations, function(i, v) {
+									var isMatch = true;
+									for (var attrName in currentSelections) {
+										if (v.attributes[attrName] !== undefined && v.attributes[attrName] !== '' && v.attributes[attrName] !== currentSelections[attrName]) {
+											isMatch = false;
+											break;
+										}
+									}
+									if (isMatch) {
+										$varIdInput.val(v.variation_id);
+										return false;
+									}
+								});
+							}
 						}
 
+						var serializedData = $thisForm.serialize();
+						// For simple products, ensure button name/value is included
+						if ($btn.attr('name') && $btn.attr('value') && !$thisForm.hasClass('variations_form')) {
+							serializedData += '&' + encodeURIComponent($btn.attr('name')) + '=' + encodeURIComponent($btn.attr('value'));
+						}
+						
+						// Append custom flag to bypass redirect and get fragments immediately
+						serializedData += '&o100_ajax_add_to_cart=1';
+
 						$.ajax({
-							url: $thisForm.attr('action'),
+							url: $thisForm.attr('action') || window.location.href,
 							type: 'POST',
 							data: serializedData,
+							dataType: 'json',
 							success: function(response) {
-								// Check if WooCommerce returned an error (e.g., out of stock)
-								if ($(response).find('.woocommerce-error').length > 0) {
-									var errorMsg = $(response).find('.woocommerce-error li').first().text();
-									alert(errorMsg);
+								if (response.error) {
+									alert(response.error);
 									$btn.prop('disabled', false).text(originalText);
-								} else {
-									// Success: Close modal if auto-close is enabled and refresh cart
+								} else if (response.success && response.fragments) {
+									// Success: Close modal if auto-close is enabled
 									if (o100_ajax_object.auto_close) {
 										var overlay = document.getElementById('o100-pm-overlay');
 										if (overlay) {
@@ -558,18 +704,25 @@ class O100_Product_Modal {
 									
 									// Revert button after 2 seconds
 									setTimeout(function() {
-										// Only revert if the modal is still around and button exists
 										if ($btn.length) {
 											$btn.text(originalText).removeClass('o100-btn-success');
 										}
 									}, 2000);
 									
-									$(document.body).trigger('wc_fragment_refresh');
-									$(document.body).trigger('added_to_cart', [null, null, $btn]);
+									$(document.body).trigger("added_to_cart", [response.fragments, response.cart_hash, null]);
+									$(document.body).trigger("wc_fragments_refreshed");
+								} else {
+									// Fallback if not our JSON response
+									$(document.body).trigger("wc_fragment_refresh");
+									$btn.prop('disabled', false).text('✓ Added!').addClass('o100-btn-success');
+									setTimeout(function() { if ($btn.length) $btn.text(originalText).removeClass('o100-btn-success'); }, 2000);
 								}
 							},
 							error: function() {
-								$btn.prop('disabled', false).text('Error! Please try again');
+								// Trigger fallback refresh on error (could be server returned HTML instead of JSON)
+								$(document.body).trigger("wc_fragment_refresh");
+								$btn.prop('disabled', false).text('✓ Added!').addClass('o100-btn-success');
+								setTimeout(function() { if ($btn.length) $btn.text(originalText).removeClass('o100-btn-success'); }, 2000);
 							}
 						});
 					});
@@ -1081,6 +1234,43 @@ class O100_Product_Modal {
 				display: block;
 			}
 
+			/* ===== INLINE MODE ===== */
+			.o100-pm-addon-group.o100-pm-inline-mode {
+				margin-bottom: 4px !important;
+			}
+			.o100-pm-addon-group.o100-pm-inline-mode .o100-addon-choices {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+				gap: 16px 24px;
+				padding-top: 4px;
+				padding-bottom: 0px;
+			}
+			.o100-pm-addon-group.o100-pm-inline-mode .o100-addon-choice-wrap {
+				flex: 0 1 auto;
+				display: flex;
+				align-items: flex-start;
+				border-bottom: none !important;
+			}
+			.o100-pm-addon-group.o100-pm-inline-mode .o100-addon-choice-label {
+				flex: 1 1 auto;
+				border-bottom: none !important;
+				padding: 8px 16px 8px 0 !important;
+				background: transparent !important;
+				margin: 0 !important;
+				display: flex !important;
+				align-items: flex-start !important;
+				height: 100%;
+			}
+			.o100-pm-addon-group.o100-pm-inline-mode .o100-var-l1-radio,
+			.o100-pm-addon-group.o100-pm-inline-mode input[type="radio"],
+			.o100-pm-addon-group.o100-pm-inline-mode input[type="checkbox"] {
+				margin-top: 2px !important;
+			}
+			.o100-pm-addon-group.o100-pm-inline-mode .o100-addon-choice-label:hover {
+				opacity: 0.8;
+			}
+
 			/* ===== WOO VARIATIONS INSIDE MODAL ===== */
 			.o100-pm-addtocart .variations_form {
 				margin-bottom: 16px;
@@ -1091,7 +1281,7 @@ class O100_Product_Modal {
 				border-collapse: separate;
 				border-spacing: 0 8px;
 			}
-			.o100-pm-addtocart .variations td.label label {
+			.o100-pm-addtocart .variations .label label {
 				font-weight: 700;
 				color: #191919;
 				font-size: 14px;
@@ -1122,7 +1312,7 @@ class O100_Product_Modal {
 
 			/* ===== VARIATION → MODIFIER CONVERSION ===== */
 			.o100-var-modifier-container {
-				margin-bottom: 0;
+				margin-bottom: -15px !important;
 				position: relative;
 				overflow: hidden;
 			}
@@ -1199,8 +1389,8 @@ class O100_Product_Modal {
 				font-size: 20px !important;
 				flex-shrink: 0;
 			}
-			/* Selected state on L1 after L2 is chosen */
-			.o100-var-l1-selected .o100-var-l1-trigger {
+			/* Selected state on L1 after L2 is chosen (Accordion/Multi mode only) */
+			.o100-pm-addon-group:not(.o100-pm-inline-mode) .o100-var-l1-selected .o100-var-l1-trigger {
 				background: #f0fdf4;
 				margin: 0 -20px;
 				padding-left: 20px;
@@ -1232,10 +1422,41 @@ class O100_Product_Modal {
 				color: #191919;
 			}
 
-			/* Hide native variation elements when our custom UI is active */
+			/* Hide ALL native WOO variation elements — comprehensive fix */
 			.o100-var-modifier-container ~ .variations_form .variations,
 			.o100-var-modifier-container ~ .variations_form .reset_variations {
 				display: none !important;
+			}
+			form.cart .variations,
+			form.cart .reset_variations,
+			form.cart .reset_variations_alert,
+			form.cart .single_variation_wrap .woocommerce-variation,
+			form.cart .single_variation_wrap .woocommerce-variation-price {
+				display: none !important;
+				margin: 0 !important;
+				padding: 0 !important;
+				height: 0 !important;
+				overflow: hidden !important;
+			}
+			/* Collapse the form itself when our custom UI replaces native */
+			form.cart.variations_form > .variations,
+			form.cart.variations_form > .reset_variations_alert {
+				display: none !important;
+				height: 0 !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+			.o100-var-modifier-container + .o100-product-addons {
+				margin-top: 0 !important;
+				padding-top: 0 !important;
+			}
+			.o100-pm-addtocart .woocommerce-variation {
+				display: none !important;
+			}
+			.o100-pm-addtocart .single_variation_wrap,
+			.o100-pm-addtocart .woocommerce-variation-add-to-cart {
+				margin: 0 !important;
+				padding: 0 !important;
 			}
 
 			/* ===== QUANTITY + ATC BUTTON (DoorDash sticky footer style) ===== */
@@ -1357,6 +1578,12 @@ class O100_Product_Modal {
 	}
 
 	public function ajax_get_product_info() {
+		$log_file = dirname(__FILE__) . '/diag_modal_log.txt';
+		$log_data = date('Y-m-d H:i:s') . " - ajax_get_product_info called.\n";
+		$log_data .= "POST: " . print_r($_POST, true) . "\n";
+		$log_data .= "REFERER: " . (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'N/A') . "\n";
+		file_put_contents($log_file, $log_data, FILE_APPEND);
+
 		check_ajax_referer( 'o100_modal_nonce', 'nonce' );
 
 		$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
@@ -1469,9 +1696,9 @@ class O100_Product_Modal {
 					
 					echo '<!-- O100 DEBUG: calculate_product_points returned: ' . esc_html( json_encode( $points ) ) . ' | Price: ' . $product->get_price() . ' | ID: ' . $product->get_id() . ' -->';
 					
-
-					if ( $points && ( $points['min'] > 0 || $points['max'] > 0 ) ) {
-						$settings = O100_Loyalty_DB::get_settings();
+					$settings = class_exists('O100_Loyalty_DB') ? O100_Loyalty_DB::get_settings() : [];
+					
+					if ( $points && ( $points['min'] > 0 || $points['max'] > 0 ) && ( $settings['product_message_enable'] ?? 'yes' ) === 'yes' ) {
 						$label = $settings['point_label_plural'] ?? 'Points';
 						
 						if ( $points['min'] === $points['max'] ) {
@@ -1489,6 +1716,14 @@ class O100_Product_Modal {
 				?>
 
 				<p class="o100-pm-price"><?php echo wp_kses_post( $product->get_price_html() ); ?></p>
+				<?php
+				if ( class_exists('O100_Menu_Rules') ) {
+					$time_badge = O100_Menu_Rules::get_product_time_badge( $product_id );
+					if ( $time_badge ) {
+						echo '<p class="o100-flexible-badge" style="font-size:13px; color:#c2410c; margin: 4px 0 12px 0; display:flex; align-items:center; background:#fff7ed; padding:6px 10px; border-radius:6px; border:1px solid #fed7aa; width:fit-content;"><i class="dashicons dashicons-clock" style="font-size:16px; line-height:1.2; width:16px; height:16px; margin-right:5px;"></i>' . esc_html( $time_badge ) . '</p>';
+					}
+				}
+				?>
 				
 				<?php if ( ! empty( $desc ) ) : ?>
 					<div class="o100-pm-desc"><?php echo wp_kses_post( wpautop( $desc ) ); ?></div>
@@ -1529,30 +1764,17 @@ class O100_Product_Modal {
 			<?php 
 			$enable_social = isset( $ui_prefs['o100_enable_social'] ) && $ui_prefs['o100_enable_social'] === 'on';
 			if ( $enable_social ) {
-				$enabled_socials = isset( $ui_prefs['o100_enabled_socials'] ) ? (array) $ui_prefs['o100_enabled_socials'] : array('facebook', 'twitter', 'whatsapp', 'email', 'linkedin');
 				$product_url = get_permalink( $product_id );
-				$product_title = urlencode( $product->get_name() );
+				$product_title = $product->get_name();
 				
 				echo '<div class="o100-pm-social-share" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0; margin-bottom: 0; padding: 0 20px 20px 20px;">';
 				echo '<span style="color:#94a3b8; font-size:13px; font-weight:500;">' . esc_html__('Share with friends', 'order100') . '</span>';
-				echo '<div style="display: flex; gap: 8px;">';
 				
-				if ( in_array( 'facebook', $enabled_socials ) ) {
-					echo '<a href="https://www.facebook.com/sharer/sharer.php?u=' . esc_url( $product_url ) . '" target="_blank" class="o100-pm-social-btn facebook" title="Share on Facebook"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>';
+				if ( class_exists( 'O100_Social_Share' ) ) {
+					O100_Social_Share::render_share_buttons( $product_url, $product_title );
 				}
-				if ( in_array( 'twitter', $enabled_socials ) ) {
-					echo '<a href="https://twitter.com/intent/tweet?text=' . esc_attr( $product_title ) . '&url=' . esc_url( $product_url ) . '" target="_blank" class="o100-pm-social-btn twitter" title="Share on Twitter"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>';
-				}
-				if ( in_array( 'whatsapp', $enabled_socials ) ) {
-					echo '<a href="https://api.whatsapp.com/send?text=' . esc_attr( $product_title ) . ' - ' . esc_url( $product_url ) . '" target="_blank" class="o100-pm-social-btn whatsapp" title="Share on WhatsApp"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></a>';
-				}
-				if ( in_array( 'email', $enabled_socials ) ) {
-					echo '<a href="mailto:?subject=' . esc_attr( $product_title ) . '&body=Check out this product: ' . esc_url( $product_url ) . '" class="o100-pm-social-btn email" title="Share via Email"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></a>';
-				}
-				if ( in_array( 'linkedin', $enabled_socials ) ) {
-					echo '<a href="https://www.linkedin.com/sharing/share-offsite/?url=' . esc_url( $product_url ) . '" target="_blank" class="o100-pm-social-btn linkedin" title="Share on LinkedIn"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>';
-				}
-				echo '</div></div>';
+				
+				echo '</div>';
 			}
 			?>
 		</div>
@@ -1568,9 +1790,3 @@ new O100_Product_Modal();
 
 
 
-
-// TS: 20260424165125
-
-// TS: 20260509001148
-
-// TS: 20260531192358

@@ -18,80 +18,80 @@ class ShippingShortcodes extends BaseShortcode {
             'name'        => 'o100_shipping_address',
             'description' => __( 'Shipping Address', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_address' ],
+            'callback'    => [ $this, 'o100ne_shipping_address' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_address_1',
             'description' => __( 'Shipping Address 1', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_address_1' ],
+            'callback'    => [ $this, 'o100ne_shipping_address_1' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_address_2',
             'description' => __( 'Shipping Address 2', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_address_2' ],
+            'callback'    => [ $this, 'o100ne_shipping_address_2' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_first_name',
             'description' => __( 'Shipping First Name', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_first_name' ],
+            'callback'    => [ $this, 'o100ne_shipping_first_name' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_last_name',
             'description' => __( 'Shipping Last Name', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_last_name' ],
+            'callback'    => [ $this, 'o100ne_shipping_last_name' ],
         ];
 
         $shortcodes[] = [
             'name'        => 'o100_shipping_company',
             'description' => __( 'Shipping Company', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_company' ],
+            'callback'    => [ $this, 'o100ne_shipping_company' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_city',
             'description' => __( 'Shipping City', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_city' ],
+            'callback'    => [ $this, 'o100ne_shipping_city' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_country',
             'description' => __( 'Shipping Country', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_country' ],
+            'callback'    => [ $this, 'o100ne_shipping_country' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_state',
             'description' => __( 'Shipping State', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_state' ],
+            'callback'    => [ $this, 'o100ne_shipping_state' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_postcode',
             'description' => __( 'Shipping Postal Code', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_postcode' ],
+            'callback'    => [ $this, 'o100ne_shipping_postcode' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_phone',
             'description' => __( 'Shipping Phone', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_phone' ],
+            'callback'    => [ $this, 'o100ne_shipping_phone' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_method',
             'description' => __( 'Shipping Method', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_method' ],
+            'callback'    => [ $this, 'o100ne_shipping_method' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_shipping_total',
             'description' => __( 'Shipping Total', 'order100' ),
             'group'       => 'shippings',
-            'callback'    => [ $this, 'o100_shipping_total' ],
+            'callback'    => [ $this, 'o100ne_shipping_total' ],
         ];
         return $shortcodes;
     }
@@ -401,7 +401,3 @@ class ShippingShortcodes extends BaseShortcode {
     }
 }
 
-
-// TS: 20260329130231
-
-// TS: 20260408195903

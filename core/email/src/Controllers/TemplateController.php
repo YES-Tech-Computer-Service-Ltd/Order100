@@ -32,6 +32,30 @@ class TemplateController extends BaseController {
         ];
         register_rest_route(
             O100NE_REST_NAMESPACE,
+            '/icons',
+            [
+                [
+                    'methods'             => \WP_REST_Server::READABLE,
+                    'callback'            => [ $this, 'exec_get_icons' ],
+                    'permission_callback' => [ $this, 'permission_callback' ],
+                ],
+            ]
+        );
+
+        register_rest_route(
+            O100NE_REST_NAMESPACE,
+            '/promotions/active',
+            [
+                [
+                    'methods'             => \WP_REST_Server::READABLE,
+                    'callback'            => [ $this, 'exec_get_active_promotions' ],
+                    'permission_callback' => [ $this, 'permission_callback' ],
+                ],
+            ]
+        );
+
+        register_rest_route(
+            O100NE_REST_NAMESPACE,
             '/templates',
             [
                 [
@@ -195,6 +219,28 @@ class TemplateController extends BaseController {
                         'html' => [
                             'type'     => 'string',
                             'required' => true,
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        register_rest_route(
+            O100NE_REST_NAMESPACE,
+            '/preview-render-html',
+            [
+                [
+                    'methods'             => \WP_REST_Server::CREATABLE,
+                    'callback'            => [ $this, 'exec_preview_render_html' ],
+                    'permission_callback' => [ $this, 'permission_callback' ],
+                    'args'                => [
+                        'html' => [
+                            'type'     => 'string',
+                            'required' => true,
+                        ],
+                        'order_id' => [
+                            'type'    => 'string',
+                            'default' => '',
                         ],
                     ],
                 ],
@@ -501,6 +547,23 @@ class TemplateController extends BaseController {
         $billing_address = $order->get_formatted_billing_address();
         $shipping_address = $order->get_formatted_shipping_address();
         
+        // 1. CRM Lookup for Guest Customers
+        $billing_first_name = $order->get_billing_first_name();
+        $billing_last_name  = $order->get_billing_last_name();
+        $billing_phone      = $order->get_billing_phone();
+        $billing_email      = $order->get_billing_email();
+
+        if ( class_exists( 'O100_Customers_DB' ) && ! empty( $billing_email ) ) {
+            global $wpdb;
+            $tbl_customers = \O100_Customers_DB::get_table_customers();
+            $customer = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tbl_customers} WHERE email = %s", $billing_email ) );
+            if ( $customer ) {
+                $billing_first_name = $customer->first_name ?: $billing_first_name;
+                $billing_last_name  = $customer->last_name ?: $billing_last_name;
+                $billing_phone      = $customer->phone ?: $billing_phone;
+            }
+        }
+        
         $item_totals = [];
         foreach ( $order->get_order_item_totals() as $key => $total ) {
             $item_totals[$key] = [
@@ -521,10 +584,21 @@ class TemplateController extends BaseController {
             'payment_method' => $order->get_payment_method_title(),
             'customer_note' => $order->get_customer_note(),
             'billing_address' => wp_kses_post( $billing_address ),
-            'billing_phone' => $order->get_billing_phone(),
-            'billing_email' => $order->get_billing_email(),
+            'billing_first_name' => $billing_first_name,
+            'billing_last_name' => $billing_last_name,
+            'billing_phone' => $billing_phone,
+            'billing_email' => $billing_email,
             'shipping_address' => wp_kses_post( $shipping_address ? $shipping_address : $billing_address ),
             'shipping_phone' => $order->get_shipping_phone(),
+            'total_html' => wp_strip_all_tags( wc_price( $order->get_total() ) ),
+            'order_date' => $order->get_date_created() ? wc_format_datetime( $order->get_date_created() ) : '',
+            'o100_time_deli' => $order->get_meta( 'o100_time_deli', true ),
+            'order_type' => $order->get_meta( '_o100_order_method', true ) ?: $order->get_meta( 'o100_order_method', true ) ?: $order->get_meta( '_o100_order_type', true ) ?: $order->get_meta( 'o100_order_type', true ),
+            'meta' => [
+                'o100_delivery_instruction' => $order->get_meta( 'o100_delivery_instruction', true ) ?: $order->get_meta( '_o100_delivery_instruction', true ),
+                'o100_date_deli' => $order->get_meta( 'o100_date_deli', true ) ?: $order->get_meta( '_o100_date_deli', true ),
+                'o100_time_deli' => $order->get_meta( 'o100_time_deli', true ) ?: $order->get_meta( '_o100_time_deli', true ),
+            ]
         ];
     }
 
@@ -571,12 +645,108 @@ class TemplateController extends BaseController {
     public function set_html_content_type() {
         return 'text/html';
     }
+
+    public function exec_get_active_promotions( \WP_REST_Request $request ) {
+        return $this->exec( [ $this, 'get_active_promotions' ], $request );
+    }
+
+    public function get_active_promotions( \WP_REST_Request $request ) {
+        if ( ! class_exists( 'O100_Promotions_DB' ) ) {
+            $promotions_db_path = O100_PATH . 'core/promotions/engine/class-o100-promotions-db.php';
+            if ( file_exists( $promotions_db_path ) ) {
+                require_once $promotions_db_path;
+            } else {
+                return [ 'success' => false, 'message' => 'Promotions module not found.' ];
+            }
+        }
+
+        $promotions = \O100_Promotions_DB::query( [
+            'status' => 'active',
+            'limit'  => 500, // get all active promos
+        ] );
+
+        $formatted = [];
+        foreach ( $promotions as $promo ) {
+            $formatted[] = [
+                'id'         => $promo['id'],
+                'title'      => $promo['title'],
+                'promo_code' => $promo['promo_code'],
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data'    => $formatted,
+        ];
+    }
+
+    /**
+     * Preview Render HTML — server-side shortcode processing
+     *
+     * Receives raw HTML with shortcode placeholders from the editor,
+     * processes them using the notification engine's shortcode executor,
+     * and returns the resolved HTML.
+     *
+     * @param \WP_REST_Request $request
+     * @return array
+     */
+    public function exec_preview_render_html( \WP_REST_Request $request ) {
+        $html     = $request->get_param( 'html' );
+        $order_id = $request->get_param( 'order_id' );
+
+        if ( empty( $html ) ) {
+            return [ 'success' => false, 'html' => '' ];
+        }
+
+        // Build render data context
+        $render_data = [
+            'is_preview'            => true,
+            'is_customized_preview' => true,
+        ];
+
+        // If a real order ID is provided, attach the order object
+        $order = null;
+        if ( ! empty( $order_id ) && $order_id !== 'sample_order' ) {
+            $order = wc_get_order( $order_id );
+            if ( $order ) {
+                $render_data['order'] = $order;
+            }
+        }
+
+        // Collect all registered shortcode definitions
+        $all_shortcodes = [];
+        $loader = \Order100\Notification\Engine\Shortcodes\ShortcodesLoader::get_instance();
+        $shortcode_classes = [
+            \Order100\Notification\Engine\Shortcodes\CommonShortcodes::get_instance(),
+            \Order100\Notification\Engine\Shortcodes\ShippingShortcodes::get_instance(),
+            \Order100\Notification\Engine\Shortcodes\BillingShortcodes::get_instance(),
+            \Order100\Notification\Engine\Shortcodes\PaymentsShortcodes::get_instance(),
+        ];
+
+        foreach ( $shortcode_classes as $sc_instance ) {
+            if ( method_exists( $sc_instance, 'get_shortcodes' ) ) {
+                $sc_defs = $sc_instance->get_shortcodes();
+                if ( is_array( $sc_defs ) ) {
+                    $all_shortcodes = array_merge( $all_shortcodes, $sc_defs );
+                }
+            }
+        }
+
+        // Register shortcodes for this context via ShortcodesExecutor
+        if ( ! empty( $all_shortcodes ) ) {
+            new \Order100\Notification\Engine\Shortcodes\ShortcodesExecutor(
+                $all_shortcodes,
+                array_merge( $render_data, [ 'render_data' => $render_data ] )
+            );
+        }
+
+        // Process all shortcodes
+        $html = do_shortcode( $html );
+
+        return [
+            'success' => true,
+            'html'    => $html,
+        ];
+    }
 }
 
-// TS: 20260204140433
-
-// TS: 20260222200606
-
-// TS: 20260410164659
-
-// Update TS: 20260603230000

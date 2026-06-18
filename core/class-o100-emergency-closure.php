@@ -33,17 +33,45 @@ class O100_Emergency_Closure {
 	 * Check if emergency closure is currently active.
 	 * Supports both immediate and scheduled closures.
 	 *
-	 * @return array|false  False if open; array {reason, expires_at, starts_at} if closed.
+	 * @return array|false  False if open; array {reason, expires_at, starts_at, scope} if closed.
 	 */
-	public static function get_active_closure_data() {
-		$options = get_option( 'o100_options', array() );
+	public static function get_active_closure_data( $branch_id = 0 ) {
+		$now = time();
 
+		// Check branch level first
+		if ( $branch_id > 0 ) {
+			$b_is_set = get_post_meta( $branch_id, 'o100_emergency_closure', true ) === 'on';
+			if ( $b_is_set ) {
+				$b_starts  = intval( get_post_meta( $branch_id, 'o100_emergency_closure_starts', true ) );
+				$b_expires = intval( get_post_meta( $branch_id, 'o100_emergency_closure_expires', true ) );
+				$b_reason  = get_post_meta( $branch_id, 'o100_emergency_closure_reason', true );
+
+				$active = true;
+				if ( $b_starts > 0 && $now < $b_starts ) {
+					$active = false;
+				}
+				if ( $b_expires > 0 && $now > $b_expires ) {
+					$active = false; // already expired
+				}
+
+				if ( $active ) {
+					return array(
+						'reason'     => $b_reason,
+						'expires_at' => $b_expires,
+						'starts_at'  => $b_starts,
+						'scope'      => 'branch',
+					);
+				}
+			}
+		}
+
+		// Fallback to Global
+		$options = get_option( 'o100_options', array() );
 		$is_set = isset( $options['o100_emergency_closure'] ) && $options['o100_emergency_closure'] === 'on';
 		if ( ! $is_set ) {
 			return false;
 		}
 
-		$now        = time();
 		$starts_at  = isset( $options['o100_emergency_closure_starts'] ) ? intval( $options['o100_emergency_closure_starts'] ) : 0;
 		$expires_at = isset( $options['o100_emergency_closure_expires'] ) ? intval( $options['o100_emergency_closure_expires'] ) : 0;
 
@@ -61,25 +89,119 @@ class O100_Emergency_Closure {
 			'reason'     => isset( $options['o100_emergency_closure_reason'] ) ? $options['o100_emergency_closure_reason'] : '',
 			'expires_at' => $expires_at,
 			'starts_at'  => $starts_at,
+			'scope'      => 'global',
 		);
 	}
 
 	/**
 	 * Get pending scheduled closure data (set but not yet started).
 	 */
-	public static function get_pending_closure_data() {
+	public static function get_pending_closure_data( $branch_id = 0 ) {
+		$now = time();
+
+		// Check branch level first
+		if ( $branch_id > 0 ) {
+			$b_is_set = get_post_meta( $branch_id, 'o100_emergency_closure', true ) === 'on';
+			if ( $b_is_set ) {
+				$b_starts = intval( get_post_meta( $branch_id, 'o100_emergency_closure_starts', true ) );
+				if ( $b_starts > 0 && $now < $b_starts ) {
+					return array(
+						'reason'     => get_post_meta( $branch_id, 'o100_emergency_closure_reason', true ),
+						'starts_at'  => $b_starts,
+						'expires_at' => intval( get_post_meta( $branch_id, 'o100_emergency_closure_expires', true ) ),
+						'scope'      => 'branch',
+					);
+				}
+			}
+		}
+
+		// Fallback to Global
 		$options = get_option( 'o100_options', array() );
 		$is_set = isset( $options['o100_emergency_closure'] ) && $options['o100_emergency_closure'] === 'on';
 		if ( ! $is_set ) return false;
 
 		$starts_at = isset( $options['o100_emergency_closure_starts'] ) ? intval( $options['o100_emergency_closure_starts'] ) : 0;
-		if ( $starts_at <= 0 || time() >= $starts_at ) return false;
+		if ( $starts_at <= 0 || $now >= $starts_at ) return false;
 
 		return array(
 			'reason'     => isset( $options['o100_emergency_closure_reason'] ) ? $options['o100_emergency_closure_reason'] : '',
 			'starts_at'  => $starts_at,
 			'expires_at' => isset( $options['o100_emergency_closure_expires'] ) ? intval( $options['o100_emergency_closure_expires'] ) : 0,
+			'scope'      => 'global',
 		);
+	}
+
+	/**
+	 * Get the full dictionary of all closures (global + all branches)
+	 * For UI initialization
+	 */
+	public static function get_all_closures_status() {
+		$statuses = array();
+
+		// Get Global
+		$options = get_option( 'o100_options', array() );
+		$is_set = isset( $options['o100_emergency_closure'] ) && $options['o100_emergency_closure'] === 'on';
+		$now = time();
+
+		$starts_at  = isset( $options['o100_emergency_closure_starts'] ) ? intval( $options['o100_emergency_closure_starts'] ) : 0;
+		$expires_at = isset( $options['o100_emergency_closure_expires'] ) ? intval( $options['o100_emergency_closure_expires'] ) : 0;
+		$reason     = isset( $options['o100_emergency_closure_reason'] ) ? $options['o100_emergency_closure_reason'] : '';
+
+		$mode = 'open';
+		if ( $is_set ) {
+			if ( $starts_at > 0 && $now < $starts_at ) {
+				$mode = 'scheduled';
+			} elseif ( $expires_at === 0 || $now <= $expires_at ) {
+				$mode = 'close_now';
+			}
+		}
+		
+		$statuses['all'] = array(
+			'mode'       => $mode,
+			'starts_at'  => $starts_at,
+			'expires_at' => $expires_at,
+			'reason'     => $reason,
+		);
+
+		// Get Branches
+		if ( get_option('o100_locations_status') === 'on' ) {
+			$branches = get_posts( array(
+				'post_type'      => 'o100_location',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+			) );
+
+			foreach ( $branches as $b ) {
+				$bid = $b->ID;
+				$b_is_set = get_post_meta( $bid, 'o100_emergency_closure', true ) === 'on';
+				
+				$b_mode = 'open';
+				$b_starts = 0;
+				$b_expires = 0;
+				$b_reason = '';
+
+				if ( $b_is_set ) {
+					$b_starts  = intval( get_post_meta( $bid, 'o100_emergency_closure_starts', true ) );
+					$b_expires = intval( get_post_meta( $bid, 'o100_emergency_closure_expires', true ) );
+					$b_reason  = get_post_meta( $bid, 'o100_emergency_closure_reason', true );
+
+					if ( $b_starts > 0 && $now < $b_starts ) {
+						$b_mode = 'scheduled';
+					} elseif ( $b_expires === 0 || $now <= $b_expires ) {
+						$b_mode = 'close_now';
+					}
+				}
+
+				$statuses[ $bid ] = array(
+					'mode'       => $b_mode,
+					'starts_at'  => $b_starts,
+					'expires_at' => $b_expires,
+					'reason'     => $b_reason,
+				);
+			}
+		}
+
+		return $statuses;
 	}
 
 	/**
@@ -104,9 +226,18 @@ class O100_Emergency_Closure {
 	 * Block checkout submission when emergency closure is active.
 	 */
 	public function block_checkout_if_closed() {
-		$closure = self::get_active_closure_data();
+		$branch_id = 0;
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$branch_id = intval( WC()->session->get( 'o100_location_id' ) );
+		}
+
+		$closure = self::get_active_closure_data( $branch_id );
 		if ( $closure !== false ) {
 			$msg = ! empty( $closure['reason'] ) ? $closure['reason'] : __( 'We are temporarily closed and not accepting orders.', 'order100' );
+			if ( $closure['scope'] === 'branch' ) {
+				$branch_title = get_the_title( $branch_id );
+				$msg = sprintf( __( '%s is temporarily closed: %s', 'order100' ), $branch_title, $msg );
+			}
 			wc_add_notice( $msg, 'error' );
 		}
 	}
@@ -119,18 +250,43 @@ class O100_Emergency_Closure {
 			return;
 		}
 
-		$closure_data = self::get_active_closure_data();
-		$pending_data = self::get_pending_closure_data();
+		$all_status = self::get_all_closures_status();
+		$global = $all_status['all'];
 
-		if ( $closure_data !== false ) {
+		$icon_color = '#00a32a';
+		$title_text = __( 'Store: OPEN', 'order100' );
+
+		if ( $global['mode'] === 'close_now' ) {
 			$icon_color = '#d63638';
 			$title_text = __( 'Emergency: CLOSED', 'order100' );
-		} elseif ( $pending_data !== false ) {
+		} elseif ( $global['mode'] === 'scheduled' ) {
 			$icon_color = '#dba617';
 			$title_text = __( 'Closure Scheduled', 'order100' );
 		} else {
-			$icon_color = '#00a32a';
-			$title_text = __( 'Store: OPEN', 'order100' );
+			// Check branches
+			$closed_branches = 0;
+			$scheduled_branches = 0;
+			$total_branches = 0;
+
+			foreach ( $all_status as $k => $v ) {
+				if ( $k === 'all' ) continue;
+				$total_branches++;
+				if ( $v['mode'] === 'close_now' ) $closed_branches++;
+				if ( $v['mode'] === 'scheduled' ) $scheduled_branches++;
+			}
+
+			if ( $closed_branches > 0 ) {
+				if ( $closed_branches === $total_branches ) {
+					$icon_color = '#d63638';
+					$title_text = __( 'Emergency: CLOSED', 'order100' );
+				} else {
+					$icon_color = '#dba617';
+					$title_text = __( 'Partial Closure', 'order100' );
+				}
+			} elseif ( $scheduled_branches > 0 ) {
+				$icon_color = '#dba617';
+				$title_text = __( 'Closure Scheduled', 'order100' );
+			}
 		}
 
 		$title = '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:' . esc_attr( $icon_color ) . '; margin-right:5px;"></span>' . esc_html( $title_text );
@@ -150,54 +306,7 @@ class O100_Emergency_Closure {
 	 * Inject HTML Modal for configuring closure
 	 */
 	public function inject_admin_modal() {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) { return; }
-		$closure_data = self::get_active_closure_data();
-		$pending_data = self::get_pending_closure_data();
-		$options  = get_option( 'o100_options', array() );
-		$reasons  = self::get_configured_reasons();
-		$mode = 'open';
-		$reason = '';
-		if ( $closure_data !== false ) { $mode = 'close_now'; $reason = $closure_data['reason']; }
-		elseif ( $pending_data !== false ) { $mode = 'scheduled'; $reason = $pending_data['reason']; }
-		$starts_at  = isset( $options['o100_emergency_closure_starts'] ) ? intval( $options['o100_emergency_closure_starts'] ) : 0;
-		$expires_at = isset( $options['o100_emergency_closure_expires'] ) ? intval( $options['o100_emergency_closure_expires'] ) : 0;
-		$tz = wp_timezone(); $now_local = new DateTime( 'now', $tz ); $min_dt = $now_local->format('Y-m-d\TH:i');
-		$fmt = function($ts) use ($tz) { if(!$ts) return ''; $d=new DateTime('@'.$ts); $d->setTimezone($tz); return $d->format('Y-m-d\TH:i'); };
-		$nonce = wp_create_nonce('o100_emergency_nonce');
-		?>
-		<style>#o100-emergency-modal{display:none;position:fixed;z-index:100000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.6);align-items:center;justify-content:center}#o100-emergency-modal.o100-active{display:flex}.o100-em-content{background:#fff;padding:28px;border-radius:10px;width:100%;max-width:480px;box-shadow:0 8px 30px rgba(0,0,0,.25);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}.o100-em-content h2{margin:0 0 20px;font-size:1.4em;border-bottom:1px solid #eee;padding-bottom:14px}.o100-em-modes{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}.o100-em-mode{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;transition:.2s}.o100-em-mode:hover{border-color:#2271b1}.o100-em-mode.active{border-color:#2271b1;background:#f0f6fc}.o100-em-mode input[type=radio]{accent-color:#2271b1;width:18px;height:18px}.o100-em-mode-info{flex:1}.o100-em-mode-info strong{display:block;font-size:14px}.o100-em-mode-info small{color:#666;font-size:12px}.o100-em-panel{display:none;padding:14px;background:#f9f9f9;border-radius:8px;margin-bottom:14px}.o100-em-panel.visible{display:block}.o100-em-row{margin-bottom:12px}.o100-em-row label{display:block;font-weight:600;margin-bottom:5px;font-size:13px}.o100-em-row select,.o100-em-row input[type=text],.o100-em-row input[type=datetime-local]{width:100%;padding:7px 10px;font-size:13px;border-radius:4px;border:1px solid #c3c4c7;box-sizing:border-box}.o100-em-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.o100-em-btn{padding:8px 18px;border-radius:5px;border:none;cursor:pointer;font-weight:600;font-size:13px}.o100-em-btn-cancel{background:#f0f0f1;color:#2c3338;border:1px solid #8c8f94}.o100-em-btn-save{background:#2271b1;color:#fff}.o100-em-btn-save:hover{background:#135e96}</style>
-		<div id="o100-emergency-modal"><div class="o100-em-content">
-			<h2><?php esc_html_e('Store Status','order100'); ?></h2>
-			<div class="o100-em-modes">
-				<label class="o100-em-mode <?php echo $mode==='open'?'active':''; ?>"><input type="radio" name="o100_em_mode" value="open" <?php checked($mode,'open'); ?>><div class="o100-em-mode-info"><strong style="color:#00a32a"><?php esc_html_e('Open — Normal Operation','order100'); ?></strong><small><?php esc_html_e('The store is accepting orders.','order100'); ?></small></div></label>
-				<label class="o100-em-mode <?php echo $mode==='close_now'?'active':''; ?>"><input type="radio" name="o100_em_mode" value="close_now" <?php checked($mode,'close_now'); ?>><div class="o100-em-mode-info"><strong style="color:#d63638"><?php esc_html_e('Close Now','order100'); ?></strong><small><?php esc_html_e('Stop accepting orders immediately.','order100'); ?></small></div></label>
-				<label class="o100-em-mode <?php echo $mode==='scheduled'?'active':''; ?>"><input type="radio" name="o100_em_mode" value="scheduled" <?php checked($mode,'scheduled'); ?>><div class="o100-em-mode-info"><strong style="color:#dba617"><?php esc_html_e('Scheduled Closure','order100'); ?></strong><small><?php esc_html_e('Set a future time window to close.','order100'); ?></small></div></label>
-			</div>
-			<div class="o100-em-panel" id="o100-panel-close_now" <?php if($mode==='close_now') echo 'style="display:block"'; ?>>
-				<div class="o100-em-row"><label><?php esc_html_e('Auto-Resume At','order100'); ?></label>
-					<select id="o100-em-resume-type"><option value="tomorrow"><?php esc_html_e('Tomorrow Morning (4 AM)','order100'); ?></option><option value="30m"><?php esc_html_e('In 30 Minutes','order100'); ?></option><option value="1h"><?php esc_html_e('In 1 Hour','order100'); ?></option><option value="2h"><?php esc_html_e('In 2 Hours','order100'); ?></option><option value="custom"><?php esc_html_e('Custom Time...','order100'); ?></option><option value="manual"><?php esc_html_e('Manual (No Auto-Resume)','order100'); ?></option></select>
-				</div>
-				<div class="o100-em-row" id="o100-resume-custom-row" style="display:none"><label><?php esc_html_e('Resume At','order100'); ?></label><input type="datetime-local" id="o100-em-resume-date" min="<?php echo esc_attr($min_dt); ?>" value="<?php echo esc_attr($fmt($expires_at)); ?>"></div>
-			</div>
-			<div class="o100-em-panel" id="o100-panel-scheduled" <?php if($mode==='scheduled') echo 'style="display:block"'; ?>>
-				<div class="o100-em-row"><label><?php esc_html_e('Closes At','order100'); ?></label><input type="datetime-local" id="o100-em-start-date" min="<?php echo esc_attr($min_dt); ?>" value="<?php echo esc_attr($fmt($starts_at)); ?>"></div>
-				<div class="o100-em-row"><label><?php esc_html_e('Re-opens At','order100'); ?></label><input type="datetime-local" id="o100-em-end-date" min="<?php echo esc_attr($min_dt); ?>" value="<?php echo esc_attr($fmt($expires_at)); ?>"></div>
-			</div>
-			<div class="o100-em-panel" id="o100-panel-reason" <?php if($mode!=='open') echo 'style="display:block"'; ?>>
-				<div class="o100-em-row"><label><?php esc_html_e('Reason (shown to customers)','order100'); ?></label>
-					<select id="o100-em-reason-select">
-						<?php foreach($reasons as $r): $msg=isset($r['message'])?$r['message']:''; $lbl=isset($r['label'])?$r['label']:$msg; ?>
-						<option value="<?php echo esc_attr($msg); ?>" <?php selected($msg,$reason); ?>><?php echo esc_html($lbl); ?></option>
-						<?php endforeach; ?>
-						<option value="custom" <?php if(!empty($reason)&&!in_array($reason,array_column($reasons,'message'))) echo 'selected'; ?>><?php esc_html_e('Custom...','order100'); ?></option>
-					</select>
-				</div>
-				<div class="o100-em-row" id="o100-custom-reason-row" style="display:none"><input type="text" id="o100-em-custom-reason" placeholder="<?php esc_attr_e('Type your reason...','order100'); ?>" value="<?php echo esc_attr($reason); ?>"></div>
-			</div>
-			<div class="o100-em-actions"><button class="o100-em-btn o100-em-btn-cancel" id="o100-em-cancel"><?php esc_html_e('Cancel','order100'); ?></button><button class="o100-em-btn o100-em-btn-save" id="o100-em-save"><?php esc_html_e('Save','order100'); ?></button></div>
-		</div></div>
-		<script>document.addEventListener('DOMContentLoaded',function(){var m=document.getElementById('o100-emergency-modal');if(!m)return;var rs=document.getElementById('o100-em-resume-type'),rz=document.getElementById('o100-em-reason-select');function gm(){var c=document.querySelector('input[name=o100_em_mode]:checked');return c?c.value:'open'}function sp(){var v=gm();document.querySelectorAll('.o100-em-mode').forEach(function(e){e.classList.remove('active')});var a=document.querySelector('input[name=o100_em_mode]:checked');if(a)a.closest('.o100-em-mode').classList.add('active');document.getElementById('o100-panel-close_now').style.display=v==='close_now'?'block':'none';document.getElementById('o100-panel-scheduled').style.display=v==='scheduled'?'block':'none';document.getElementById('o100-panel-reason').style.display=v!=='open'?'block':'none'}document.querySelectorAll('input[name=o100_em_mode]').forEach(function(r){r.addEventListener('change',sp)});rs.addEventListener('change',function(){document.getElementById('o100-resume-custom-row').style.display=this.value==='custom'?'block':'none'});rz.addEventListener('change',function(){document.getElementById('o100-custom-reason-row').style.display=this.value==='custom'?'block':'none'});if(rz.value==='custom')document.getElementById('o100-custom-reason-row').style.display='block';document.querySelectorAll('.o100-emergency-trigger').forEach(function(e){e.addEventListener('click',function(ev){ev.preventDefault();m.classList.add('o100-active')})});document.getElementById('o100-em-cancel').addEventListener('click',function(){m.classList.remove('o100-active')});document.getElementById('o100-em-save').addEventListener('click',function(){var b=this,v=gm(),rv=rz.value,fr=rv==='custom'?document.getElementById('o100-em-custom-reason').value:rv;b.textContent='<?php esc_html_e("Saving...","order100"); ?>';b.disabled=true;var d=new FormData();d.append('action','o100_save_emergency_status');d.append('security','<?php echo esc_js($nonce); ?>');d.append('mode',v);d.append('reason',fr);if(v==='close_now'){d.append('resume_type',rs.value);d.append('resume_date',document.getElementById('o100-em-resume-date').value)}else if(v==='scheduled'){d.append('start_date',document.getElementById('o100-em-start-date').value);d.append('end_date',document.getElementById('o100-em-end-date').value)}fetch(ajaxurl,{method:'POST',body:d}).then(function(r){return r.json()}).then(function(r){if(r.success)window.location.reload();else{alert(r.data||'Error');b.textContent='<?php esc_html_e("Save","order100"); ?>';b.disabled=false}})})});</script>
-		<?php
+		include dirname( __FILE__ ) . '/class-o100-emergency-closure-modal.php';
 	}
 	/**
 	 * AJAX Handler for saving emergency status
@@ -209,6 +318,7 @@ class O100_Emergency_Closure {
 			wp_send_json_error( 'Unauthorized' );
 		}
 
+		$branch_id   = isset( $_POST['branch_id'] ) ? sanitize_text_field( wp_unslash( $_POST['branch_id'] ) ) : 'all';
 		$mode        = isset( $_POST['mode'] ) ? sanitize_text_field( wp_unslash( $_POST['mode'] ) ) : 'open';
 		$resume_type = isset( $_POST['resume_type'] ) ? sanitize_text_field( wp_unslash( $_POST['resume_type'] ) ) : '';
 		$resume_date = isset( $_POST['resume_date'] ) ? sanitize_text_field( wp_unslash( $_POST['resume_date'] ) ) : '';
@@ -216,14 +326,19 @@ class O100_Emergency_Closure {
 		$end_date    = isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '';
 		$reason      = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
 
-		$options = get_option( 'o100_options', array() );
 		$tz = wp_timezone();
 		$now = time();
 
+		$data = array(
+			'is_set'  => '0',
+			'reason'  => '',
+			'starts'  => 0,
+			'expires' => 0,
+		);
+
 		if ( $mode === 'close_now' ) {
-			$options['o100_emergency_closure'] = 'on';
-			$options['o100_emergency_closure_reason'] = $reason;
-			$options['o100_emergency_closure_starts'] = 0; // immediate
+			$data['is_set'] = 'on';
+			$data['reason'] = $reason;
 
 			$expires_at = 0;
 			if ( $resume_type === '30m' ) {
@@ -239,9 +354,8 @@ class O100_Emergency_Closure {
 				$dt = new DateTime( $resume_date, $tz );
 				$expires_at = $dt->getTimestamp();
 			}
-			// 'manual' → $expires_at stays 0
 
-			$options['o100_emergency_closure_expires'] = $expires_at;
+			$data['expires'] = $expires_at;
 
 		} elseif ( $mode === 'scheduled' ) {
 			if ( empty( $start_date ) || empty( $end_date ) ) {
@@ -250,21 +364,28 @@ class O100_Emergency_Closure {
 			$dt_start = new DateTime( $start_date, $tz );
 			$dt_end   = new DateTime( $end_date, $tz );
 
-			$options['o100_emergency_closure'] = 'on';
-			$options['o100_emergency_closure_reason']  = $reason;
-			$options['o100_emergency_closure_starts']  = $dt_start->getTimestamp();
-			$options['o100_emergency_closure_expires'] = $dt_end->getTimestamp();
-
-		} else {
-			// mode === 'open'
-			$options['o100_emergency_closure'] = '0';
-			$options['o100_emergency_closure_reason'] = '';
-			$options['o100_emergency_closure_expires'] = 0;
-			$options['o100_emergency_closure_starts'] = 0;
+			$data['is_set']  = 'on';
+			$data['reason']  = $reason;
+			$data['starts']  = $dt_start->getTimestamp();
+			$data['expires'] = $dt_end->getTimestamp();
 		}
 
-		update_option( 'o100_options', $options );
-		wp_send_json_success( array( 'mode' => $mode ) );
+		if ( $branch_id === 'all' ) {
+			$options = get_option( 'o100_options', array() );
+			$options['o100_emergency_closure']         = $data['is_set'];
+			$options['o100_emergency_closure_reason']  = $data['reason'];
+			$options['o100_emergency_closure_starts']  = $data['starts'];
+			$options['o100_emergency_closure_expires'] = $data['expires'];
+			update_option( 'o100_options', $options );
+		} else {
+			$bid = intval( $branch_id );
+			update_post_meta( $bid, 'o100_emergency_closure', $data['is_set'] );
+			update_post_meta( $bid, 'o100_emergency_closure_reason', $data['reason'] );
+			update_post_meta( $bid, 'o100_emergency_closure_starts', $data['starts'] );
+			update_post_meta( $bid, 'o100_emergency_closure_expires', $data['expires'] );
+		}
+
+		wp_send_json_success( array( 'mode' => $mode, 'branch' => $branch_id ) );
 	}
 
 	/**
@@ -275,12 +396,21 @@ class O100_Emergency_Closure {
 			return;
 		}
 
-		$closure_data = self::get_active_closure_data();
+		$branch_id = 0;
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$branch_id = intval( WC()->session->get( 'o100_location_id' ) );
+		}
+
+		$closure_data = self::get_active_closure_data( $branch_id );
 		if ( $closure_data === false ) {
 			return;
 		}
 
 		$reason = ! empty( $closure_data['reason'] ) ? $closure_data['reason'] : __( 'Temporarily paused', 'order100' );
+		if ( $closure_data['scope'] === 'branch' ) {
+			$branch_title = get_the_title( $branch_id );
+			$reason = $branch_title . ' — ' . $reason;
+		}
 		$resume_text = '';
 
 		if ( $closure_data['expires_at'] > 0 ) {
