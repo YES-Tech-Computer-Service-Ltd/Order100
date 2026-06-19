@@ -92,6 +92,17 @@ class TemplateModel {
 
         $excluded_templates = apply_filters( 'o100_excluded_templates', [ 'o100_global_header_footer' ] );
 
+        // Exclude legacy templates from previous version
+        $legacy_templates = [
+            'o100_points_update',
+            'o100_birthday',
+            'o100_tier_upgrade',
+            'o100_coupon_issued',
+            'o100_points_expiring',
+            'o100_win_back',
+        ];
+        $excluded_templates = array_merge( $excluded_templates, $legacy_templates );
+
         /* Wc Emails, may or may not be supported by us */
         $wc_emails = \WC_Emails::instance()->get_emails();
 
@@ -107,16 +118,13 @@ class TemplateModel {
             }
 
             if ( SupportedPlugins::get_instance()->get_support_info( $template_id )['status'] !== 'already_supported' ) {
-                // Templates is currently not editable, but could be supported by pro/addon
-                $template_data = self::get_uneditable_template( $wc_email, $templates );
-                $templates[]   = $template_data;
+                // Order100: We don't upsell Pro/Addons for emails anymore. Just hide unsupported templates.
                 continue;
             }
 
             $email_data    = SupportedPlugins::get_instance()->get_o100ne_template_data( $template_id );
-            $template_data = self::get_o100ne_template( $email_data );
+            $template_data = self::get_o100ne_template( $email_data, false );
             if ( isset( $template_data ) ) {
-                unset( $template_data['elements'] );
                 $templates[] = $template_data;
             }
         }//end foreach
@@ -137,43 +145,107 @@ class TemplateModel {
             if ( empty( $tpl_name ) || in_array( $tpl_name, $excluded_templates, true ) || in_array( $tpl_name, $template_ids, true ) ) {
                 continue;
             }
-            $tpl_status   = get_post_meta( $post_id, '_o100ne_status', true ) ?: 'inactive';
+            $tpl_status   = get_post_meta( $post_id, '_o100ne_status', true );
+            if ( $tpl_status === '' ) {
+                $tpl_status = ( strpos($tpl_name, 'o100_loyalty_') === false && strpos($tpl_name, 'o100_promo_') === false && strpos($tpl_name, 'o100_reservation_') === false ) ? 'active' : 'inactive';
+            }
+            $tpl_status = apply_filters('o100_email_template_status', $tpl_status, $tpl_name);
+            
             $tpl_post     = get_post( $post_id );
             $last_updated = $tpl_post && isset( $tpl_post->post_modified )
                 ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $tpl_post->post_modified ) )
                 : esc_html__( 'N/A', 'order100' );
 
+            $add_recipients = get_post_meta( $post_id, '_o100ne_additional_recipients', true ) ?: '';
+            // Generally o100_ templates are for customers, unless they specify admin
+            $recipient_type = ( strpos( $tpl_name, 'customer_' ) !== false || strpos( $tpl_name, 'o100_' ) !== false ) ? 'customer' : 'admin';
+
             $templates[]    = [
-                'id'             => $post_id,
-                'key'            => $post_id,
-                'name'           => $tpl_name,
-                'support_status' => 'already_supported',
-                'addon_info'     => null,
-                'template_title' => $tpl_post->post_title ?: $tpl_name,
-                'status'         => $tpl_status,
-                'recipient'      => '',
-                'source'         => 'Order100 Addon',
-                'last_updated'   => $last_updated,
+                'id'                    => $post_id,
+                'key'                   => $post_id,
+                'name'                  => $tpl_name,
+                'support_status'        => 'already_supported',
+                'addon_info'            => null,
+                'template_title'        => $tpl_post->post_title ?: $tpl_name,
+                'status'                => $tpl_status,
+                'recipient'             => '',
+                'recipient_type'        => $recipient_type,
+                'additional_recipients' => $add_recipients,
+                'source'                => 'Order100 Addon',
+                'last_updated'          => $last_updated,
             ];
             $template_ids[] = $tpl_name;
         }
 
-        return $templates;
+        // Dynamically inject missing custom templates
+        $custom_templates = [
+            'o100_reservation_new'         => 'New Reservation',
+            'o100_reservation_confirmed'   => 'Reservation Confirmed',
+            'o100_reservation_rejected'    => 'Reservation Rejected',
+            'o100_reservation_reminder'    => 'Reservation Reminder',
+            'o100_loyalty_birthday'        => 'Birthday Greeting',
+            'o100_loyalty_points_earned'   => 'Points Earned',
+            'o100_loyalty_tier_upgrade'    => 'Tier Upgrade',
+            'o100_loyalty_reward_issued'   => 'Reward Issued',
+            'o100_loyalty_reward_expiring' => 'Reward Expiring',
+            'o100_loyalty_points_expiring' => 'Points Expiring',
+            'o100_loyalty_referral_invite' => 'Referral Invite',
+            'o100_loyalty_referral_reward' => 'Referral Reward',
+            'o100_loyalty_punch_card_update'=> 'Punch Card Update',
+            'o100_promo_win_back'          => 'Win-back Offer',
+            'o100_promo_campaign'          => 'Mass Campaign',
+        ];
+
+        foreach ( $custom_templates as $tpl_name => $tpl_title ) {
+            if ( ! in_array( $tpl_name, $template_ids, true ) ) {
+                $recipient_type = ( strpos( $tpl_name, 'customer_' ) !== false || strpos( $tpl_name, 'o100_' ) !== false ) ? 'customer' : 'admin';
+                $status = 'inactive';
+                if ( strpos($tpl_name, 'o100_loyalty_') === false && strpos($tpl_name, 'o100_promo_') === false && strpos($tpl_name, 'o100_reservation_') === false ) {
+                    $status = 'active';
+                }
+                $status = apply_filters('o100_email_template_status', $status, $tpl_name);
+
+                $templates[] = [
+                    'id'                    => 0,
+                    'key'                   => 0,
+                    'name'                  => $tpl_name,
+                    'support_status'        => 'already_supported',
+                    'addon_info'            => null,
+                    'template_title'        => $tpl_title,
+                    'status'                => $status,
+                    'recipient'             => '',
+                    'recipient_type'        => $recipient_type,
+                    'additional_recipients' => '',
+                    'source'                => 'Order100 Addon',
+                    'last_updated'          => esc_html__( 'N/A', 'order100' ),
+                ];
+            }
+        }
+
+        return array_values( $templates );
     }
 
-    private static function get_o100ne_template( $email_data ) {
+    private static function get_o100ne_template( $email_data, $include_elements = true ) {
+        if ( empty( $email_data ) || ! is_object( $email_data ) ) {
+            return null;
+        }
+
         /* Template is supported and ready to be edited */
         $template = new O100neTemplate( $email_data->get_id() );
-        if ( ! $template->is_exists() || empty( $email_data ) ) {
+        if ( ! $template->is_exists() ) {
             return null;
         }
 
         $template_data                   = $template->get_data();
-        $template_data['elements']       = $template->get_elements();
+        if ( $include_elements ) {
+            $template_data['elements']       = $template->get_elements();
+        }
         $template_data['key']            = $template_data['id'];
         $template_data['template_title'] = $email_data->get_title();
-        $template_data['status']         = $template_data['status'];
+        $template_data['status']         = $template->get_status();
         $template_data['recipient']      = $email_data->get_recipient();
+        $template_data['recipient_type'] = ( strpos( $email_data->get_id(), 'customer_' ) !== false || strpos( $email_data->get_id(), 'o100_' ) !== false ) ? 'customer' : 'admin';
+        $template_data['additional_recipients'] = get_post_meta( $template_data['id'], '_o100ne_additional_recipients', true ) ?: '';
         $template_data['source']         = $email_data->get_source()['plugin_name'] ?? '';
         $template_data['last_updated']   = isset( get_post( $template_data['id'] )->post_modified ) ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( get_post( $template_data['id'] )->post_modified ) ) : esc_html__( 'N/A', 'order100' );
         return $template_data;
@@ -224,16 +296,18 @@ class TemplateModel {
             : esc_html__( 'N/A', 'order100' );
 
         return [
-            'id'             => $mock_post_id,
-            'key'            => $mock_post_id,
-            'name'           => $template_id,
-            'support_status' => $support_status,
-            'addon_info'     => $support_info['addon'],
-            'template_title' => $template_title,
-            'status'         => 'inactive',
-            'recipient'      => o100ne_get_email_recipient_zone( $wc_email ),
-            'source'         => $source,
-            'last_updated'   => $last_updated,
+            'id'                    => $mock_post_id,
+            'key'                   => $mock_post_id,
+            'name'                  => $template_id,
+            'support_status'        => $support_status,
+            'addon_info'            => $support_info['addon'],
+            'template_title'        => $template_title,
+            'status'                => 'inactive',
+            'recipient'             => o100ne_get_email_recipient_zone( $wc_email ),
+            'recipient_type'        => ( strpos( $template_id, 'customer_' ) !== false || strpos( $template_id, 'o100_' ) !== false ) ? 'customer' : 'admin',
+            'additional_recipients' => '',
+            'source'                => $source,
+            'last_updated'          => $last_updated,
         ];
     }
 
@@ -250,6 +324,13 @@ class TemplateModel {
             ]
         );
         if ( empty( $template_id ) ) {
+            // Fallback for automation templates queried directly by ID
+            if ( is_numeric( $name ) ) {
+                $by_id = self::find_by_id( (int) $name );
+                if ( $by_id ) {
+                    return $by_id;
+                }
+            }
             $support_info = SupportedPlugins::get_instance()->get_support_info( $name );
             return [
                 'support_status' => $support_info['status'] ?? '',
@@ -476,6 +557,7 @@ class TemplateModel {
             $content_text_color       = self::query_meta_data( $template_post_id, self::$meta_keys['content_text_color'], O100neTemplate::DEFAULT_DATA['content_text_color'] );
             $global_header_settings   = self::query_meta_data( $template_post_id, self::$meta_keys['global_header_settings'], O100neTemplate::DEFAULT_DATA['global_header_settings'] );
             $global_footer_settings   = self::query_meta_data( $template_post_id, self::$meta_keys['global_footer_settings'], O100neTemplate::DEFAULT_DATA['global_footer_settings'] );
+            $additional_recipients    = self::query_meta_data( $template_post_id, self::$meta_keys['additional_recipients'], O100neTemplate::DEFAULT_DATA['additional_recipients'] );
         }
 
         // MJML string elements bypass the legacy array filter
@@ -497,8 +579,9 @@ class TemplateModel {
             'support_status'           => $support_info['status'] ?? 'already_supported',
             'addon_info'               => $support_info['addon'] ?? '',
             'post_modified'            => $post_modified,
-            'global_header_settings'   => $global_header_settings,
-            'global_footer_settings'   => $global_footer_settings,
+            'global_header_settings'   => $global_header_settings ?? O100neTemplate::DEFAULT_DATA['global_header_settings'],
+            'global_footer_settings'   => $global_footer_settings ?? O100neTemplate::DEFAULT_DATA['global_footer_settings'],
+            'additional_recipients'    => $additional_recipients ?? O100neTemplate::DEFAULT_DATA['additional_recipients'],
         ];
     }
 
@@ -584,13 +667,3 @@ class TemplateModel {
     }
 }
 
-
-// TS: 20260114173946
-
-// TS: 20260302175556
-
-// TS: 20260308142020
-
-// TS: 20260417174438
-
-// TS: 20260513020951

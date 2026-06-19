@@ -46,7 +46,7 @@ class SettingsPage {
     public function add_o100ne_menu() {
         // Hidden page — no parent menu, accessed via direct URL only
         $this->o100ne_hook_surfix = add_submenu_page(
-            'woocommerce',
+            null,
             __( 'Email Template Editor', 'order100' ),
             __( 'Email Editor', 'order100' ),
             'manage_woocommerce',
@@ -79,10 +79,14 @@ class SettingsPage {
     }
 
     public function admin_enqueue_scripts( $hook_suffix ) {
-        if ( in_array( $hook_suffix, [ $this->o100ne_hook_surfix ], true ) && class_exists( 'WC_Emails' ) ) {
+        file_put_contents('/Users/kevinqi/development/antigravity/puppeteer_test/hook_suffix_debug.log', $hook_suffix . PHP_EOL, FILE_APPEND);
+        wp_add_inline_script('jquery-core', 'console.log("SettingsPage Hook Suffix: ' . esc_js($hook_suffix) . '");');
+
+        if ( in_array( $hook_suffix, [ $this->o100ne_hook_surfix, 'toplevel_page_order100', 'order100_page_o100-notifications', 'admin_page_o100_notifications' ], true ) && function_exists( 'WC' ) ) {
+            // Ensure emails are loaded
+            WC()->mailer();
             do_action( 'o100_before_enqueue_settings_page_scripts' );
-            // Enqueue script here
-            O100neViteApp::get_instance()->enqueue_entry( 'src/main.tsx', [ 'react', 'react-dom', 'wp-i18n' ] );
+            O100neViteApp::get_instance()->enqueue_entry( 'src/main.tsx', [ 'wp-element', 'wp-i18n' ] );
             add_action( 'o100ne_after_enqueue_scripts', [ $this, 'localize_js_vars' ] );
 
             wp_enqueue_media();
@@ -90,337 +94,58 @@ class SettingsPage {
             wp_enqueue_script( 'accounting' );
             do_action( 'o100_after_enqueue_settings_page_scripts' );
 
-            // Runtime shim: force-enable Save button (bypasses hasChanges guard in compiled JS)
-            add_action( 'admin_footer', [ $this, 'inject_save_button_shim' ], 99 );
+            // Runtime shim: Intercept toast to notify parent iframe on save
+            add_action( 'admin_footer', [ $this, 'inject_iframe_toast_hook' ], 99 );
+            
+            if ( $hook_suffix === $this->o100ne_hook_surfix ) {
+                // Disable admin notices to prevent flash/layout shifts in iframe
+                remove_all_actions( 'admin_notices' );
+                remove_all_actions( 'all_admin_notices' );
+                remove_all_actions( 'network_admin_notices' );
 
-            // Ensure WP Media Library modal renders above any remaining overlays
-            add_action( 'admin_head', function() {
-                echo '<style>
-                    .media-modal { z-index: 200000 !important; }
-                    .media-modal-backdrop { z-index: 199999 !important; }
-                </style>';
-            });
+                // Ensure WP Media Library modal renders above any remaining overlays
+                add_action( 'admin_head', function() {
+                    echo '<style>
+                        .media-modal { z-index: 200000 !important; }
+                        .media-modal-backdrop { z-index: 199999 !important; }
+                        /* Hide WordPress Admin UI when in iframe */
+                        html.wp-toolbar { padding-top: 0 !important; }
+                        #wpadminbar, #adminmenumain, #wpfooter, .update-nag, .notice, .error, .updated, .is-dismissible { display: none !important; }
+                        #wpcontent, #wpbody-content { margin-left: 0 !important; padding: 0 !important; }
+                        #wpbody { padding-top: 0 !important; }
+                        /* Hide the internal "Back to Templates" arrow since we have an external close button */
+                        button[title="Back to Templates"] { display: none !important; }
+                    </style>';
+                }, 1 );
+            }
         }
     }
 
     /**
-     * Inject runtime JS to force-enable Save and handle save logic directly.
-     * Uses React Fiber traversal to find GrapesJS editor from component state.
+     * Inject runtime JS to intercept the save toast when running in an iframe (Automation mode)
      */
-    public function inject_save_button_shim() {
+    public function inject_iframe_toast_hook() {
         ?>
         <script>
         (function() {
             'use strict';
-
-            var _gjsEditor = null;
-            var _templateNumericId = null;
-
-            // ── 1. Capture template numeric ID from REST response ──
-            // Wrap the existing fetch (which settings.php already wrapped)
-            var _prevFetch = window.fetch;
-            window.fetch = function(url, options) {
-                var promise = _prevFetch.apply(this, arguments);
-                if (typeof url === 'string' && url.indexOf('get-template-by-name') !== -1) {
-                    promise.then(function(resp) {
-                        return resp.clone().json();
-                    }).then(function(data) {
-                        if (data && data.id) {
-                            _templateNumericId = data.id;
-                            console.log('[Shim] Captured template ID:', _templateNumericId);
+            window.o100ShowToast = function(msg, type) {
+                if (type === 'success' && msg.toLowerCase().indexOf('saved') !== -1) {
+                    if (window.parent && window.parent !== window) {
+                        var m = window.location.hash.match(/#\/editor\/(\d+)/);
+                        var tid = m ? m[1] : null;
+                        if (tid) {
+                            window.parent.postMessage({
+                                type: 'o100_template_saved',
+                                template_id: tid
+                            }, '*');
                         }
-                    }).catch(function(){});
+                    }
                 }
-                return promise;
             };
-
-            // ── 2. Find GrapesJS editor via React Fiber ──
-            function findEditorViaFiber() {
-                if (_gjsEditor) return _gjsEditor;
-
-                var editor = null;
-
-                // Strategy A: Bottom-up from .gjs-editor DOM element
-                editor = findEditorBottomUp();
-                if (editor) {
-                    _gjsEditor = editor;
-                    window.__gjsEditor = editor;
-                    console.log('[Shim] Found editor via Strategy A (bottom-up from .gjs-editor)');
-                    return editor;
-                }
-
-                // Strategy B: Top-down from React root
-                editor = findEditorTopDown();
-                if (editor) {
-                    _gjsEditor = editor;
-                    window.__gjsEditor = editor;
-                    console.log('[Shim] Found editor via Strategy B (top-down from root)');
-                    return editor;
-                }
-
-                return null;
-            }
-
-            // Strategy A: Find .gjs-editor element, walk UP fiber.return chain
-            function findEditorBottomUp() {
-                var gjsEl = document.querySelector('.gjs-editor');
-                if (!gjsEl) return null;
-
-                // Walk up DOM to find nearest React-managed element
-                var el = gjsEl;
-                while (el && el !== document.body) {
-                    var fiberKey = getReactFiberKey(el);
-                    if (fiberKey) {
-                        var fiber = el[fiberKey];
-                        // Walk UP through fiber.return (parent components)
-                        var visited = 0;
-                        while (fiber && visited < 200) {
-                            var result = checkFiberForEditor(fiber);
-                            if (result) return result;
-                            fiber = fiber.return;
-                            visited++;
-                        }
-                    }
-                    el = el.parentElement;
-                }
-                return null;
-            }
-
-            // Strategy B: Top-down from React root
-            function findEditorTopDown() {
-                var root = document.getElementById('o100ne-main-pages');
-                if (!root) return null;
-
-                // Try __reactContainer$ (React 18 createRoot)
-                var containerKey = Object.keys(root).find(function(k) {
-                    return k.startsWith('__reactContainer$');
-                });
-                if (containerKey) {
-                    var containerFiber = root[containerKey];
-                    if (containerFiber) {
-                        // For container, get the stateNode.current (FiberRoot)
-                        var fiberRoot = containerFiber.stateNode;
-                        if (fiberRoot && fiberRoot.current) {
-                            var result = traverseFiberDown(fiberRoot.current, 0);
-                            if (result) return result;
-                        }
-                        // Also try traversing directly from the container fiber
-                        var result2 = traverseFiberDown(containerFiber, 0);
-                        if (result2) return result2;
-                    }
-                }
-
-                // Try __reactFiber$ (standard)
-                var fiberKey = getReactFiberKey(root);
-                if (fiberKey) {
-                    return traverseFiberDown(root[fiberKey], 0);
-                }
-
-                // Try first child elements
-                for (var i = 0; i < root.children.length && i < 5; i++) {
-                    var childKey = getReactFiberKey(root.children[i]);
-                    if (childKey) {
-                        var r = traverseFiberDown(root.children[i][childKey], 0);
-                        if (r) return r;
-                    }
-                }
-
-                return null;
-            }
-
-            function getReactFiberKey(el) {
-                return Object.keys(el).find(function(k) {
-                    return k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$');
-                }) || null;
-            }
-
-            function traverseFiberDown(fiber, depth) {
-                if (!fiber || depth > 150) return null;
-                var result = checkFiberForEditor(fiber);
-                if (result) return result;
-                return traverseFiberDown(fiber.child, depth + 1) || traverseFiberDown(fiber.sibling, depth + 1);
-            }
-
-            function checkFiberForEditor(fiber) {
-                if (!fiber || !fiber.memoizedState) return null;
-                var hookNode = fiber.memoizedState;
-                var hookCount = 0;
-                while (hookNode && hookCount < 50) {
-                    // useState: value in hookNode.memoizedState
-                    if (isGjsEditor(hookNode.memoizedState)) return hookNode.memoizedState;
-                    // useRef: value in hookNode.memoizedState.current
-                    if (hookNode.memoizedState && typeof hookNode.memoizedState === 'object' &&
-                        hookNode.memoizedState.current && isGjsEditor(hookNode.memoizedState.current)) {
-                        return hookNode.memoizedState.current;
-                    }
-                    // queue.lastRenderedState
-                    if (hookNode.queue && isGjsEditor(hookNode.queue.lastRenderedState)) {
-                        return hookNode.queue.lastRenderedState;
-                    }
-                    hookNode = hookNode.next;
-                    hookCount++;
-                }
-                return null;
-            }
-
-            function isGjsEditor(obj) {
-                if (obj === null || obj === undefined || typeof obj !== 'object') return false;
-                try {
-                    return typeof obj.runCommand === 'function' &&
-                           typeof obj.getHtml === 'function' &&
-                           typeof obj.getWrapper === 'function';
-                } catch(e) { return false; }
-            }
-
-            // ── 3. Save function ──
-            function doSaveTemplate() {
-                // Always re-find editor (React may have re-rendered on route change)
-                _gjsEditor = null;
-                findEditorViaFiber();
-                // Also try global reference set by Editor.tsx
-                if (!_gjsEditor && window.__gjsEditor) _gjsEditor = window.__gjsEditor;
-
-                if (!_gjsEditor) {
-                    alert('Editor not ready. Please wait for the template to fully load, then try again.');
-                    return;
-                }
-                if (!_templateNumericId) {
-                    alert('Template ID not found. Please reload the page.');
-                    return;
-                }
-
-                var restPath = (window.o100neData || {}).rest_path || {};
-                if (!restPath.root || !restPath.base) {
-                    alert('REST API config missing.');
-                    return;
-                }
-
-                // Extract MJML from GrapesJS
-                var mjmlResult, mjml, mjmlHtml;
-                // Inject conditional data into css-class so it survives MJML compilation
-                var allComps = [];
-                var walk = function(comp) {
-                    allComps.push(comp);
-                    comp.components().forEach(walk);
-                };
-                walk(_gjsEditor.DomComponents.getWrapper());
-                
-                var condFound = 0;
-                allComps.forEach(function(comp) {
-                    var attrs = comp.getAttributes();
-                    var f = attrs['data-condition-field'] || '';
-                    var o = attrs['data-condition-operator'] || '';
-                    var v = attrs['data-condition-value'] || '';
-                    if (f) {
-                        condFound++;
-                        var css = attrs['css-class'] || '';
-                        css = css.replace(/cond_o100_[^\s]+/g, '').trim();
-                        var jsonStr = JSON.stringify({f: f, o: o, v: v});
-                        // Base64URL encoding
-                        var base64 = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, function(m, p1) { return String.fromCharCode('0x' + p1); })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                        css += ' cond_o100_' + base64;
-                        comp.addAttributes({ 'css-class': css.trim() });
-                        console.log('[Shim] Injected cond for', f, o, v, '→ css-class:', css.trim());
-                    }
-                });
-                console.log('[Shim] Total conditional sections found:', condFound);
-
-                try {
-                    window.isExporting = true;
-                    mjmlResult = _gjsEditor.runCommand('mjml-get-code');
-                    window.isExporting = false;
-                    mjml = mjmlResult ? mjmlResult.mjml : null;
-                    mjmlHtml = mjmlResult ? mjmlResult.html : null;
-                } catch(ex) {
-                    window.isExporting = false;
-                    console.error('[Shim] mjml-get-code error:', ex);
-                }
-
-                if (!mjml) {
-                    try { mjml = _gjsEditor.getHtml(); } catch(e2) {}
-                }
-                if (!mjmlHtml) {
-                    mjmlHtml = mjml;
-                }
-                if (!mjml) {
-                    alert('Could not extract template content.');
-                    return;
-                }
-
-                // Verify cond_o100_ survived compilation
-                var condInMjml = (mjml.match(/cond_o100_/g) || []).length;
-                var condInHtml = (mjmlHtml.match(/cond_o100_/g) || []).length;
-                console.log('[Shim] cond_o100_ in MJML:', condInMjml, '| in compiled HTML:', condInHtml);
-                console.log('[Shim] Saving template ID', _templateNumericId, 'MJML length:', mjml.length, 'HTML length:', mjmlHtml.length);
-
-                var saveBtn = document.getElementById('o100ne-shim-save-btn');
-                if (saveBtn) { saveBtn.textContent = 'Saving...'; saveBtn.disabled = true; }
-
-                // Use XMLHttpRequest to avoid fetch-wrapper conflicts
-                var xhr = new XMLHttpRequest();
-                var url = restPath.root + restPath.base + '/templates/' + _templateNumericId;
-                xhr.open('PUT', url, true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.setRequestHeader('X-WP-Nonce', restPath.nonce);
-                xhr.onload = function() {
-                    var resp;
-                    try { resp = JSON.parse(xhr.responseText); } catch(e) { resp = xhr.responseText; }
-                    console.log('[Shim] Save response:', resp);
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        if (saveBtn) {
-                            saveBtn.textContent = '\u2713 Saved';
-                            saveBtn.style.background = '#22c55e';
-                            setTimeout(function() {
-                                saveBtn.textContent = 'Save';
-                                saveBtn.style.background = '#6A4BFF';
-                                saveBtn.disabled = false;
-                            }, 2000);
-                        }
-                    } else {
-                        alert('Save failed (HTTP ' + xhr.status + '): ' + xhr.responseText.substring(0, 200));
-                        if (saveBtn) { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }
-                    }
-                };
-                xhr.onerror = function() {
-                    alert('Save network error');
-                    if (saveBtn) { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }
-                };
-                xhr.send(JSON.stringify({
-                    data: {
-                        template_id: String(_templateNumericId),
-                        template_elements: mjml,
-                        template_html: mjmlHtml,
-                        template_elements_type: 'mjml'
-                    }
-                }));
-            }
-
-            // ── 4. Inject our Save button & hide React's broken one ──
+            
+            // Preview modal: wire up header icons & hide "Device" toggle
             var observer = new MutationObserver(function() {
-                // Periodically try to find editor via fiber
-                if (!_gjsEditor) findEditorViaFiber();
-
-                var icons = document.querySelectorAll('.dashicons-saved');
-                icons.forEach(function(icon) {
-                    var reactBtn = icon.closest('button');
-                    if (reactBtn && !reactBtn.dataset.shimHidden) {
-                        reactBtn.dataset.shimHidden = 'true';
-                        reactBtn.style.display = 'none';
-
-                        var shimBtn = document.createElement('button');
-                        shimBtn.id = 'o100ne-shim-save-btn';
-                        shimBtn.textContent = 'Save';
-                        shimBtn.style.cssText = 'background:#6A4BFF;color:#fff;border:none;padding:8px 24px;border-radius:4px;cursor:pointer;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;';
-                        shimBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            doSaveTemplate();
-                        });
-                        reactBtn.parentNode.insertBefore(shimBtn, reactBtn);
-                    }
-                });
-
-                // ── 5. Preview modal: wire up header icons & hide "Device" toggle ──
                 try {
                     var previewH2s = document.querySelectorAll('h2');
                     previewH2s.forEach(function(h2) {
@@ -616,33 +341,29 @@ class SettingsPage {
     /**
      * Register localize data
      */
-    public function localize_js_vars() {
+    public function localize_js_vars() { error_log("localize_js_vars CALLED!"); wp_add_inline_script("module/o100ne/src/main.tsx", "var o100neData = {test: 123};", "before"); 
 
-        $_wc_emails = wc()->mailer()->emails;
-
-        // override template base for wc emails
-        foreach ( $_wc_emails as $email ) {
-            $reflector            = new \ReflectionClass( $email );
-            $email->template_base = $reflector->getFileName();
-            unset( $reflector );
-        }
-
+        $all_templates_data = class_exists( '\Order100\Notification\Engine\Models\TemplateModel' ) 
+            ? \Order100\Notification\Engine\Models\TemplateModel::find_all() 
+            : [];
+            
         $_wc_emails = array_map(
-            function( $email ) {
+            function( $tpl ) {
                 return (object) [
-                    'id'               => $email->id,
-                    'title'            => $email->title,
-                    'enabled'          => $email->enabled,
-                    'description'      => $email->description,
-                    'template_base'    => $email->template_base,
-                    'recipient'        => $email->recipient,
-                    'content_type'     => $email->get_content_type(),
-                    'setting_page_url' => Helpers::o100ne_get_url_email_setting_page( $email->id ),
+                    'id'               => $tpl['name'],
+                    'title'            => $tpl['template_title'],
+                    'enabled'          => $tpl['status'] === 'active' ? 'yes' : 'no',
+                    'description'      => '',
+                    'template_base'    => '',
+                    'recipient'        => $tpl['recipient_type'] === 'admin' ? 'admin@store.com' : 'customer@email.com',
+                    'content_type'     => 'text/html',
+                    'setting_page_url' => '',
                 ];
             },
-            $_wc_emails
+            $all_templates_data
         );
 
+        error_log('LOCALIZE JS VARS DATA DUMP: ' . print_r([ 'is_rtl' => is_rtl(), 'wc_emails' => $_wc_emails ], true));
         wp_localize_script(
             'module/o100ne/src/main.tsx',
             'o100neData',
@@ -655,6 +376,7 @@ class SettingsPage {
                         'home_url'               => home_url(),
                         'wc_placeholder_img_src' => function_exists( 'wc_placeholder_img_src' ) ? wc_placeholder_img_src() : '',
                         'media_picker_url'       => O100NE_PLUGIN_URL . 'media-picker.php',
+                        'store_logo_url'         => \Order100\Notification\Engine\Shortcodes\CommonShortcodes::get_instance()->o100ne_store_logo_url([]),
                     ],
                     'admin_ajax'                     => [
                         'url'   => admin_url( 'admin-ajax.php' ),
@@ -712,6 +434,8 @@ class SettingsPage {
                     'ghf_tour'                       => get_option( 'o100_ghf_tour', 'initial' ),
                     'test_email_address'             => get_option( 'o100_default_email_test', wp_get_current_user()->user_email ),
                     'site_title'                     => get_option( 'blogname' ),
+                    'site_name'                      => get_option( 'blogname' ),
+                    'store_profile'                  => get_option( 'o100_store_profile', [] ),
                     'wc_emails'                      => $_wc_emails,
                     'is_critical_migration_required' => false,
                     'supported_plugins'              => SupportedPlugins::get_instance()->get_slug_name_supported_plugins(),
@@ -730,7 +454,7 @@ class SettingsPage {
      * @return string
      */
     public static function get_editor_url( $template_id = '' ) {
-        $url = admin_url( 'admin.php?page=' . O100NE_PREFIX . '-settings' );
+        $url = admin_url( 'admin.php?page=o100-notifications' );
         if ( ! empty( $template_id ) ) {
             $url .= '#/editor/' . urlencode( $template_id );
         }
@@ -742,7 +466,7 @@ class SettingsPage {
             return;
         }
         $screen = get_current_screen();
-        if ( $this->o100ne_hook_surfix === $screen->id ) {
+        if ( in_array( $screen->id, [ $this->o100ne_hook_surfix, 'order100_page_o100-settings', 'toplevel_page_order100', 'order100_page_o100-notifications', 'admin_page_o100_notifications' ], true ) ) {
             wp_dequeue_style( 'real-media-library-lite-rml' );
             wp_dequeue_script( 'real-media-library-lite-rml' );
             wp_dequeue_style( 'real-media-library-rml' );
@@ -753,7 +477,3 @@ class SettingsPage {
 }
 
 
-
-// TS: 20260125161943
-
-// TS: 20260208175239

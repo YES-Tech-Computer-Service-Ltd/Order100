@@ -53,9 +53,38 @@ class O100_Loyalty_Engine {
 		$campaigns = O100_Loyalty_DB::get_active_campaigns();
 		$total_earned = 0;
 
+		// --- Advanced CRM Rules Engine: Points Multiplier ---
+		$points_multiplier = 1;
+		if ( class_exists( 'O100_Privilege_Manager' ) ) {
+			$loc_id = $order->get_meta( '_o100_branch' );
+			$order_type = $order->get_meta( '_o100_order_method' );
+			if ( ! $order_type ) $order_type = 'delivery';
+			
+			$order_time = $order->get_date_created() ? $order->get_date_created()->getOffsetTimestamp() : current_time( 'timestamp' );
+			$context = array(
+				'branch'     => $loc_id ? intval( $loc_id ) : null,
+				'order_type' => $order_type,
+				'subtotal'   => $order->get_subtotal(),
+				'timestamp'  => $order_time,
+			);
+			
+			// We can use $user_id or $email as identifier
+			$identifier = $user_id ? $user_id : $email;
+			$multiplier = O100_Privilege_Manager::get_privilege( $identifier, 'loyalty', 'points_multiplier', $context );
+			
+			if ( is_numeric( $multiplier ) && floatval( $multiplier ) > 0 ) {
+				$points_multiplier = floatval( $multiplier );
+			}
+		}
+
 		foreach ( $campaigns as $campaign ) {
 			$points = $this->calculate_campaign_points( $campaign, $order, $settings );
 			if ( $points > 0 ) {
+				if ( $points_multiplier != 1 ) {
+					// Apply multiplier and round up
+					$points = (int) ceil( $points * $points_multiplier );
+				}
+
 				O100_Loyalty_DB::add_points(
 					$account->id,
 					$points,
@@ -128,7 +157,7 @@ class O100_Loyalty_Engine {
 	/**
 	 * Calculate how many points a campaign awards for this order.
 	 */
-	private function calculate_campaign_points( $campaign, $order, $settings ) {
+	public function calculate_campaign_points( $campaign, $order, $settings ) {
 		// Handle Native Payload vs Legacy Payload
 		$earn_config = isset($campaign->earn_config) ? json_decode( $campaign->earn_config, true ) : [];
 		$ui_json = isset($campaign->ui_json) ? json_decode( $campaign->ui_json, true ) : [];
@@ -145,13 +174,19 @@ class O100_Loyalty_Engine {
 		// Check conditions
 		if ( ! $this->evaluate_conditions( $campaign, $order ) ) return 0;
 
-		$subtotal = (float) $order->get_subtotal();
-		$earn_after = $settings['earn_after_discount'] ?? 'yes';
-		if ( $earn_after === 'yes' ) {
-			$subtotal -= (float) $order->get_total_discount();
+		$basis = $settings['calculation_basis'] ?? 'subtotal';
+		if ( $basis === 'total' ) {
+			$subtotal = (float) $order->get_total();
+		} else {
+			$subtotal = (float) $order->get_subtotal();
+			$earn_after = $settings['earn_after_discount'] ?? 'yes';
+			if ( $earn_after === 'yes' ) {
+				$subtotal -= (float) $order->get_total_discount();
+			}
 		}
 
 		switch ( $campaign->type ) {
+			case 'points':
 			case 'points_per_dollar':
 			case 'points_for_purchase':
 			case 'point_for_purchase':
@@ -203,8 +238,8 @@ class O100_Loyalty_Engine {
 				return 0;
 
 			default:
-				// Generic fixed-point campaigns (referral, review, etc.)
-				return (int) ( $earn_config['earn_point'] ?? 0 );
+				// Ensure unknown or automation campaigns don't accidentally award points per order
+				return 0;
 		}
 	}
 
@@ -342,6 +377,34 @@ class O100_Loyalty_Engine {
 				if ($op === 'not_in_list') $op = 'not_in';
 
 				$intersect = array_intersect($target_roles, $roles);
+				if ($op === 'in') return count($intersect) > 0;
+				if ($op === 'not_in') return count($intersect) === 0;
+				return false;
+			case 'customer_tag':
+				$user_id = $is_cart ? get_current_user_id() : $order->get_user_id();
+				if (!$user_id) return false;
+				if (!class_exists('O100_Customers_DB')) return false;
+				global $wpdb;
+				$tbl = O100_Customers_DB::get_table_customers();
+				$cid = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tbl} WHERE wp_user_id = %d", $user_id ) );
+				if (!$cid) return false;
+				$tags = wp_list_pluck( O100_Customers_DB::get_customer_tags( $cid ), 'id' );
+				$targets = array_map('intval', explode(',', $val));
+				$intersect = array_intersect($targets, $tags);
+				if ($op === 'in') return count($intersect) > 0;
+				if ($op === 'not_in') return count($intersect) === 0;
+				return false;
+			case 'customer_list':
+				$user_id = $is_cart ? get_current_user_id() : $order->get_user_id();
+				if (!$user_id) return false;
+				if (!class_exists('O100_Customers_DB')) return false;
+				global $wpdb;
+				$tbl = O100_Customers_DB::get_table_customers();
+				$cid = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tbl} WHERE wp_user_id = %d", $user_id ) );
+				if (!$cid) return false;
+				$lists = wp_list_pluck( O100_Customers_DB::get_customer_lists( $cid ), 'id' );
+				$targets = array_map('intval', explode(',', $val));
+				$intersect = array_intersect($targets, $lists);
 				if ($op === 'in') return count($intersect) > 0;
 				if ($op === 'not_in') return count($intersect) === 0;
 				return false;
@@ -592,6 +655,8 @@ class O100_Loyalty_Engine {
 		$progress = O100_Loyalty_DB::get_punch_progress( $account->id, $campaign->id );
 		if ( $progress && $progress->stamps >= $required ) {
 			$this->auto_redeem_punch_card( $account->id, $campaign, $progress, $required, $reward_cfg );
+		} elseif ( $progress && $account->user_id ) {
+			do_action( 'o100_loyalty_punch_card_updated', $account->user_id, $qualifying_qty, $progress->stamps, $required );
 		}
 	}
 
@@ -630,6 +695,12 @@ class O100_Loyalty_Engine {
 			);
 
 			do_action( 'o100_loyalty_punch_card_redeemed', $account_id, $campaign->id, $promo_id, $code );
+
+			// Trigger the reward issued email
+			$account = O100_Loyalty_DB::get_account( $account_id );
+			if ( $account && $account->user_id ) {
+				do_action( 'o100_loyalty_auto_reward_issued', $account->user_id, $campaign->id, $code, $promo_id, $campaign );
+			}
 		}
 	}
 
@@ -852,7 +923,51 @@ class O100_Loyalty_Engine {
 	}
 
 	/**
-	 * Calculate how many points the current cart would earn.
+	 * Calculate total prospective points for an order.
+	 */
+	public function calculate_order_points( $order ) {
+		if ( ! $order ) return 0;
+		$settings = O100_Loyalty_DB::get_settings();
+		$campaigns = O100_Loyalty_DB::get_active_campaigns();
+		$total_earned = 0;
+		
+		$points_multiplier = 1;
+		if ( class_exists( 'O100_Privilege_Manager' ) ) {
+			$loc_id = $order->get_meta( '_o100_branch' );
+			$order_type = $order->get_meta( '_o100_order_method' ) ?: 'delivery';
+			$order_time = $order->get_date_created() ? $order->get_date_created()->getOffsetTimestamp() : current_time( 'timestamp' );
+			$context = array(
+				'branch'     => $loc_id ? intval( $loc_id ) : null,
+				'order_type' => $order_type,
+				'subtotal'   => $order->get_subtotal(),
+				'timestamp'  => $order_time,
+			);
+			$user_id = $order->get_user_id();
+			$email = $order->get_billing_email();
+			$identifier = $user_id ? $user_id : $email;
+			$multiplier = O100_Privilege_Manager::get_privilege( $identifier, 'loyalty', 'points_multiplier', $context );
+			if ( is_numeric( $multiplier ) && floatval( $multiplier ) > 0 ) {
+				$points_multiplier = floatval( $multiplier );
+			}
+		}
+
+		foreach ( $campaigns as $campaign ) {
+			$points = $this->calculate_campaign_points( $campaign, $order, $settings );
+			if ( $points > 0 ) {
+				if ( $points_multiplier != 1 ) {
+					$points = (int) ceil( $points * $points_multiplier );
+				}
+				$total_earned += $points;
+			}
+		}
+
+		// Calculate order bonuses as well if possible, or skip for simplicity (cart and bonuses are complex)
+		// For the thank you page, this gives an accurate projection of the main earn campaigns.
+		return $total_earned;
+	}
+
+	/**
+	 * Calculate points for the current cart.
 	 */
 	public function calculate_cart_points() {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart ) return 0;
@@ -861,10 +976,15 @@ class O100_Loyalty_Engine {
 		if ( empty( $campaigns ) ) return 0;
 
 		$settings = O100_Loyalty_DB::get_settings();
-		$subtotal = (float) WC()->cart->get_subtotal();
-		$earn_after = $settings['earn_after_discount'] ?? 'yes';
-		if ( $earn_after === 'yes' ) {
-			$subtotal -= (float) WC()->cart->get_discount_total();
+		$basis = $settings['calculation_basis'] ?? 'subtotal';
+		if ( $basis === 'total' ) {
+			$subtotal = (float) WC()->cart->get_total('');
+		} else {
+			$subtotal = (float) WC()->cart->get_subtotal();
+			$earn_after = $settings['earn_after_discount'] ?? 'yes';
+			if ( $earn_after === 'yes' ) {
+				$subtotal -= (float) WC()->cart->get_discount_total();
+			}
 		}
 
 		$total_points = 0;
@@ -886,7 +1006,7 @@ class O100_Loyalty_Engine {
 			$earn_config = isset($campaign->earn_config) ? json_decode( $campaign->earn_config, true ) : [];
 			$ui_json = isset($campaign->ui_json) ? json_decode( $campaign->ui_json, true ) : [];
 
-			if ( $campaign->type === 'points_per_dollar' || $campaign->type === 'points_for_purchase' ) {
+			if ( $campaign->type === 'points' || $campaign->type === 'points_per_dollar' || $campaign->type === 'points_for_purchase' || $campaign->type === 'point_for_purchase' ) {
 				$pts = (float) ( $ui_json['earn_point'] ?? ( $earn_config['earn_point'] ?? 1 ) );
 				$per = (float) ( $ui_json['point_earn_price'] ?? ( $earn_config['wlr_point_earn_price'] ?? 1 ) );
 				if ( $per <= 0 ) $per = 1;
@@ -901,6 +1021,44 @@ class O100_Loyalty_Engine {
 					$total_points += (int) $campaign->reward_value;
 				}
 			}
+		}
+
+		// --- Advanced CRM Rules Engine: Points Multiplier ---
+		$points_multiplier = 1;
+		if ( class_exists( 'O100_Privilege_Manager' ) && function_exists( 'WC' ) && WC()->session ) {
+			$loc_id = WC()->session->get( '_o100_branch_id' );
+			$order_type = WC()->session->get( '_o100_order_method' );
+			if ( ! $order_type ) $order_type = 'delivery';
+			
+			$context = array(
+				'branch'     => $loc_id ? intval( $loc_id ) : null,
+				'order_type' => $order_type,
+				'subtotal'   => $subtotal,
+				'timestamp'  => current_time( 'timestamp' ),
+			);
+			
+			$identifier = get_current_user_id();
+			if ( ! $identifier && function_exists('WC') && WC()->checkout() ) {
+				$email = WC()->checkout()->get_value('billing_email');
+				if ( ! $email && isset($_POST['post_data']) ) {
+					parse_str($_POST['post_data'], $post_data);
+					$email = $post_data['billing_email'] ?? '';
+				}
+				if ( $email ) {
+					$identifier = $email;
+				}
+			}
+
+			if ( $identifier ) {
+				$multiplier = O100_Privilege_Manager::get_privilege( $identifier, 'loyalty', 'points_multiplier', $context );
+				if ( is_numeric( $multiplier ) && floatval( $multiplier ) > 0 ) {
+					$points_multiplier = floatval( $multiplier );
+				}
+			}
+		}
+
+		if ( $points_multiplier != 1 && $total_points > 0 ) {
+			$total_points = (float) ( $total_points * $points_multiplier );
 		}
 
 		return $this->round_points( $total_points, $settings );
@@ -1037,7 +1195,7 @@ class O100_Loyalty_Engine {
 			$earn_config = isset($campaign->earn_config) ? json_decode( $campaign->earn_config, true ) : [];
 			$ui_json = isset($campaign->ui_json) ? json_decode( $campaign->ui_json, true ) : [];
 
-			if ( $campaign->type === 'points_per_dollar' || $campaign->type === 'points_for_purchase' ) {
+			if ( $campaign->type === 'points' || $campaign->type === 'points_per_dollar' || $campaign->type === 'points_for_purchase' || $campaign->type === 'point_for_purchase' ) {
 				$pts = (float) ( $ui_json['earn_point'] ?? ( $earn_config['earn_point'] ?? 1 ) );
 				$per = (float) ( $ui_json['point_earn_price'] ?? ( $earn_config['wlr_point_earn_price'] ?? 1 ) );
 				if ( $per <= 0 ) $per = 1;
@@ -1049,6 +1207,23 @@ class O100_Loyalty_Engine {
 				$total_min += $pts;
 				$total_max += $pts;
 			}
+		}
+
+		// Apply VIP multiplier for product display
+		$multiplier = 1;
+		if ( is_user_logged_in() ) {
+			$user_id = get_current_user_id();
+			$tags = get_user_meta( $user_id, 'o100_customer_tags', true );
+			$context = [ 'customer_tags' => is_array($tags) ? $tags : [] ];
+			$mult = O100_Privilege_Manager::get_privilege( $user_id, 'loyalty', 'points_multiplier', $context );
+			if ( is_numeric($mult) && floatval($mult) > 0 ) {
+				$multiplier = floatval($mult);
+			}
+		}
+
+		if ( $multiplier != 1 ) {
+			$total_min = $total_min * $multiplier;
+			$total_max = $total_max * $multiplier;
 		}
 
 		if ( $total_max <= 0 ) return false;
@@ -1276,11 +1451,3 @@ class O100_Loyalty_Engine {
 	}
 }
 
-
-// TS: 20260327023136
-
-// TS: 20260417174438
-
-// TS: 20260519122109
-
-// TS: 20260521164429
