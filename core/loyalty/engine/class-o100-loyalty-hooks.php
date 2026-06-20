@@ -27,6 +27,9 @@ class O100_Loyalty_Hooks {
 	public function init() {
 		$settings = O100_Loyalty_DB::get_settings();
 
+		// ─── Product Impact Registry (Insights) ───────────────
+		add_filter( 'o100_get_product_impacts', [ $this, 'get_product_impacts' ], 10, 3 );
+
 		// ─── Order-based point earning ─────────────────────────
 		$earn_statuses = $settings['earning_statuses'] ?? [ 'processing', 'completed' ];
 		foreach ( (array) $earn_statuses as $status ) {
@@ -50,9 +53,7 @@ class O100_Loyalty_Hooks {
 			wp_schedule_event( strtotime( 'today 00:05' ), 'daily', 'o100_loyalty_daily_cron' );
 		}
 
-		// ─── Birthday AJAX ─────────────────────────────────────
-		add_action( 'wp_ajax_o100_save_birthday', [ $this, 'ajax_save_birthday' ] );
-		add_action( 'wp_ajax_nopriv_o100_save_birthday', [ $this, 'ajax_save_birthday' ] );
+
 
 		// ─── Referral tracking ─────────────────────────────────
 		add_action( 'init', [ $this, 'capture_referral_code' ] );
@@ -62,13 +63,10 @@ class O100_Loyalty_Hooks {
 		add_action( 'comment_post', [ $this, 'on_comment_post' ], 20, 3 );
 		add_action( 'comment_unapproved_to_approved', [ $this, 'on_comment_approved' ], 20, 1 );
 
-		// ─── Social Share AJAX ──────────────────────────────────
-		add_action( 'wp_ajax_o100_loyalty_social_share', [ $this, 'ajax_social_share' ] );
-
 		// ─── Frontend display messages ─────────────────────────
-		add_action( 'woocommerce_before_add_to_cart_form', [ $this, 'display_product_earn_message' ] );
-		add_action( 'woocommerce_before_cart', [ $this, 'display_cart_earn_message' ] );
-		// Removed: add_action( 'woocommerce_before_checkout_form', [ $this, 'display_checkout_earn_message' ] ); // Now integrated into O100 Promotions Dashboard
+		// add_action( 'woocommerce_before_add_to_cart_form', [ $this, 'display_product_earn_message' ] );
+		// add_action( 'woocommerce_before_cart', [ $this, 'display_cart_earn_message' ] );
+		// add_action( 'woocommerce_before_checkout_form', [ $this, 'display_checkout_earn_message' ] );
 		add_action( 'woocommerce_thankyou', [ $this, 'display_thankyou_message' ], 5, 1 );
 
 		// ─── WooCommerce My Account ────────────────────────────
@@ -108,73 +106,6 @@ class O100_Loyalty_Hooks {
 	public function on_comment_approved( $comment ) {
 		O100_Loyalty_Engine::instance()->process_review_approved( $comment );
 	}
-
-	// ─── Social Share AJAX ───────────────────────────────────────
-
-	public function ajax_social_share() {
-		check_ajax_referer( 'o100_loyalty_social_share', 'nonce' );
-
-		if ( ! is_user_logged_in() ) {
-			wp_send_json_error( [ 'message' => 'Not logged in' ] );
-		}
-
-		$channel    = sanitize_text_field( $_POST['channel'] ?? '' );
-		$shared_url = esc_url_raw( $_POST['shared_url'] ?? '' );
-
-		if ( ! in_array( $channel, [ 'facebook', 'twitter', 'whatsapp', 'email' ], true ) ) {
-			wp_send_json_error( [ 'message' => 'Invalid channel' ] );
-		}
-
-		$result = O100_Loyalty_Engine::instance()->process_social_share_earn(
-			get_current_user_id(), $channel, $shared_url
-		);
-
-		if ( $result['status'] === 'success' ) {
-			wp_send_json_success( $result );
-		} else {
-			wp_send_json_error( $result );
-		}
-	}
-
-	// ─── Birthday AJAX ─────────────────────────────────────────
-
-	public function ajax_save_birthday() {
-		if ( ! is_user_logged_in() ) {
-			wp_send_json_error( 'Not logged in' );
-		}
-
-		$date = isset( $_POST['birthday'] ) ? sanitize_text_field( $_POST['birthday'] ) : '';
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
-			wp_send_json_error( 'Invalid date format' );
-		}
-
-		$account = O100_Loyalty_DB::get_account_by_user( get_current_user_id() );
-		if ( ! $account ) {
-			$account = O100_Loyalty_DB::get_or_create_account( get_current_user_id() );
-		}
-		if ( ! $account ) {
-			wp_send_json_error( 'Account error' );
-		}
-
-		$force = isset( $_POST['force'] ) && $_POST['force'] === '1';
-
-		// If existing birthday and not forcing, ask confirmation
-		if ( $account->birthday && $account->birthday !== $date && ! $force ) {
-			wp_send_json_success( [
-				'status'  => 'confirm',
-				'message' => 'Are you sure you want to change your birthday? Points are awarded once per year.',
-			] );
-		}
-
-		$result = O100_Loyalty_Engine::instance()->save_birthday( $account->id, $date );
-		
-		update_user_meta( get_current_user_id(), 'wlr_birthday_date', $date );
-		update_user_meta( get_current_user_id(), 'wlr_birth_date', $date );
-		update_user_meta( get_current_user_id(), 'o100_birthday', $date );
-		
-		wp_send_json_success( $result );
-	}
-
 	// ─── Referral Tracking ─────────────────────────────────────
 
 	/**
@@ -292,28 +223,13 @@ class O100_Loyalty_Hooks {
 		$settings = O100_Loyalty_DB::get_settings();
 		if ( ( $settings['product_message_enable'] ?? 'yes' ) !== 'yes' ) return;
 
-		$campaigns = O100_Loyalty_DB::get_active_campaigns( 'point_for_purchase' );
-		if ( empty( $campaigns ) ) {
-			$campaigns = O100_Loyalty_DB::get_active_campaigns( 'points_per_dollar' );
-		}
-		if ( empty( $campaigns ) ) return;
-
 		global $product;
 		if ( ! $product ) return;
 
-		$price = (float) $product->get_price();
-		if ( $price <= 0 ) return;
+		$calc = O100_Loyalty_Engine::instance()->calculate_product_points( $product );
+		if ( ! $calc || empty($calc['max']) ) return;
 
-		$total_points = 0;
-		foreach ( $campaigns as $camp ) {
-			$config = json_decode( $camp->earn_config, true );
-			$pts = (float) ( $config['earn_point'] ?? 1 );
-			$per = (float) ( $config['wlr_point_earn_price'] ?? 1 );
-			if ( $per <= 0 ) $per = 1;
-			$total_points += ( $price / $per ) * $pts;
-		}
-
-		$total_points = (int) round( $total_points );
+		$total_points = (int) round( $calc['max'] );
 		if ( $total_points <= 0 ) return;
 
 		$label = $settings['point_label_plural'] ?? 'Points';
@@ -383,11 +299,21 @@ class O100_Loyalty_Hooks {
 		if ( ! $order ) return;
 
 		$earned = (int) $order->get_meta( '_o100_loyalty_points_earned' );
+		if ( $earned <= 0 ) {
+			// Calculate projected points
+			$earned = O100_Loyalty_Engine::instance()->calculate_order_points( $order );
+		}
+		
 		if ( $earned <= 0 ) return;
 
 		$user_id = $order->get_user_id();
 		$account = $user_id ? O100_Loyalty_DB::get_account_by_user( $user_id ) : null;
 		$total   = $account ? $account->points_balance : $earned;
+
+		// If points weren't officially awarded yet, total is balance + projected earned
+		if ( ! $order->get_meta( '_o100_loyalty_points_earned' ) && $account ) {
+			$total += $earned;
+		}
 
 		$engine = O100_Loyalty_Engine::instance();
 		$msg = $settings['thankyou_message'] ?? 'You earned {o100_earned_points} {o100_points_label} for this order!';
@@ -401,10 +327,65 @@ class O100_Loyalty_Hooks {
 			wp_kses_post( $msg )
 		);
 	}
+
+	// ─── Product Impact Registry (Insights) ────────────────────
+
+	public function get_product_impacts( $impacts, $product_id, $category_ids ) {
+		if ( ! class_exists( 'O100_Loyalty_DB' ) || ! class_exists( 'O100_Loyalty_Engine' ) ) return $impacts;
+
+		$campaigns = O100_Loyalty_DB::get_active_campaigns();
+		if ( empty( $campaigns ) ) return $impacts;
+
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) return $impacts;
+
+		$engine = O100_Loyalty_Engine::instance();
+
+		foreach ( $campaigns as $camp ) {
+			if ( $engine->evaluate_product_conditions( $camp, $product ) ) {
+				$title = !empty( $camp->title ) ? $camp->title : 'Loyalty Rule';
+				
+				$earn_config = isset($camp->earn_config) ? json_decode( $camp->earn_config, true ) : [];
+				$ui_json = isset($camp->ui_json) ? json_decode( $camp->ui_json, true ) : [];
+				$pts = (float) ( $ui_json['earn_point'] ?? ( $earn_config['earn_point'] ?? 1 ) );
+				$per = (float) ( $ui_json['point_earn_price'] ?? ( $earn_config['wlr_point_earn_price'] ?? 1 ) );
+
+				if ( $camp->type === 'point_for_purchase' || $camp->type === 'points_per_item' ) {
+					$desc = sprintf( 'Earn %s points per item.', $pts );
+				} elseif ( $camp->type === 'points_per_dollar' ) {
+					$desc = sprintf( 'Earn %s points for every $%s spent.', $pts, $per );
+				} elseif ( $camp->type === 'product_review' ) {
+					$desc = sprintf( 'Earn %s points for writing a review.', $pts );
+				} else {
+					$desc = ucfirst( str_replace( '_', ' ', $camp->type ) ) . ' program.';
+					if ( class_exists( 'O100_Promotions_DB' ) ) {
+						global $wpdb;
+						$promo_table = O100_Promotions_DB::table_name();
+						$proxy_promo = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$promo_table} WHERE parent_id = %d AND source LIKE 'loyalty%%' AND status = 'active' LIMIT 1", $camp->id ), ARRAY_A );
+						if ( $proxy_promo ) {
+							$config = json_decode( $proxy_promo['action_config'], true ) ?: array();
+							if ( $proxy_promo['rule_type'] === 'simple' ) {
+								$val = $config['discount_value'] ?? '';
+								$type = $config['discount_type'] ?? '';
+								if ( $type === 'percentage' ) $desc .= " (Includes {$val}% off coupon)";
+								elseif ( $type === 'fixed_cart' ) $desc .= " (Includes \${$val} off order coupon)";
+								elseif ( $type === 'fixed_product' ) $desc .= " (Includes \${$val} off coupon)";
+							}
+						}
+					}
+				}
+
+				$impacts[] = array(
+					'module'      => 'Loyalty',
+					'title'       => html_entity_decode( $title ),
+					'status'      => 'Active',
+					'description' => $desc,
+					'action_url'  => admin_url( 'admin.php?page=o100-loyalty&tab=campaigns' ),
+					'type'        => 'positive',
+				);
+			}
+		}
+
+		return $impacts;
+	}
 }
-
-// TS: 20260201215335
-
-// TS: 20260213185426
-
-// TS: 20260314013018
