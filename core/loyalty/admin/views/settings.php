@@ -679,7 +679,6 @@ $settings_schema = array(
 			array( 'id' => 'launcher_content_member_redeem_title', 'type' => 'text', 'title' => 'Redeem Points Title' ),
 			array( 'id' => 'launcher_content_member_referrals_title', 'type' => 'text', 'title' => 'Referrals Title' ),
 			array( 'id' => 'launcher_content_member_referrals_desc', 'type' => 'textarea', 'title' => 'Referrals Description' ),
-			array( 'id' => 'launcher_content_member_referrals_channels', 'type' => 'multiselect_checkbox', 'title' => 'Social Share Channels', 'options' => ['facebook' => 'Facebook', 'twitter' => 'Twitter/X', 'whatsapp' => 'WhatsApp', 'email' => 'Email', 'linkedin' => 'LinkedIn', 'telegram' => 'Telegram'], 'default' => ['facebook', 'twitter', 'whatsapp', 'email'] ),
 			array( 'id' => 'member_shortcodes_info', 'type' => 'html', 'title' => 'Available Shortcodes', 'html' => '<details style="background:#f8fafc; padding:10px 15px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; color:#475569; cursor:pointer;">
 				<summary style="font-weight:600; outline:none;">View Available Shortcodes</summary>
 				<div style="margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0; cursor:text;">
@@ -859,7 +858,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 				$is_checked = ( $value === 'yes' || $value === true );
 				$checked_attr = $is_checked ? 'checked="checked"' : '';
 				$label_text = $is_checked ? 'Visible' : 'Hidden';
-				$bg_color = $is_checked ? '#2271b1' : '#cbd5e1';
+				$bg_color = $is_checked ? '#F59322' : '#cbd5e1';
 				$handle_pos = $is_checked ? '23px' : '3px';
 				
 				echo '<div class="o100-toggle-wrapper" style="display:flex; align-items:center;">';
@@ -875,7 +874,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 						var handle = slider.querySelector(".o100-slider-handle");
 						var label = this.closest(".o100-toggle-wrapper").querySelector(".o100-toggle-label");
 						if(this.checked) {
-							slider.style.backgroundColor = "#2271b1";
+							slider.style.backgroundColor = "#F59322";
 							handle.style.left = "23px";
 							label.textContent = "Visible";
 						} else {
@@ -912,7 +911,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 
 		<div class="o100-loyalty-settings-tabs-wrapper" style="border-bottom: 1px solid #e2e8f0; margin-bottom: 24px;">
 			<ul class="o100-loyalty-settings-tabs" style="display: flex; margin: 0; padding: 0; list-style: none;">
-				<li class="o100-settings-tab active" data-tab="tab-earn_point" style="margin-right: 20px; padding: 12px 0; cursor: pointer; color: #2271b1; border-bottom: 2px solid #2271b1; font-weight: 500;">General Settings</li>
+				<li class="o100-settings-tab active" data-tab="tab-earn_point" style="margin-right: 20px; padding: 12px 0; cursor: pointer; color: #F59322; border-bottom: 2px solid #F59322; font-weight: 500;">General Settings</li>
 				<li class="o100-settings-tab" data-tab="tab-display_messages" style="margin-right: 20px; padding: 12px 0; cursor: pointer; color: #64748b; font-weight: 500;">Display Messages</li>
 				<li class="o100-settings-tab" data-tab="tab-customer_reward_page" style="margin-right: 20px; padding: 12px 0; cursor: pointer; color: #64748b; font-weight: 500;">Customer Reward Page</li>
 				<li class="o100-settings-tab" data-tab="tab-launcher" style="margin-right: 20px; padding: 12px 0; cursor: pointer; color: #64748b; font-weight: 500;">Rewards Widget</li>
@@ -924,17 +923,17 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 		
 		<div class="o100-loyalty-sub-tabs-wrapper-launcher" style="display:none; align-items:center; justify-content:space-between; margin-bottom:20px;">
 			<div style="display:flex; gap:10px;">
-				<div class="o100-sub-tab o100-sub-tab-launcher active" data-sub-tab="launcher_design" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#e0e7ff; color:#4338ca;">Panel Design</div>
+				<div class="o100-sub-tab o100-sub-tab-launcher active" data-sub-tab="launcher_design" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#fff7ed; color:#d97b06;">Panel Design</div>
 				<div class="o100-sub-tab o100-sub-tab-launcher" data-sub-tab="launcher_content" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#f1f5f9; color:#64748b;">Panel Content</div>
 			</div>
 			<div style="display:flex; gap:10px;">
 				<button type="button" class="button o100-launcher-reset-btn" style="border-radius:6px; padding:4px 16px;">Reset Defaults</button>
-				<button type="button" class="button button-primary o100-launcher-save-btn" style="border-radius:6px; padding:4px 16px; background:#4338ca; border-color:#4338ca;">Save Widget Settings</button>
+				<button type="button" class="button button-primary o100-launcher-save-btn" style="border-radius:6px; padding:4px 16px; background:#d97b06; border-color:#d97b06;">Save Widget Settings</button>
 			</div>
 		</div>
 
 		<div class="o100-loyalty-sub-tabs-wrapper-referral" style="display:none; gap:10px; margin-bottom:20px;">
-			<div class="o100-sub-tab o100-sub-tab-referral active" data-sub-tab="referral_settings" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#e0e7ff; color:#4338ca;">Settings</div>
+			<div class="o100-sub-tab o100-sub-tab-referral active" data-sub-tab="referral_settings" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#fff7ed; color:#d97b06;">Settings</div>
 			<div class="o100-sub-tab o100-sub-tab-referral" data-sub-tab="referral_popup" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#f1f5f9; color:#64748b;">Popup Template</div>
 			<div class="o100-sub-tab o100-sub-tab-referral" data-sub-tab="referral_coupon" style="padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:500; background:#f1f5f9; color:#64748b;">Coupon Template</div>
 		</div>
@@ -959,7 +958,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
                             </div>
                             <div class="preview-body" style="padding:20px; background:#F5F5F5;">
                                 <div class="preview-earn-card" style="background:#fff; border-radius:8px; padding:15px; display:flex; align-items:center; gap:15px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.02); position:relative; cursor:pointer;">
-                                    <div class="preview-icons" style="color:#4F47EB; background:#e0e7ff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><span class="dashicons dashicons-money-alt"></span></div>
+                                    <div class="preview-icons" style="color:#4F47EB; background:#fff7ed; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><span class="dashicons dashicons-money-alt"></span></div>
                                     <div style="flex:1;">
                                         <div class="preview-earn-title" style="font-weight:600; font-size:15px; margin-bottom:2px;">Earn Points</div>
                                         <div class="preview-earn-desc" style="color:#64748b; font-size:12px;">Complete tasks to earn points</div>
@@ -967,7 +966,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
                                     <div style="color:#94a3b8; font-size:18px; font-weight:bold;">›</div>
                                 </div>
                                 <div class="preview-redeem-card" style="background:#fff; border-radius:8px; padding:15px; display:flex; align-items:center; gap:15px; box-shadow:0 2px 5px rgba(0,0,0,0.02); position:relative; cursor:pointer;">
-                                    <div class="preview-icons" style="color:#4F47EB; background:#e0e7ff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><span class="dashicons dashicons-tickets-alt"></span></div>
+                                    <div class="preview-icons" style="color:#4F47EB; background:#fff7ed; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><span class="dashicons dashicons-tickets-alt"></span></div>
                                     <div style="flex:1;">
                                         <div class="preview-redeem-title" style="font-weight:600; font-size:15px; margin-bottom:2px;">Redeem Points</div>
                                         <div class="preview-redeem-desc" style="color:#64748b; font-size:12px;">Use points for discounts</div>
@@ -1063,8 +1062,8 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 						t.style.borderBottom = 'none'; 
 					});
 					this.classList.add('active');
-					this.style.color = '#2271b1';
-					this.style.borderBottom = '2px solid #2271b1';
+					this.style.color = '#F59322';
+					this.style.borderBottom = '2px solid #F59322';
 
 					var targetTab = this.getAttribute('data-tab');
 					var allSections = document.querySelectorAll('.o100-loyalty-settings-section');
@@ -1144,8 +1143,8 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 						t.style.color = '#64748b';
 					});
 					this.classList.add('active');
-					this.style.background = '#e0e7ff';
-					this.style.color = '#4338ca';
+					this.style.background = '#fff7ed';
+					this.style.color = '#d97b06';
 
 					var targetSubTab = this.getAttribute('data-sub-tab');
 					var parentClass = 'tab-' + (group === 'launcher' ? 'launcher' : 'guest_referral');
@@ -1289,11 +1288,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 				var memberReferralTitle = document.getElementById('launcher_content_member_referrals_title')?.value || 'Refer and earn';
 				var memberReferralDesc = document.getElementById('launcher_content_member_referrals_desc')?.value || 'Refer your friends and earn rewards. Your friend can get a reward as well!';
 				
-				var channelCheckboxes = document.querySelectorAll('input[name="launcher_content_member_referrals_channels[]"]:checked');
-				var memberReferralChannels = Array.from(channelCheckboxes).map(function(cb) { return cb.value; });
-				if (memberReferralChannels.length === 0) {
-					memberReferralChannels = ['facebook', 'twitter', 'whatsapp', 'email'];
-				}
+				var memberReferralChannels = ['facebook', 'twitter', 'whatsapp', 'email', 'linkedin'];
 				
 				var currentMode = document.querySelector('.preview-toggle-btn.active')?.getAttribute('data-mode') || 'guest';
 				
@@ -1451,11 +1446,6 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 					el.addEventListener('input', updatePreview);
 					el.addEventListener('change', updatePreview);
 				}
-			});
-
-			// For multiselect checkbox preview trigger
-			document.querySelectorAll('input[name="launcher_content_member_referrals_channels[]"]').forEach(function(cb) {
-				cb.addEventListener('change', updatePreview);
 			});
 
 			// Toggle Logic
@@ -1630,8 +1620,8 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 		}
 		.o100-loyalty-settings .select2-container--default.select2-container--focus .select2-selection--multiple,
 		.o100-loyalty-settings .select2-container--default.select2-container--open .select2-selection--multiple {
-			border-color: #2271b1;
-			box-shadow: 0 0 0 1px #2271b1;
+			border-color: #F59322;
+			box-shadow: 0 0 0 1px #F59322;
 		}
 		.o100-loyalty-settings .select2-container--default .select2-selection--multiple .select2-selection__rendered {
 			display: flex !important;
@@ -1642,7 +1632,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 			list-style: none !important;
 		}
 		.o100-loyalty-settings .select2-container--default .select2-selection--multiple .select2-selection__choice {
-			background-color: #eef2ff !important;
+			background-color: #fff7ed !important;
 			border: 1px solid #c7d2fe !important;
 			border-radius: 4px !important;
 			color: #1e293b !important;
@@ -1663,7 +1653,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 			padding: 0 !important;
 		}
 		.o100-loyalty-settings .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-			color: #6366f1;
+			color: #F59322;
 			margin-right: 5px;
 			font-weight: bold;
 			font-size: 14px;
@@ -1678,8 +1668,8 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 		}
 		.o100-loyalty-settings .select2-container--default.select2-container--focus .select2-selection--single,
 		.o100-loyalty-settings .select2-container--default.select2-container--open .select2-selection--single {
-			border-color: #2271b1;
-			box-shadow: 0 0 0 1px #2271b1;
+			border-color: #F59322;
+			box-shadow: 0 0 0 1px #F59322;
 		}
 		.o100-loyalty-settings .select2-container--default .select2-selection--single .select2-selection__rendered {
 			line-height: 38px;
@@ -1694,7 +1684,7 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 			box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 		}
 		.o100-loyalty-settings .select2-results__option--highlighted {
-			background-color: #eef2ff !important;
+			background-color: #fff7ed !important;
 			color: #1e293b !important;
 		}
 		.o100-loyalty-styled-table input[type="text"], 
@@ -1705,8 +1695,8 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 		}
 		.o100-loyalty-styled-table input[type="text"]:focus, 
 		.o100-loyalty-styled-table textarea:focus {
-			border-color: #2271b1;
-			box-shadow: 0 0 0 1px #2271b1;
+			border-color: #F59322;
+			box-shadow: 0 0 0 1px #F59322;
 		}
 		</style>
 
@@ -1719,7 +1709,3 @@ if ( ! function_exists( 'o100_loyalty_render_setting_field' ) ) {
 	</div>
 </div>
 
-
-// TS: 20260204110224
-
-// TS: 20260311173430

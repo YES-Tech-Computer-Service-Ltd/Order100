@@ -107,9 +107,3 @@ class Shipping3 extends BasePattern {
     }
 }
 
-
-// TS: 20260113114226
-
-// TS: 20260114173946
-
-// TS: 20260407170537
