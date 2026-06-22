@@ -12,8 +12,51 @@ class O100_Side_Cart {
 		add_action( 'wp_ajax_o100_update_cart_qty', array( $this, 'ajax_update_qty' ) );
 		add_action( 'wp_ajax_nopriv_o100_update_cart_qty', array( $this, 'ajax_update_qty' ) );
 
+		// Quickview Modal
+		add_action( 'wp_ajax_o100_get_product_quickview', array( $this, 'ajax_quickview' ) );
+		add_action( 'wp_ajax_nopriv_o100_get_product_quickview', array( $this, 'ajax_quickview' ) );
+
 		// Inject Loyalty Content into Rewards Tab
 		add_action( 'o100_store_portal_rewards_tab_content', array( $this, 'inject_loyalty_rewards_content' ) );
+	}
+
+	public function ajax_quickview() {
+		$product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+		if ( ! $product_id ) wp_send_json_error('No product id');
+
+		$product = wc_get_product($product_id);
+		if ( ! $product ) wp_send_json_error('Invalid product');
+
+		ob_start();
+		$img = wp_get_attachment_image_url( $product->get_image_id(), 'large' ) ?: wc_placeholder_img_src('large');
+		?>
+		<div style="display:flex; flex-direction:column; background:#fff; border-radius:16px; overflow:hidden;">
+			<div style="height:220px; background:url('<?php echo esc_url($img); ?>') center/cover;"></div>
+			<div style="padding:20px;">
+				<h2 style="margin:0 0 8px; font-size:20px; font-weight:800; color:#111;"><?php echo esc_html($product->get_name()); ?></h2>
+				<div style="font-size:18px; font-weight:700; color:var(--theme-color, #e11d48); margin-bottom:12px;"><?php echo $product->get_price_html(); ?></div>
+				<div style="font-size:14px; color:#6b7280; margin-bottom:20px; line-height:1.5;">
+					<?php echo wp_kses_post( $product->get_short_description() ?: $product->get_description() ); ?>
+				</div>
+				<?php 
+				// Render Add to Cart Form
+				if ( $product->is_type('simple') ) {
+					echo '<div class="o100-quickview-atc-wrap">';
+					woocommerce_simple_add_to_cart(); 
+					echo '</div>';
+				} else if ( $product->is_type('variable') ) {
+					echo '<div class="o100-quickview-atc-wrap o100-quickview-variable">';
+					woocommerce_variable_add_to_cart();
+					echo '</div>';
+				} else {
+					echo '<a href="'.esc_url($product->get_permalink()).'" class="button alt" style="display:block; text-align:center; padding:12px; background:var(--theme-color,#e11d48); color:#fff; border-radius:8px; font-weight:700;">'.esc_html__('View Product', 'order100').'</a>';
+				}
+				?>
+			</div>
+		</div>
+		<?php
+		$html = ob_get_clean();
+		wp_send_json_success(array('html' => $html));
 	}
 
 	public function inject_loyalty_rewards_content() {
@@ -26,11 +69,20 @@ class O100_Side_Cart {
 		$guest_title    = isset($opts['o100_portal_guest_title']) ? $opts['o100_portal_guest_title'] : 'Unlock free food with every order!';
 		$guest_sub      = isset($opts['o100_portal_guest_subtitle']) ? $opts['o100_portal_guest_subtitle'] : 'Sign up today and start earning points towards your next meal.';
 		$guest_btn      = isset($opts['o100_portal_guest_btn_text']) ? $opts['o100_portal_guest_btn_text'] : 'Join Now';
+		$guest_earn     = isset($opts['o100_portal_guest_earn_text']) ? $opts['o100_portal_guest_earn_text'] : 'Ways to earn';
+		$guest_redeem   = isset($opts['o100_portal_guest_redeem_text']) ? $opts['o100_portal_guest_redeem_text'] : 'Ways to redeem';
 		
 		$member_welcome = isset($opts['o100_portal_member_welcome']) ? $opts['o100_portal_member_welcome'] : 'Welcome back, {name}!';
 		$points_format  = isset($opts['o100_portal_member_points_format']) ? $opts['o100_portal_member_points_format'] : 'You have {points} Points';
 		$member_earn    = isset($opts['o100_portal_member_earn_text']) ? $opts['o100_portal_member_earn_text'] : 'Ways to earn';
 		$member_redeem  = isset($opts['o100_portal_member_redeem_text']) ? $opts['o100_portal_member_redeem_text'] : 'Ways to redeem';
+		$guest_referral_enabled = isset($opts['o100_portal_guest_referral_enabled']) ? $opts['o100_portal_guest_referral_enabled'] : 'yes';
+		$guest_referral_title   = isset($opts['o100_portal_guest_referral_title']) ? $opts['o100_portal_guest_referral_title'] : 'Refer and Earn';
+		$guest_referral_desc    = isset($opts['o100_portal_guest_referral_desc']) ? $opts['o100_portal_guest_referral_desc'] : '';
+		
+		$member_referral_enabled = isset($opts['o100_portal_member_referral_enabled']) ? $opts['o100_portal_member_referral_enabled'] : 'yes';
+		$member_referral_title   = isset($opts['o100_portal_member_referral_title']) ? $opts['o100_portal_member_referral_title'] : 'Refer and Earn';
+		$member_referral_desc    = isset($opts['o100_portal_member_referral_desc']) ? $opts['o100_portal_member_referral_desc'] : '';
 
 		// Determine user context
 		$is_member = is_user_logged_in();
@@ -89,10 +141,10 @@ class O100_Side_Cart {
 					$icon_str = $action_type ? $action_type : 'default';
 					$icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#f3f4f6; color:#6b7280;">⭐</div>';
 					if ($icon_str === 'o100_punch_card') $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#f3e8ff; color:#9333ea;">🎫</div>';
-					elseif (strpos($icon_str, 'point') !== false || strpos($icon_str, 'order') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#e0e7ff; color:#4f46e5;">$</div>';
+					elseif (strpos($icon_str, 'point') !== false || strpos($icon_str, 'order') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#fff7ed; color:#F59322;">$</div>';
 					elseif (strpos($icon_str, 'signup') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#fef3c7; color:#d97706;">+</div>';
 					elseif (strpos($icon_str, 'birthday') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#fce7f3; color:#db2777;">🎁</div>';
-					elseif (strpos($icon_str, 'share') !== false || strpos($icon_str, 'social') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#dbeafe; color:#2563eb;">🔗</div>';
+					elseif (strpos($icon_str, 'share') !== false || strpos($icon_str, 'social') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#fff7ed; color:#F59322;">🔗</div>';
 					elseif (strpos($icon_str, 'review') !== false) $icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#d1fae5; color:#059669;">📝</div>';
 					
 					$ui = json_decode($c->ui_json ?: '', true) ?: [];
@@ -186,7 +238,7 @@ class O100_Side_Cart {
 					
 					if (empty($desc)) {
 						if ($action_type === 'signup') {
-							$desc = sprintf("Create an account to earn %d points.", $point_val);
+							$desc = "Earn " . $point_val . " points by creating an account.";
 						} elseif ($action_type === 'birthday') {
 							$desc = "Celebrate your special day with a reward.";
 						} elseif ($action_type === 'product_review' || $action_type === 'review') {
@@ -197,6 +249,8 @@ class O100_Side_Cart {
 							$desc = "Follow our social pages to get rewarded.";
 						} elseif ($point_val > 0) {
 							$desc = "Earn " . $point_val . " points for this activity.";
+						} else {
+							$desc = !empty($ui['campaign_message']) ? wp_strip_all_tags($ui['campaign_message']) : "Unlock special rewards and offers by completing this activity.";
 						}
 					}
 					
@@ -213,6 +267,8 @@ class O100_Side_Cart {
 							$short_desc = "Follow us and get rewarded.";
 						} elseif ($point_val > 0) {
 							$short_desc = "Earn " . $point_val . " points.";
+						} else {
+							$short_desc = "Special reward inside.";
 						}
 					}
 					
@@ -224,6 +280,36 @@ class O100_Side_Cart {
 			}
 
 			// Redeem Cards
+			$redeem_count = 0;
+			
+			// 1. Fetch Global Conversion from Settings (New Architecture)
+			$o100_settings = class_exists('O100_Loyalty_DB') ? O100_Loyalty_DB::get_settings() : [];
+			$conv_pts = isset($o100_settings['conversion_points']) ? intval($o100_settings['conversion_points']) : 0;
+			$conv_val = isset($o100_settings['conversion_value']) ? floatval($o100_settings['conversion_value']) : 0;
+			
+			if ( $conv_pts > 0 && $conv_val > 0 ) {
+				$icon_html = '<div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; background:#f3e8ff; color:#9333ea;">🔄</div>';
+				$clean_price = html_entity_decode(wp_strip_all_tags(wc_price($conv_val)), ENT_QUOTES, 'UTF-8');
+				$title = $clean_price . ' Off Discount';
+				$short_desc = $conv_pts . ' points';
+				$desc = 'Use ' . $conv_pts . ' points to get a ' . wc_price($conv_val) . ' discount on your order.';
+				$point_val = $conv_pts;
+				$payload = htmlspecialchars(wp_json_encode([
+					'title' => $title,
+					'short_desc' => $short_desc,
+					'desc' => $desc,
+					'point_val' => $point_val,
+					'action_type' => 'redeem',
+					'icon_html' => $icon_html,
+					'reward_id' => 'global_conversion'
+				]), ENT_QUOTES, 'UTF-8');
+				
+				$right_arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>';
+				$redeem_cards_html .= '<div class="o100-pbp-card o100-campaign-card" data-type="redeem" data-payload="'.$payload.'" style="background:#fff; border:1px solid #e5e7eb; border-radius:var(--border-radius); padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02); cursor:pointer;">'. $icon_html .'<div style="flex:1;"><h4 style="margin:0 0 4px; font-size:14px; color:var(--text-color); font-weight:700;">'.esc_html(wp_strip_all_tags($title)).'</h4><p style="margin:0; font-size:12px; color:#6b7280;">'.esc_html(wp_strip_all_tags($short_desc)).'</p></div>' . $right_arrow . '</div>';
+				$redeem_count++;
+			}
+
+			// 2. Fetch standard points_conversion campaigns (Legacy/Fallback)
 			$redeem_rewards = $wpdb->get_results( "SELECT * FROM {$campaigns_table} WHERE type = 'points_conversion' AND status = 'active'" );
 			if ( !empty($redeem_rewards) && is_array($redeem_rewards) ) {
 				foreach ( $redeem_rewards as $reward ) {
@@ -261,6 +347,7 @@ class O100_Side_Cart {
 					
 					$right_arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>';
 					$redeem_cards_html .= '<div class="o100-pbp-card o100-campaign-card" data-type="redeem" data-payload="'.$payload.'" style="background:#fff; border:1px solid #e5e7eb; border-radius:var(--border-radius); padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02); cursor:pointer;">'. $icon_html .'<div style="flex:1;"><h4 style="margin:0 0 4px; font-size:14px; color:var(--text-color); font-weight:700;">'.esc_html(wp_strip_all_tags($title)).'</h4><p style="margin:0; font-size:12px; color:#6b7280;">'.esc_html(wp_strip_all_tags($short_desc)).'</p></div>' . $right_arrow . '</div>';
+					$redeem_count++;
 				}
 			}
 		}
@@ -349,7 +436,7 @@ class O100_Side_Cart {
 						actionHtml = stampsHtml;
 					}
 				} else if (p.action_type === "referral" && p.referral_url) {
-					actionHtml = "<div style=\"margin-top:12px;\"><div style=\"font-size:13px; font-weight:600; margin-bottom:8px; color:var(--text-color);\">Share your referral link:</div><div style=\"display:flex; gap:0; border-radius:6px; overflow:hidden; border:1px solid #c7d2fe; margin-bottom:12px;\"><input type=\"text\" value=\""+p.referral_url+"\" readonly style=\"flex:1; border:none; padding:8px 12px; font-size:13px; background:#fff; color:#4f46e5; outline:none; margin:0; width:100%;\"><button style=\"border:none; background:#4f46e5; color:#fff; font-weight:600; padding:0 12px; cursor:pointer;\" onclick=\"navigator.clipboard.writeText(\'"+p.referral_url+"\');\">Copy</button></div></div>";
+					actionHtml = "<div style=\"margin-top:12px;\"><div style=\"font-size:13px; font-weight:600; margin-bottom:8px; color:var(--text-color);\">Share your referral link:</div><div style=\"display:flex; gap:0; border-radius:6px; overflow:hidden; border:1px solid #c7d2fe; margin-bottom:12px;\"><input type=\"text\" value=\""+p.referral_url+"\" readonly style=\"flex:1; border:none; padding:8px 12px; font-size:13px; background:#fff; color:#F59322; outline:none; margin:0; width:100%;\"><button style=\"border:none; background:#F59322; color:#fff; font-weight:600; padding:0 12px; cursor:pointer;\" onclick=\"navigator.clipboard.writeText(\'"+p.referral_url+"\');\">Copy</button></div></div>";
 				} else if (p.action_type === "signup") {
 					if (window.o100ActivePbpView === "guest") {
 						actionHtml = "<button onclick=\"o100TriggerGlobalLogin(event)\" style=\"width:100%; background:var(--theme-color); color:var(--btn-text-color); border:none; border-radius:var(--border-radius); padding:12px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1);\">Register Now</button>";
@@ -373,7 +460,11 @@ class O100_Side_Cart {
 				if (window.o100ActivePbpView === "guest") {
 					actionHtml = "<button onclick=\"o100TriggerGlobalLogin(event)\" style=\"width:100%; background:var(--theme-color); color:var(--btn-text-color); border:none; border-radius:var(--border-radius); padding:12px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1);\">Sign in to Redeem</button>";
 				} else {
-					actionHtml = "<button onclick=\"o100RedeemReward("+p.reward_id+", "+p.point_val+", this)\" style=\"width:100%; background:var(--theme-color); color:var(--btn-text-color); border:none; border-radius:var(--border-radius); padding:12px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1);\">Redeem for " + p.point_val + " Points</button>";
+					if (p.reward_id === \'global_conversion\') {
+						actionHtml = "<a href=\"/checkout/\" style=\"display:block; text-align:center; width:100%; background:var(--theme-color); color:var(--btn-text-color); border:none; border-radius:var(--border-radius); padding:12px; font-size:14px; font-weight:700; cursor:pointer; text-decoration:none; box-shadow:0 4px 6px rgba(0,0,0,0.1);\">Redeem at Checkout</a>";
+					} else {
+						actionHtml = "<button onclick=\"o100RedeemReward(\'"+p.reward_id+"\', "+p.point_val+", this)\" style=\"width:100%; background:var(--theme-color); color:var(--btn-text-color); border:none; border-radius:var(--border-radius); padding:12px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1);\">Redeem for " + p.point_val + " Points</button>";
+					}
 				}
 			}
 			
@@ -548,6 +639,53 @@ class O100_Side_Cart {
 		}
 		</script>';
 
+		if (!function_exists('o100_parse_referral_desc')) {
+			function o100_parse_referral_desc($desc, $campaign) {
+				if (empty($campaign)) return $desc;
+				$old_default = 'Share the love of our restaurant! Your friend gets $5 off their first order of $50+, and you get rewarded when they finish their meal!';
+				$point_rule = [];
+				if (!empty($campaign->earn_config)) $point_rule = is_string($campaign->earn_config) ? json_decode($campaign->earn_config, true) : (array)$campaign->earn_config;
+				elseif (!empty($campaign->point_rule)) $point_rule = is_string($campaign->point_rule) ? json_decode($campaign->point_rule, true) : (array)$campaign->point_rule;
+				
+				$get_txt = function($type, $amt, $cpn) {
+					if ($type === 'point') return $amt . ' Points';
+					if ($type === 'coupon' && !empty($cpn)) {
+						if (strpos($cpn, 'promo_') === 0 && class_exists('O100_Promotions_DB')) {
+							$promo = O100_Promotions_DB::get((int)str_replace('promo_', '', $cpn));
+							if ($promo) {
+								$cfg = json_decode($promo['action_config']??'{}', true);
+								return ($cfg['discount_type']??'') === 'percentage' ? ($cfg['discount_value']??'').'% off' : '$'.($cfg['discount_value']??'').' off';
+							}
+						}
+						if (strpos($cpn, 'wc_') === 0) { $wc = get_post((int)str_replace('wc_', '', $cpn)); if ($wc) return $wc->post_title; }
+						if (strpos($cpn, 'REFERRAL_') === 0) {
+							global $wpdb;
+							$coupon = $wpdb->get_row($wpdb->prepare("SELECT post_title FROM {$wpdb->posts} WHERE post_type='shop_coupon' AND post_name=%s LIMIT 1", strtolower($cpn)));
+							if ($coupon) return 'the ' . $coupon->post_title . ' coupon';
+							return $cpn;
+						}
+						return 'a special discount';
+					}
+					return 'a reward';
+				};
+				
+				$fri_type = $point_rule['friend']['campaign_type'] ?? ($point_rule['friend_type'] ?? 'point');
+				$fri_amt  = $point_rule['friend']['earn_point'] ?? ($point_rule['friend_amount'] ?? 0);
+				$fri_cpn  = $point_rule['friend']['earn_reward'] ?? ($point_rule['friend_coupon'] ?? '');
+				
+				$adv_type = $point_rule['advocate']['campaign_type'] ?? ($point_rule['advocate_type'] ?? 'point');
+				$adv_amt  = $point_rule['advocate']['earn_point'] ?? ($point_rule['advocate_amount'] ?? 0);
+				$adv_cpn  = $point_rule['advocate']['earn_reward'] ?? ($point_rule['advocate_coupon'] ?? '');
+
+				$fri_txt = $get_txt($fri_type, $fri_amt, $fri_cpn);
+				$adv_txt = $get_txt($adv_type, $adv_amt, $adv_cpn);
+				if (trim($desc) === $old_default) {
+					return "Share the love of our restaurant! Your friend gets {$fri_txt} on their first order, and you get {$adv_txt} when they finish their meal!";
+				}
+				return str_replace(['{friend_reward}', '{advocate_reward}'], [$fri_txt, $adv_txt], $desc);
+			}
+		}
+
 		if ( ! $is_member ) {
 			// GUEST VIEW
 			?>
@@ -561,8 +699,8 @@ class O100_Side_Cart {
 				
 				<!-- GUEST FOLDER TABS -->
 				<div class="o100-sc-inner-tabs">
-					<div class="o100-sc-inner-tab active" onclick="document.getElementById('sc-guest-earn-cards').style.display='block'; document.getElementById('sc-guest-redeem-cards').style.display='none'; this.parentElement.children[0].classList.add('active'); this.parentElement.children[1].classList.remove('active');">Earn</div>
-					<div class="o100-sc-inner-tab" onclick="document.getElementById('sc-guest-earn-cards').style.display='none'; document.getElementById('sc-guest-redeem-cards').style.display='block'; this.parentElement.children[0].classList.remove('active'); this.parentElement.children[1].classList.add('active');">Redeem</div>
+					<div class="o100-sc-inner-tab active" onclick="document.getElementById('sc-guest-earn-cards').style.display='block'; document.getElementById('sc-guest-redeem-cards').style.display='none'; this.parentElement.children[0].classList.add('active'); this.parentElement.children[1].classList.remove('active');"><?php echo esc_html($guest_earn); ?></div>
+					<div class="o100-sc-inner-tab" onclick="document.getElementById('sc-guest-earn-cards').style.display='none'; document.getElementById('sc-guest-redeem-cards').style.display='block'; this.parentElement.children[0].classList.remove('active'); this.parentElement.children[1].classList.add('active');"><?php echo esc_html($guest_redeem); ?></div>
 				</div>
 				
 				<div class="o100-sc-tab-content-wrapper">
@@ -575,13 +713,14 @@ class O100_Side_Cart {
 					</div>
 				</div>
 				
-				<?php if ( !empty($referral_campaign) ) :
-					$ref_desc = strip_tags($referral_campaign->description) ?: 'Refer your friends and earn rewards. Your friend can get a reward as well!';
+				<?php if ( !empty($referral_campaign) && $guest_referral_enabled === 'yes' ) :
+					$ref_desc = !empty($guest_referral_desc) ? $guest_referral_desc : (strip_tags($referral_campaign->description) ?: 'Refer your friends and earn rewards. Your friend can get a reward as well!');
+					if (function_exists('o100_parse_referral_desc')) $ref_desc = o100_parse_referral_desc($ref_desc, $referral_campaign);
 				?>
-				<div style="margin-top:24px; padding:20px; border-radius:var(--border-radius); background:#eef2ff; color:#3730a3; text-align:center;">
-					<h4 style="margin:0 0 8px; font-size:16px; font-weight:800; color:#312e81;">Refer and Earn</h4>
-					<p style="margin:0; font-size:13px; line-height:1.4; color:#4338ca;"><?php echo esc_html($ref_desc); ?></p>
-					<div style="margin-top:12px; font-size:12px;"><a href="<?php echo esc_url(wc_get_page_permalink('myaccount')); ?>" style="color:#4f46e5; font-weight:600;">Sign in</a> to get your link</div>
+				<div class="o100-sc-referral-block" style="margin-top:24px; padding:20px; border-radius:var(--border-radius); background:#fff7ed; color:#3730a3; text-align:center;">
+					<h4 style="margin:0 0 8px; font-size:16px; font-weight:800; color:#9a5c06;"><?php echo esc_html($guest_referral_title); ?></h4>
+					<p style="margin:0; font-size:13px; line-height:1.4; color:#d97b06;"><?php echo esc_html($ref_desc); ?></p>
+					<div style="margin-top:12px; font-size:12px;"><a href="<?php echo esc_url(wc_get_page_permalink('myaccount')); ?>" style="color:#F59322; font-weight:600;">Sign in</a> to get your link</div>
 				</div>
 				<?php endif; ?>
 			</div>
@@ -615,7 +754,7 @@ class O100_Side_Cart {
 						<?php echo esc_html($member_earn); ?>
 					</div>
 					<div class="o100-sc-inner-tab" onclick="document.getElementById('sc-member-earn-cards').style.display='none'; document.getElementById('sc-member-redeem-cards').style.display='block'; this.parentElement.children[0].classList.remove('active'); this.parentElement.children[1].classList.add('active');">
-						<?php echo esc_html($member_redeem); ?> <span style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:10px; line-height:1; position:absolute; top:-6px; right:12px;">1</span>
+						<?php echo esc_html($member_redeem); ?> <?php if ($redeem_count > 0) { ?><span style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:10px; line-height:1; position:absolute; top:-6px; right:12px;"><?php echo $redeem_count; ?></span><?php } ?>
 					</div>
 				</div>
 				
@@ -629,23 +768,38 @@ class O100_Side_Cart {
 					</div>
 				</div>
 				
-				<?php if ( !empty($referral_campaign) ) :
-					$ref_desc = strip_tags($referral_campaign->description) ?: 'Refer your friends and earn rewards. Your friend can get a reward as well!';
+				<?php if ( !empty($referral_campaign) && $member_referral_enabled === 'yes' ) :
+					$ref_desc = !empty($member_referral_desc) ? $member_referral_desc : (strip_tags($referral_campaign->description) ?: 'Refer your friends and earn rewards. Your friend can get a reward as well!');
+					if (function_exists('o100_parse_referral_desc')) $ref_desc = o100_parse_referral_desc($ref_desc, $referral_campaign);
 					$referral_url = site_url('/?o100_ref=' . $user->ID);
 				?>
-				<div style="margin-top:24px; padding:20px; border-radius:var(--border-radius); background:#eef2ff; color:#3730a3; text-align:center;">
-					<h4 style="margin:0 0 8px; font-size:16px; font-weight:800; color:#312e81;">Refer and Earn</h4>
-					<p style="margin:0 0 16px; font-size:13px; line-height:1.4; color:#4338ca;"><?php echo esc_html($ref_desc); ?></p>
+				<div class="o100-sc-referral-block" style="background:#fff7ed; border-radius:12px; padding:16px; margin-top:20px; text-align:center;">
+					<div style="font-size:16px; font-weight:800; color:#9a5c06; margin-bottom:4px;"><?php echo esc_html($member_referral_title); ?></div>
+					<div style="font-size:13px; color:#d97b06; line-height:1.4; margin-bottom:12px;"><?php echo esc_html($ref_desc); ?></div>
 					<div style="display:flex; gap:0; border-radius:6px; overflow:hidden; border:1px solid #c7d2fe; margin-bottom:12px;">
-						<input type="text" value="<?php echo esc_attr($referral_url); ?>" readonly style="flex:1; border:none; padding:8px 12px; font-size:13px; background:#fff; color:#4f46e5; outline:none; margin:0; width:100%;">
-						<button style="border:none; background:#4f46e5; color:#fff; font-weight:600; padding:0 12px; cursor:pointer;" onclick="navigator.clipboard.writeText('<?php echo esc_js($referral_url); ?>');">Copy</button>
+						<input type="text" value="<?php echo esc_attr($referral_url); ?>" readonly style="flex:1; border:none; padding:8px 12px; font-size:13px; background:#fff; color:#F59322; outline:none; margin:0; width:100%;">
+						<button style="border:none; background:#F59322; color:#fff; font-weight:600; padding:0 12px; cursor:pointer;" onclick="navigator.clipboard.writeText('<?php echo esc_js($referral_url); ?>');">Copy</button>
 					</div>
 					<div style="display:flex; gap:12px; justify-content:center;">
-						<a href="https://api.whatsapp.com/send?text=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#4f46e5; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></a>
-						<a href="mailto:?body=<?php echo urlencode($referral_url); ?>" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#4f46e5; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></a>
-						<a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#4f46e5; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
-						<a href="https://twitter.com/intent/tweet?url=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#4f46e5; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
-						<a href="https://reddit.com/submit?url=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#4f46e5; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M22.54 11.12a2.82 2.82 0 0 0-4.66-1.57c-1.84-1.28-4.32-2.1-7.07-2.19l1.49-4.8 4.21 1.25a2.53 2.53 0 0 0 4.8-1.16 2.54 2.54 0 0 0-5-1l-4.52-1.34a1 1 0 0 0-1.25.68l-1.68 5.4c-2.82.1-5.38.93-7.25 2.23a2.82 2.82 0 0 0-4.66 1.58c0 1.07.6 2 1.5 2.5a5.55 5.55 0 0 0-.15 1.25c0 3.73 4.26 6.75 9.5 6.75s9.5-3.02 9.5-6.75a5.13 5.13 0 0 0-.14-1.25c.9-.5 1.49-1.42 1.49-2.5zM7.5 13.88a1.62 1.62 0 1 1 1.62-1.62A1.62 1.62 0 0 1 7.5 13.88zm4.5 5.25c-2.34 0-4.22-.84-4.22-1.88 0-.25.26-.47.66-.62a3.83 3.83 0 0 0 3.56.88 3.83 3.83 0 0 0 3.56-.88c.4.15.66.37.66.62 0 1.04-1.88 1.88-4.22 1.88zm4.5-5.25a1.62 1.62 0 1 1 1.62-1.62A1.62 1.62 0 0 1 16.5 13.88z"></path></svg></a>
+						<?php
+						$wll_content = get_option('wll_launcher_content_settings', []);
+						$enabled_socials = isset($wll_content['content']['member']['referrals']['channels']) && is_array($wll_content['content']['member']['referrals']['channels']) ? $wll_content['content']['member']['referrals']['channels'] : ['whatsapp', 'email', 'facebook', 'twitter'];
+						?>
+						<?php if (in_array('whatsapp', $enabled_socials)) : ?>
+						<a href="https://api.whatsapp.com/send?text=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#F59322; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></a>
+						<?php endif; ?>
+						<?php if (in_array('email', $enabled_socials)) : ?>
+						<a href="mailto:?body=<?php echo urlencode($referral_url); ?>" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#F59322; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></a>
+						<?php endif; ?>
+						<?php if (in_array('facebook', $enabled_socials)) : ?>
+						<a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#F59322; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+						<?php endif; ?>
+						<?php if (in_array('twitter', $enabled_socials) || in_array('x', $enabled_socials)) : ?>
+						<a href="https://twitter.com/intent/tweet?url=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#F59322; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
+						<?php endif; ?>
+						<?php if (in_array('linkedin', $enabled_socials)) : ?>
+						<a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo urlencode($referral_url); ?>" target="_blank" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#fff; color:#F59322; text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>
+						<?php endif; ?>
 					</div>
 				</div>
 				<?php endif; ?>
@@ -685,16 +839,29 @@ class O100_Side_Cart {
 	public function ajax_update_qty() {
 		$key = isset($_POST['cart_item_key']) ? sanitize_text_field($_POST['cart_item_key']) : '';
 		$qty = isset($_POST['qty']) ? absint($_POST['qty']) : 1;
-		if ( $key && WC()->cart ) {
-			WC()->cart->set_quantity( $key, $qty );
+		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
+
+		if ( WC()->cart ) {
+			if ( $key ) {
+				WC()->cart->set_quantity( $key, $qty );
+			} elseif ( $product_id ) {
+				WC()->cart->add_to_cart( $product_id, $qty );
+			}
 			WC()->cart->calculate_totals();
 		}
 		
-		wp_send_json_success(array(
-			'subtotal'   => WC()->cart->get_cart_subtotal(),
-			'cart_count' => WC()->cart->get_cart_contents_count(),
-			'cart_html'  => $this->build_cart_body()
-		));
+		$res = array(
+			'subtotal'       => WC()->cart->get_cart_subtotal(),
+			'cart_count'     => WC()->cart->get_cart_contents_count(),
+			'cart_html'      => $this->build_cart_body(),
+			'total'          => WC()->cart->get_total(),
+			'discount_total' => WC()->cart->get_cart_discount_total(),
+			'shipping_total' => WC()->cart->get_shipping_total()
+		);
+		
+		
+		
+		wp_send_json_success( $res );
 	}
 
 	private function render_cart_item( $cart_item, $cart_item_key ) {
@@ -796,6 +963,35 @@ class O100_Side_Cart {
 			}
 		}
 		$upsell_ids = array_unique( array_diff( $upsell_ids, $cart_ids ) );
+
+		// Fallback 1: Featured Products
+		if ( count($upsell_ids) < 8 ) {
+			$featured = wc_get_products( array(
+				'featured' => true,
+				'limit'    => 8,
+				'exclude'  => array_merge( $cart_ids, $upsell_ids ),
+				'return'   => 'ids',
+				'status'   => 'publish'
+			) );
+			$upsell_ids = array_merge( $upsell_ids, $featured );
+			$upsell_ids = array_unique( $upsell_ids );
+		}
+
+		// Fallback 2: Best Sellers
+		if ( count($upsell_ids) < 8 ) {
+			$best_sellers = wc_get_products( array(
+				'meta_key' => 'total_sales',
+				'orderby'  => 'meta_value_num',
+				'order'    => 'DESC',
+				'limit'    => 8,
+				'exclude'  => array_merge( $cart_ids, $upsell_ids ),
+				'return'   => 'ids',
+				'status'   => 'publish'
+			) );
+			$upsell_ids = array_merge( $upsell_ids, $best_sellers );
+			$upsell_ids = array_unique( $upsell_ids );
+		}
+
 		if ( empty($upsell_ids) ) return '';
 
 		$upsell_ids = array_slice( $upsell_ids, 0, 8 );
@@ -815,9 +1011,14 @@ class O100_Side_Cart {
 					$img = wp_get_attachment_image_url( $up->get_image_id(), 'thumbnail' ) ?: wc_placeholder_img_src('thumbnail');
 				?>
 				<div class="o100-sc-upsell-card" data-id="<?php echo esc_attr($uid); ?>">
-					<div class="o100-sc-upsell-img"><img src="<?php echo esc_url($img); ?>" alt=""></div>
-					<div class="o100-sc-upsell-name"><?php echo esc_html( wp_trim_words($up->get_name(), 4) ); ?></div>
-					<div class="o100-sc-upsell-price"><?php echo $up->get_price_html(); ?></div>
+					<div class="o100-sc-upsell-info">
+						<div class="o100-sc-upsell-name"><?php echo esc_html( wp_trim_words($up->get_name(), 8) ); ?></div>
+						<div class="o100-sc-upsell-price"><?php echo $up->get_price_html(); ?></div>
+					</div>
+					<div class="o100-sc-upsell-img-wrap">
+						<img src="<?php echo esc_url($img); ?>" alt="">
+						<button class="o100-sc-upsell-add add_to_cart_button ajax_add_to_cart" data-product_id="<?php echo esc_attr($uid); ?>">+</button>
+					</div>
 				</div>
 				<?php endforeach; ?>
 			</div>
@@ -889,13 +1090,13 @@ class O100_Side_Cart {
 		ob_start(); ?>
 		<div class="o100-sc-promos">
 			<div class="o100-sc-promos-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-				<div class="o100-sc-promos-title" style="margin-bottom:0;"><?php esc_html_e('Offers for you', 'order100'); ?></div>
+				<div class="o100-sc-promos-title" style="margin-bottom:0; font-size:16px; font-weight:700; color:#111;"><?php esc_html_e('Offers for you', 'order100'); ?></div>
 				<div class="o100-sc-promos-nav" style="display:flex; gap:4px;">
-					<button class="o100-sc-promo-prev" type="button" style="width:28px; height:28px; border:1px solid #e5e7eb; border-radius:50%; background:#fff; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; color:#111; transition:background .15s;">&#8249;</button>
-					<button class="o100-sc-promo-next" type="button" style="width:28px; height:28px; border:1px solid #e5e7eb; border-radius:50%; background:#fff; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; color:#111; transition:background .15s;">&#8250;</button>
+					<button class="o100-sc-promo-prev" type="button" style="width:28px; height:28px; min-width:28px; min-height:28px; padding:0; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:50%; background:#fff; cursor:pointer; font-size:16px; line-height:1; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#111; transition:background .15s;">&#8249;</button>
+					<button class="o100-sc-promo-next" type="button" style="width:28px; height:28px; min-width:28px; min-height:28px; padding:0; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:50%; background:#fff; cursor:pointer; font-size:16px; line-height:1; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#111; transition:background .15s;">&#8250;</button>
 				</div>
 			</div>
-			<div class="o100-sc-promos-track" style="display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; -ms-overflow-style:none; scrollbar-width:none; padding-bottom:8px;">
+			<div class="o100-sc-promos-track" style="display:flex; gap:12px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none; padding-bottom:8px;">
 			<?php foreach ( $promo_items as $pi ) :
 				$p = wc_get_product($pi['product_id']);
 				if ( ! $p ) continue;
@@ -948,11 +1149,17 @@ class O100_Side_Cart {
 	 * Build the full cart body HTML (used for initial render + fragments)
 	 */
 	private function build_cart_body() {
+		$portal_opts = get_option('o100_portal', array());
+		$empty_text = isset($portal_opts['o100_portal_cart_empty_text']) ? $portal_opts['o100_portal_cart_empty_text'] : 'Your cart is currently empty.';
+		$continue_btn = isset($portal_opts['o100_portal_cart_continue_btn_text']) ? $portal_opts['o100_portal_cart_continue_btn_text'] : 'Browse Menu';
+		$checkout_btn = isset($portal_opts['o100_portal_cart_checkout_text']) ? $portal_opts['o100_portal_cart_checkout_text'] : 'Go to checkout';
+		
 		ob_start();
 		echo '<div class="o100-sc-body">';
 		if ( ! WC()->cart || WC()->cart->is_empty() ) {
 			echo '<div class="o100-sc-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>';
-			echo '<p>' . esc_html__('Your cart is empty', 'order100') . '</p></div>';
+			echo '<p>' . esc_html( $empty_text ) . '</p>';
+			echo '<button type="button" class="o100-sc-continue-btn o100-sc-close-btn" style="margin-top:16px; background:var(--theme-color); color:var(--btn-text-color); padding:10px 20px; border-radius:8px; border:none; font-weight:600; cursor:pointer; width:auto; height:auto; display:inline-block; transition:opacity 0.2s;">' . esc_html( $continue_btn ) . '</button></div>';
 		} else {
 			// Items
 			echo '<div class="o100-sc-items">';
@@ -962,7 +1169,7 @@ class O100_Side_Cart {
 			echo '</div>';
 
 			// Upsells (conditional)
-			$portal_opts = get_option('o100_portal', array());
+			// Upsells (conditional)
 			$show_upsell = isset($portal_opts['o100_portal_cart_show_upsell']) ? $portal_opts['o100_portal_cart_show_upsell'] : 'yes';
 			$show_promo  = isset($portal_opts['o100_portal_cart_show_promo']) ? $portal_opts['o100_portal_cart_show_promo'] : 'yes';
 			if ( $show_upsell === 'yes' ) {
@@ -1001,7 +1208,7 @@ class O100_Side_Cart {
 				echo '</div>';
 			}
 			
-			echo '<a href="' . esc_url(wc_get_checkout_url()) . '" class="o100-sc-checkout-btn">' . esc_html__('Go to checkout', 'order100') . '</a>';
+			echo '<a href="' . esc_url(wc_get_checkout_url()) . '" class="o100-sc-checkout-btn">' . esc_html( $checkout_btn ) . '</a>';
 			echo '</div>';
 		}
 		echo '</div>';
@@ -1012,8 +1219,20 @@ class O100_Side_Cart {
 	 * Render full side cart to footer
 	 */
 	public function render_side_cart() {
-		if ( is_admin() || ! function_exists('WC') ) return;
+		global $o100_disable_side_cart;
+		if ( ! empty( $o100_disable_side_cart ) ) {
+			return;
+		}
+
+		if ( is_admin() || ! function_exists( 'WC' ) ) {
+			return;
+		}
 		if ( is_checkout() || is_cart() ) return;
+		
+		if ( WC()->cart && ! WC()->cart->is_empty() ) {
+			WC()->cart->calculate_totals();
+		}
+		
 		$count = WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
 		
 		// Load Store Portal Settings
@@ -1029,30 +1248,19 @@ class O100_Side_Cart {
 		$theme_color    = !empty($opts['o100_portal_theme_color']) ? $opts['o100_portal_theme_color'] : '#e11d48';
 		$bg_color       = !empty($opts['o100_portal_bg_color']) ? $opts['o100_portal_bg_color'] : '#ffffff';
 		$btn_text_color = !empty($opts['o100_portal_btn_text_color']) ? $opts['o100_portal_btn_text_color'] : '#ffffff';
-
-		// STANDALONE MODE: Cart toggle is always middle-right, icon-only
-		if ( $widget_mode === 'standalone' ) {
-			$launcher_pos   = 'middle-right';
-			$launcher_style = 'icon_only';
-			$launcher_icon  = 'cart';
-			$launcher_text  = '';
-			
-			// Detach standalone cart from Loyalty colors, use global store color
-			$general_opts = get_option( 'o100_options', array() );
-			$theme_color = !empty($general_opts['o100_main_color']) ? $general_opts['o100_main_color'] : '#0f172a';
-			$btn_text_color = '#ffffff';
-
-			// Only Cart tab in standalone (Rewards handled by native launcher)
-			$enabled_tabs   = array('cart');
-			$default_tab    = 'cart';
-		} else {
-			if ( $launcher_pos === 'hidden' ) {
-				$launcher_style = 'hidden';
-			} else if ( strpos($launcher_pos, 'middle') !== false ) {
-				$launcher_style = 'icon_only';
-			} else {
-				$launcher_style = 'icon_text';
-			}
+		
+		$theme_mode     = !empty($opts['o100_portal_theme_mode']) ? $opts['o100_portal_theme_mode'] : 'light';
+		$panel_width    = !empty($opts['o100_portal_panel_width']) ? $opts['o100_portal_panel_width'] : '400';
+		$drawer_side    = !empty($opts['o100_portal_drawer_side']) ? $opts['o100_portal_drawer_side'] : 'right';
+		$backdrop       = !empty($opts['o100_portal_backdrop_overlay']) ? $opts['o100_portal_backdrop_overlay'] : 'dark';
+		$close_btn      = !empty($opts['o100_portal_close_btn_style']) ? $opts['o100_portal_close_btn_style'] : 'inside';
+		$z_index        = !empty($opts['o100_portal_z_index']) ? $opts['o100_portal_z_index'] : '999999';
+		$custom_css     = !empty($opts['o100_portal_custom_css']) ? $opts['o100_portal_custom_css'] : '';
+		
+		$launcher_style = isset($opts['o100_portal_launcher_style']) ? $opts['o100_portal_launcher_style'] : 'icon_text';
+		if ( $launcher_pos === 'hidden' ) {
+			$launcher_style = 'hidden';
+		}
 			$enabled_tabs   = isset($opts['o100_portal_enabled_tabs']) && is_array($opts['o100_portal_enabled_tabs']) ? $opts['o100_portal_enabled_tabs'] : array('cart', 'rewards', 'account');
 			if ( ! in_array('cart', $enabled_tabs) ) array_unshift($enabled_tabs, 'cart');
 			// Smart detection: remove rewards tab if no active loyalty campaigns
@@ -1065,9 +1273,8 @@ class O100_Side_Cart {
 			if ( ! $has_loy_campaigns ) {
 				$enabled_tabs = array_diff($enabled_tabs, array('rewards'));
 			}
-			$default_tab    = isset($opts['o100_portal_default_tab']) ? $opts['o100_portal_default_tab'] : 'rewards';
-			if ( ! $has_loy_campaigns && $default_tab === 'rewards' ) $default_tab = 'cart';
-		}
+		$default_tab    = isset($opts['o100_portal_default_tab']) ? $opts['o100_portal_default_tab'] : 'rewards';
+		if ( ! $has_loy_campaigns && $default_tab === 'rewards' ) $default_tab = 'cart';
 
 		// If hidden, render nothing for desktop
 		if ( $launcher_style !== 'hidden' ) {
@@ -1082,39 +1289,76 @@ class O100_Side_Cart {
 				$pos_style .= " bottom: {$launcher_spacing}px;";
 			}
 			
-			$shape_style = 'border-radius: 24px;';
+			$shape_style = 'border-radius: 50px;';
 			if ($launcher_shape === 'rounded') $shape_style = 'border-radius: 12px;';
 			if ($launcher_shape === 'square') $shape_style = 'border-radius: 0;';
 			
 			$icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>';
+			if ($launcher_icon === 'bag') $icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>';
+			if ($launcher_icon === 'basket') $icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h2l3.6 7.59L6.25 13A2 2 0 008 16h12v-2H8l1.1-2h7.45a2 2 0 001.76-1.06L22 6H6.21"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>';
 			if ($launcher_icon === 'gift') $icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>';
 			if ($launcher_icon === 'star') $icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
 			if ($launcher_icon === 'crown') $icon_svg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>';
+			if ($launcher_icon === 'custom_image') {
+				$custom_img = isset($opts['o100_portal_launcher_custom_image']) ? $opts['o100_portal_launcher_custom_image'] : '';
+				if (!empty($custom_img)) {
+					$icon_svg = '<img src="' . esc_url($custom_img) . '" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">';
+				}
+			}
 			
 			?>
-			<div id="o100-cart-toggle" class="o100-cart-toggle <?php echo esc_attr($launcher_style . ' ' . $anim_class); ?>" style="<?php echo esc_attr($pos_style); ?> <?php echo esc_attr($shape_style); ?> background: <?php echo esc_attr($theme_color); ?>; color: <?php echo esc_attr($btn_text_color); ?>; --badge-bg: <?php echo esc_attr($btn_text_color); ?>; --badge-color: <?php echo esc_attr($theme_color); ?>;">
-				<?php echo $icon_svg; ?>
-				<?php if ( $launcher_style === 'icon_text' ) : ?>
-					<span class="o100-cart-text" style="margin-left: 8px; font-weight: 600; font-size: 14px;"><?php echo esc_html($launcher_text); ?></span>
+			<div id="o100-cart-toggle" class="o100-cart-toggle <?php echo esc_attr($launcher_style . ' ' . $anim_class); ?>" style="<?php echo esc_attr($pos_style); ?> <?php echo esc_attr($shape_style); ?> background: <?php echo esc_attr($theme_color); ?>; color: <?php echo esc_attr($btn_text_color); ?>; z-index: <?php echo esc_attr($z_index); ?>; --badge-bg: <?php echo esc_attr($btn_text_color); ?>; --badge-color: <?php echo esc_attr($theme_color); ?>;">
+				<?php if ( $launcher_style !== 'text_only' ) echo $icon_svg; ?>
+				<?php if ( $launcher_style !== 'icon_only' ) : ?>
+					<span class="o100-cart-text" style="margin-left: <?php echo $launcher_style === 'text_only' ? '0' : '8px'; ?>; font-weight: 600; font-size: 14px; white-space:nowrap;"><?php echo esc_html($launcher_text); ?></span>
 				<?php endif; ?>
 				<span class="o100-cart-count"><?php echo esc_html($count); ?></span>
 			</div>
 			<?php
 		}
 		?>
-		<div id="o100-cart-overlay" class="o100-cart-overlay"></div>
-		<div id="o100-side-cart" class="o100-side-cart">
+		<?php if ( !empty($custom_css) ) : ?>
+			<style id="o100-portal-custom-css"><?php echo wp_strip_all_tags($custom_css); ?></style>
+		<?php endif; ?>
+		<div id="o100-cart-overlay" class="o100-cart-overlay backdrop-<?php echo esc_attr($backdrop); ?>" style="z-index: <?php echo esc_attr(intval($z_index) - 1); ?>;"></div>
+		<div id="o100-side-cart" class="o100-side-cart drawer-<?php echo esc_attr($drawer_side); ?> mode-<?php echo esc_attr($theme_mode); ?>" style="width: <?php echo esc_attr($panel_width); ?>px; max-width: 100%; z-index: <?php echo esc_attr($z_index); ?>;">
+			
+			<?php if ( $close_btn === 'outside' ) : ?>
+				<button type="button" id="o100-cart-close" class="o100-sc-close-btn o100-sc-close-outside" style="position:absolute; top:15px; left:-50px; width:40px; height:40px; background:#fff; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer; color:#111; z-index:<?php echo esc_attr($z_index); ?>;">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+				</button>
+			<?php endif; ?>
+
 			<div class="o100-sc-header" style="background: <?php echo esc_attr($bg_color); ?>;">
-				<button type="button" id="o100-cart-close" class="o100-sc-close-btn">&times;</button>
+				<div class="o100-sc-header-logo-row">
+					<div class="o100-sc-header-logo" style="display:flex; align-items:center;">
+						<?php 
+						$logo_url = isset($opts['o100_portal_logo']) ? $opts['o100_portal_logo'] : '';
+						if ( $logo_url ) {
+							echo '<img src="' . esc_url($logo_url) . '" alt="Logo" style="max-height:30px; max-width:120px; object-fit:contain;">';
+						} else {
+							echo '<span class="o100-sc-header-label" style="color:var(--text-color);">' . esc_html__('Store Portal', 'order100') . '</span>';
+						}
+						?>
+					</div>
+					<?php if ( $close_btn === 'inside' ) : ?>
+						<button type="button" id="o100-cart-close" class="o100-sc-close-btn" style="color:var(--text-color);">&times;</button>
+					<?php endif; ?>
+				</div>
 				<div class="o100-sc-header-tabs">
+					<?php 
+					$tab_cart = isset($portal_opts['o100_portal_tab_label_cart']) ? $portal_opts['o100_portal_tab_label_cart'] : 'Your Order';
+					$tab_rewards = isset($portal_opts['o100_portal_tab_label_rewards']) ? $portal_opts['o100_portal_tab_label_rewards'] : 'Rewards';
+					$tab_account = isset($portal_opts['o100_portal_tab_label_account']) ? $portal_opts['o100_portal_tab_label_account'] : 'Account';
+					?>
 					<?php if ( in_array('cart', $enabled_tabs) ) : ?>
-						<button class="o100-sc-tab-btn <?php echo ($default_tab === 'cart') ? 'active' : ''; ?>" data-target="o100-sc-tab-cart"><?php esc_html_e('Your Order', 'order100'); ?></button>
+						<button class="o100-sc-tab-btn <?php echo ($default_tab === 'cart') ? 'active' : ''; ?>" data-target="o100-sc-tab-cart"><?php echo esc_html($tab_cart); ?></button>
 					<?php endif; ?>
 					<?php if ( in_array('rewards', $enabled_tabs) ) : ?>
-						<button class="o100-sc-tab-btn <?php echo ($default_tab === 'rewards') ? 'active' : ''; ?>" data-target="o100-sc-tab-rewards"><?php esc_html_e('Rewards', 'order100'); ?></button>
+						<button class="o100-sc-tab-btn <?php echo ($default_tab === 'rewards') ? 'active' : ''; ?>" data-target="o100-sc-tab-rewards"><?php echo esc_html($tab_rewards); ?></button>
 					<?php endif; ?>
 					<?php if ( in_array('account', $enabled_tabs) ) : ?>
-						<button class="o100-sc-tab-btn" data-target="o100-sc-tab-account"><?php esc_html_e('Account', 'order100'); ?></button>
+						<button class="o100-sc-tab-btn" data-target="o100-sc-tab-account"><?php echo esc_html($tab_account); ?></button>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -1154,6 +1398,15 @@ class O100_Side_Cart {
 				<?php endif; ?>
 			</div>
 		</div>
+		
+		<!-- Product Quickview Modal -->
+		<div id="o100-product-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);">
+			<div class="o100-modal-content" style="background:#fff; border-radius:16px; width:90%; max-width:400px; position:relative; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+				<button class="o100-modal-close" style="position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.4); color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:20px; z-index:10; padding:0;">&times;</button>
+				<div class="o100-modal-body"></div>
+			</div>
+		</div>
+		
 		<?php
 		$qtys = array();
 		if ( WC()->cart ) {
@@ -1305,24 +1558,61 @@ class O100_Side_Cart {
 		?>
 <style>
 /* ── Toggle Button ── */
-.o100-cart-toggle{position:fixed;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s; height: 52px; padding: 0 20px;}
-.o100-cart-toggle.icon_only{padding: 0; width: 52px; justify-content: center;}
+.o100-cart-toggle{position:fixed;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s; height: 52px; padding: 0 20px; box-sizing: border-box;}
+.o100-cart-toggle.icon_only{padding: 0; width: 52px; justify-content: center; aspect-ratio: 1; flex-shrink:0;}
 .o100-cart-toggle:hover{transform:translateY(-2px);box-shadow:0 4px 18px rgba(0,0,0,.35)}
 .o100-cart-count{position:absolute;top:-4px;right:-4px;font-size:11px;font-weight:700;min-width:20px;height:20px;line-height:20px;text-align:center;border-radius:10px;padding:0 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); background: var(--badge-bg, #fff); color: var(--badge-color, #e11d48);}
 
 /* ── Overlay ── */
-.o100-cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:99991;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.o100-cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99991;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
 .o100-cart-overlay.active{opacity:1;visibility:visible}
+.o100-cart-overlay.backdrop-glass{background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.o100-cart-overlay.backdrop-none{background:transparent; pointer-events:none;}
+.o100-cart-overlay.backdrop-none.active{pointer-events:auto;}
 
 /* ── Panel ── */
-.o100-side-cart{position:fixed;top:0;right:-440px;width:420px;max-width:92vw;height:100%;background:#fff;z-index:99992;box-shadow:-2px 0 20px rgba(0,0,0,.12);transition:right .35s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.o100-side-cart{position:fixed;top:0;right:-440px;width:420px;max-width:92vw;height:100%;background:#fff;z-index:99992;box-shadow:-2px 0 20px rgba(0,0,0,.12);transition:right .35s cubic-bezier(.16,1,.3,1),left .35s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 .o100-side-cart.open{right:0}
 
+/* Left Drawer Variant */
+.o100-side-cart.drawer-left{right:auto;left:-440px;box-shadow:2px 0 20px rgba(0,0,0,.12);}
+.o100-side-cart.drawer-left.open{left:0;right:auto;}
+
+/* Dark Mode Variant */
+.o100-side-cart.mode-dark{background:#111827;color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-header{border-bottom:1px solid #374151;}
+.o100-side-cart.mode-dark .o100-sc-close-btn{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-header-label{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-header-tabs{background:#1f2937;}
+.o100-side-cart.mode-dark .o100-sc-tab-btn{color:#9ca3af !important;}
+.o100-side-cart.mode-dark .o100-sc-tab-btn:hover{color:#f9fafb !important;background:rgba(255,255,255,.05) !important;}
+.o100-side-cart.mode-dark .o100-sc-tab-btn.active{color:#111827 !important;background:#f9fafb !important;}
+.o100-side-cart.mode-dark .o100-sc-item{border-bottom-color:#374151;}
+.o100-side-cart.mode-dark .o100-sc-item:hover{background:#1f2937;}
+.o100-side-cart.mode-dark .o100-sc-item-title, .o100-side-cart.mode-dark .o100-sc-item-price{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-qty{border-color:#4b5563;}
+.o100-side-cart.mode-dark .o100-sc-qty-btn{background:#1f2937;color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-qty-btn:hover{background:#374151 !important;}
+.o100-side-cart.mode-dark .o100-sc-qty-val{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-upsells, .o100-side-cart.mode-dark .o100-sc-promos{border-top-color:#1f2937;}
+.o100-side-cart.mode-dark .o100-sc-upsells-header span, .o100-side-cart.mode-dark .o100-sc-promos-title{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-upsell-name{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-upsells-nav button{background:#1f2937;border-color:#374151;color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-upsells-nav button:hover{background:#374151;}
+.o100-side-cart.mode-dark .o100-sc-footer{background:#111827;border-top-color:#374151;}
+.o100-side-cart.mode-dark .o100-sc-subtotal span{color:#f9fafb;}
+.o100-side-cart.mode-dark .o100-sc-promo-card{background:#1f2937;border-color:#374151;}
+.o100-side-cart.mode-dark .o100-sc-promo-name, .o100-side-cart.mode-dark .o100-sc-promo-price{color:#f9fafb;}
+
 /* Header */
-.o100-sc-header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.o100-sc-header{display:block;padding:15px 20px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.o100-sc-header-logo-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+.o100-sc-header-logo-row .o100-sc-close-btn{position:relative;left:0 !important;top:0 !important;right:0 !important;}
 .o100-sc-close-btn{background:none;border:none;font-size:28px;color:#111;cursor:pointer;padding:0;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s}
 .o100-sc-close-btn:hover{background:#f3f4f6}
-.o100-sc-header-tabs{display:flex;gap:4px;flex:1;background:#f3f4f6;padding:4px;border-radius:24px;}
+.o100-side-cart.drawer-left .o100-sc-close-outside{left:auto !important;right:-50px !important;}
+@media(max-width: 768px) { .o100-sc-close-outside{display:none !important;} }
+.o100-sc-header-tabs{display:flex;gap:4px;width:100%;background:#f3f4f6;padding:4px;border-radius:24px;}
 .o100-sc-tab-btn{background:transparent !important;border:none !important;font-size:14px !important;font-weight:600 !important;color:#6b7280 !important;cursor:pointer;padding:6px 12px !important;border-radius:20px !important;transition:all .2s ease !important;white-space:nowrap;flex:1;text-align:center;box-shadow:none !important;outline:none !important;line-height:1.4 !important;margin:0 !important;}
 .o100-sc-tab-btn:hover{color:#111827 !important;background:rgba(0,0,0,.05) !important;}
 .o100-sc-tab-btn.active{color:#111827 !important;background:#ffffff !important;box-shadow:0 1px 3px rgba(0,0,0,.1) !important;}
@@ -1358,22 +1648,44 @@ class O100_Side_Cart {
 .o100-sc-qty-val{width:28px;text-align:center;font-size:13px;font-weight:600;color:#111;line-height:32px;transition:opacity .2s ease;}
 .o100-sc-qty.is-loading .o100-sc-qty-val{opacity:.3;}
 @keyframes o100-spin{100%{transform:rotate(360deg)}}
-.o100-sc-spinner{animation:o100-spin 1s linear infinite;margin-left:6px;vertical-align:middle;color:#6b7280;}
+.o100-sc-spinner{animation:o100-spin 1s linear infinite}
+
+/* Quickview Add to Cart */
+.o100-quickview-atc-wrap form.cart { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:0; }
+.o100-quickview-atc-wrap .quantity { display:flex; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+.o100-quickview-atc-wrap .quantity input { width:40px; height:44px; text-align:center; border:none; background:transparent; font-size:14px; font-weight:600; padding:0; box-shadow:none; }
+.o100-quickview-atc-wrap .quantity input[type=number]::-webkit-inner-spin-button, .o100-quickview-atc-wrap .quantity input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.o100-quickview-atc-wrap button.single_add_to_cart_button { flex:1; height:44px; background:var(--theme-color, #e11d48); color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; transition:opacity 0.2s; white-space:nowrap; padding:0 20px; }
+.o100-quickview-atc-wrap button.single_add_to_cart_button:hover { opacity:0.9; }
+.o100-quickview-variable form.cart { display:block; }
+.o100-quickview-variable .variations { margin-bottom:15px; width:100%; border-collapse:collapse; }
+.o100-quickview-variable .variations td { padding:5px 0; }
+.o100-quickview-variable .variations .label { font-weight:600; font-size:13px; color:#374151; vertical-align:middle; width:30%; }
+.o100-quickview-variable .variations select { width:100%; height:36px; border:1px solid #d1d5db; border-radius:6px; padding:0 10px; font-size:13px; }
+.o100-quickview-variable .single_variation_wrap { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.o100-quickview-variable .woocommerce-variation-price { width:100%; font-size:16px; font-weight:700; color:var(--theme-color, #e11d48); margin-bottom:10px; }
+.o100-quickview-variable .woocommerce-variation-add-to-cart { display:flex; width:100%; gap:10px; }
+
+@media (max-width: 480px) { .o100-modal-content { width:95%; } }
 
 /* Upsells */
 .o100-sc-upsells{padding:16px 20px;border-top:6px solid #f5f5f5}
 .o100-sc-upsells-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.o100-sc-upsells-header span{font-size:15px;font-weight:700;color:#111}
+.o100-sc-upsells-header span{font-size:16px;font-weight:700;color:#111}
 .o100-sc-upsells-nav{display:flex;gap:4px}
-.o100-sc-upsells-nav button{width:28px;height:28px;border:1px solid #e5e7eb;border-radius:50%;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#111;transition:background .15s}
+.o100-sc-upsells-nav button{width:28px;height:28px;min-width:28px;min-height:28px;padding:0;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:50%;background:#fff;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;color:#111;transition:background .15s;flex-shrink:0}
 .o100-sc-upsells-nav button:hover{background:#f3f4f6}
-.o100-sc-upsells-track{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none;padding-bottom:4px}
+.o100-sc-upsells-track{display:flex;gap:10px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;padding-bottom:12px;padding-top:4px}
 .o100-sc-upsells-track::-webkit-scrollbar{display:none}
-.o100-sc-upsell-card{flex-shrink:0;width:90px;cursor:pointer;text-align:center}
-.o100-sc-upsell-img{width:80px;height:80px;border-radius:10px;overflow:hidden;background:#f9fafb;margin:0 auto 6px}
-.o100-sc-upsell-img img{width:100%;height:100%;object-fit:cover}
-.o100-sc-upsell-name{font-size:11px;font-weight:500;color:#111;line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.o100-sc-upsell-price{font-size:11px;color:#6b7280}
+.o100-sc-upsell-card{flex-shrink:0;width:220px;display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;cursor:pointer;text-align:left;transition:border-color .15s}
+.o100-sc-upsell-card:hover{border-color:#d1d5db}
+.o100-sc-upsell-info{flex:1;padding-right:12px;min-width:0}
+.o100-sc-upsell-name{font-size:13px;font-weight:600;color:#111;line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+.o100-sc-upsell-price{font-size:12px;color:#6b7280;font-weight:500}
+.o100-sc-upsell-img-wrap{width:64px;height:64px;border-radius:8px;overflow:visible;background:#f9fafb;position:relative;flex-shrink:0}
+.o100-sc-upsell-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.o100-sc-upsell-add{position:absolute;right:-6px;bottom:-6px;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;box-sizing:border-box;border-radius:50%;background:#fff;border:1px solid #e5e7eb;color:var(--theme-color,#d97706);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);transition:all .2s;z-index:2}
+.o100-sc-upsell-add:hover{transform:scale(1.1)}
 
 /* Promotions */
 .o100-sc-promos{padding:16px 20px;border-top:6px solid #f5f5f5}
@@ -1467,11 +1779,10 @@ jQuery(function($){
 		// Update card quantities
 		var qtys = {};
 		var $qtyData = $('#o100-cart-qtys');
-		console.log('o100_frontend_optimizations running! $qtyData length:', $qtyData.length);
+
 		if ($qtyData.length > 0) {
 			try { 
-				qtys = JSON.parse($qtyData.attr('data-qtys')); 
-				console.log('Parsed qtys:', qtys);
+				qtys = JSON.parse($qtyData.attr('data-qtys'));
 			} catch(e){
 				console.error('Error parsing qtys:', e);
 			}
@@ -1501,12 +1812,10 @@ jQuery(function($){
 			if ($btn.length === 0) return;
 			
 			if (qty > 0) {
-				console.log('Updating button for PID', pid, 'to qty', qty);
 				if (!$btn.hasClass('o100-qty-active')) {
 					$btn.addClass('o100-qty-active');
 				}
 				$btn.html('<span class="o100-qty-text" style="color: #fff !important; font-size: 13px !important; font-weight: 800; display: inline-block; white-space: nowrap; line-height: 1;">' + qty + ' &times;</span>');
-				console.log('Button HTML after update:', $btn[0].outerHTML);
 			} else {
 				$btn.removeClass('o100-qty-active').html('<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>');
 			}
@@ -1535,16 +1844,7 @@ jQuery(function($){
 	});
 
 	// Promo Carousel Manual Navigation
-	$(document).on('click', '.o100-sc-promo-prev', function(e) {
-		e.preventDefault();
-		var $track = $(this).closest('.o100-sc-promos').find('.o100-sc-promos-track');
-		if ($track.length) $track[0].scrollLeft -= 260;
-	});
-	$(document).on('click', '.o100-sc-promo-next', function(e) {
-		e.preventDefault();
-		var $track = $(this).closest('.o100-sc-promos').find('.o100-sc-promos-track');
-		if ($track.length) $track[0].scrollLeft += 260;
-	});
+
 
 	$(document).on('click','.o100-sc-plus,.o100-sc-minus',function(e){
 		e.preventDefault();
@@ -1572,6 +1872,7 @@ jQuery(function($){
 						if (res.data.cart_html) {
 							var $newBody = $(res.data.cart_html);
 							$('.o100-sc-body').replaceWith($newBody);
+							injectSvgs();
 						}
 						
 						if (typeof o100_frontend_optimizations === 'function') {
@@ -1579,7 +1880,7 @@ jQuery(function($){
 						}
 					}
 					$(document.body).trigger('wc_fragment_refresh');
-				});
+				}).catch(function(){ return $.Deferred().resolve(); });
 			});
 			return;
 		}
@@ -1617,6 +1918,7 @@ jQuery(function($){
 						if (res.data.cart_html) {
 							var $newBody = $(res.data.cart_html);
 							$('.o100-sc-body').replaceWith($newBody);
+							injectSvgs();
 						}
 					}
 					
@@ -1637,35 +1939,93 @@ jQuery(function($){
 		}, 300);
 	});
 
-	// Upsell & Promo carousel nav
-	$(document).on('click','.o100-sc-upsell-prev, .o100-sc-promo-prev',function(){
-		$(this).closest('[class^="o100-sc-"]').find('[class$="-track"]').scrollLeft(-240);
+	// Upsell & Promo carousel nav (Infinite Loop)
+	$(document).on('click', '.o100-sc-upsell-prev, .o100-sc-promo-prev', function(e) {
+		e.preventDefault();
+		var track = $(this).closest('.o100-sc-upsells, .o100-sc-promos').find('.o100-sc-upsells-track, .o100-sc-promos-track');
+		if(track.children().length <= 1) return;
+		var last = track.children().last();
+		var w = last.outerWidth(true);
+		track.prepend(last);
+		track.scrollLeft(w);
+		track.animate({scrollLeft: 0}, 250);
 	});
-	$(document).on('click','.o100-sc-upsell-next, .o100-sc-promo-next',function(){
-		$(this).closest('[class^="o100-sc-"]').find('[class$="-track"]')[0].scrollLeft+=240;
+	$(document).on('click', '.o100-sc-upsell-next, .o100-sc-promo-next', function(e) {
+		e.preventDefault();
+		var track = $(this).closest('.o100-sc-upsells, .o100-sc-promos').find('.o100-sc-upsells-track, .o100-sc-promos-track');
+		if(track.children().length <= 1) return;
+		var first = track.children().first();
+		var w = first.outerWidth(true);
+		track.animate({scrollLeft: w}, 250, function() {
+			track.append(first);
+			track.scrollLeft(0);
+		});
 	});
 
 	// Upsell card click -> open product modal
-	$(document).on('click','.o100-sc-upsell-card',function(){
+	$(document).on('click','.o100-sc-upsell-card',function(e){
+		if ($(e.target).closest('.o100-sc-upsell-add').length) return; // ignore clicks on the Add button
+		
 		var id=$(this).data('id');
-		if(typeof exwoofood_modal_open==='function'){exwoofood_modal_open(id)}
-		else if($('#food_modal').length){$('#food_modal').trigger('exwf_open_modal',[id])}
+		var $modal = $('#o100-product-modal');
+		$modal.find('.o100-modal-body').html('<div style="padding:40px; text-align:center;"><svg class="o100-sc-spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="4.93" x2="19.07" y2="7.76"></line></svg></div>');
+		$modal.css('display', 'flex');
+		
+		$.post('<?php echo admin_url("admin-ajax.php"); ?>', {
+			action: 'o100_get_product_quickview',
+			product_id: id
+		}, function(res) {
+			if (res.success) {
+				$modal.find('.o100-modal-body').html(res.data.html);
+				// Re-init WC variation scripts if needed
+				if (typeof $.fn.wc_variation_form !== 'undefined') {
+					$modal.find('.variations_form').wc_variation_form();
+				}
+			}
+		});
+	});
+
+	$(document).on('click', '.o100-modal-close, #o100-product-modal', function(e) {
+		if (e.target === this) {
+			$('#o100-product-modal').hide();
+		}
+	});
+
+	// Quick Add to Cart Button on Upsell Card
+	$(document).on('click', '.o100-sc-upsell-add', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var pid = $btn.data('product_id');
+		$btn.html('<svg class="o100-sc-spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="4.93" x2="19.07" y2="7.76"></line></svg>');
+		
+		$.post('<?php echo admin_url("admin-ajax.php"); ?>', {
+			action: 'o100_update_cart_qty',
+			cart_item_key: '', 
+			product_id: pid,
+			qty: 1
+		}, function(res) {
+			if(res.success) {
+				$btn.html('✓');
+				setTimeout(function(){ $btn.html('+'); }, 2000);
+				$(document.body).trigger('wc_fragment_refresh');
+			} else {
+				$btn.html('+');
+			}
+		});
 	});
 
 	// Auto-refresh fragments after add/remove
-	$(document.body).on('added_to_cart removed_from_cart',function(){
+	$(document.body).on('added_to_cart', function(){
+		setTimeout(function(){$(document.body).trigger('wc_fragment_refresh')},100);
+		// No longer auto-opening side cart when item is added per user request
+	});
+	$(document.body).on('removed_from_cart', function(){
 		setTimeout(function(){$(document.body).trigger('wc_fragment_refresh')},100);
 	});
 });
 </script>
 	<?php }
+
+	// ========================================================================
+
 }
-
-
-// TS: 20260111142730
-
-// TS: 20260211163733
-
-// TS: 20260430164932
-
-// TS: 20260514022044

@@ -43,7 +43,7 @@ class Initialize {
             add_action( $hook, [ $this, 'init_core' ], $priority ?? 10 );
         }
 
-        add_action( 'init', [ $this, 'init_modules' ] );
+        add_action( 'init', [ $this, 'init_modules' ], 5 );
     }
 
     public function init_core() {
@@ -128,13 +128,3 @@ class Initialize {
     }
 }
 
-
-// TS: 20260207122908
-
-// TS: 20260306164119
-
-// TS: 20260420114203
-
-// TS: 20260504164724
-
-// TS: 20260526181300
