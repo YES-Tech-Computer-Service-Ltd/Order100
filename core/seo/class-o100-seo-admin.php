@@ -306,7 +306,7 @@ class O100_SEO_Admin {
 			<!-- Section B: Restaurant / FoodEstablishment Schema -->
 			<div style="margin-top:16px; padding:20px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;">
 				<h4 style="margin:0 0 8px; font-size:14px; display:flex; align-items:center; gap:6px;">
-					<span class="dashicons dashicons-store" style="color:#3b82f6;"></span>
+					<span class="dashicons dashicons-store" style="color:#F59322;"></span>
 					<?php esc_html_e( 'Restaurant Schema', 'order100' ); ?>
 				</h4>
 				<p style="margin:0 0 12px; color:#6b7280; font-size:12px;">
@@ -352,7 +352,7 @@ class O100_SEO_Admin {
 			<!-- Section C: Product Brand -->
 			<div style="margin-top:16px; padding:20px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:8px;">
 				<h4 style="margin:0 0 8px; font-size:14px; display:flex; align-items:center; gap:6px;">
-					<span class="dashicons dashicons-nametag" style="color:#a855f7;"></span>
+					<span class="dashicons dashicons-nametag" style="color:#F59322;"></span>
 					<?php esc_html_e( 'Product Brand', 'order100' ); ?>
 				</h4>
 				<p style="margin:0 0 12px; color:#6b7280; font-size:12px;">
@@ -525,7 +525,7 @@ class O100_SEO_Admin {
 				<span id="o100-schema-feedback" style="font-size:13px; font-weight:500; display:none;"></span>
 				<button type="button" id="o100-save-schema-btn"
 						style="padding:10px 28px; font-size:14px; font-weight:600; color:#fff;
-						background:linear-gradient(135deg, #1800AD, #6366f1); border:none; border-radius:8px;
+						background:linear-gradient(135deg, #1800AD, #F59322); border:none; border-radius:8px;
 						cursor:pointer; display:inline-flex; align-items:center; gap:6px;
 						box-shadow:0 2px 8px rgba(99,102,241,0.3); transition:all 0.2s ease;"
 						onmouseover="this.style.boxShadow='0 4px 14px rgba(99,102,241,0.45)'; this.style.transform='translateY(-1px)';"
@@ -780,7 +780,7 @@ class O100_SEO_Admin {
 					</div>
 				<?php else : ?>
 					<div class="o100-seo-dynamic-note">
-						<span class="dashicons dashicons-info" style="color:#4f46e5;"></span>
+						<span class="dashicons dashicons-info" style="color:#F59322;"></span>
 						<?php esc_html_e( 'No Preview/Apply needed — this works automatically. Just save your templates above, and the system will generate Title & Description in real-time whenever someone visits a product page.', 'order100' ); ?>
 					</div>
 				<?php endif; ?>
@@ -821,9 +821,3 @@ class O100_SEO_Admin {
 		<?php
 	}
 }
-
-// TS: 20260224142535
-
-// TS: 20260531225744
-
-// Update TS: 20260607130000
