@@ -11,9 +11,8 @@ class O100_Diagnostic {
 			return;
 		}
 
-		add_action( 'admin_footer', array( $this, 'render_diagnostic_panel' ) );
-		
-		// AJAX Handlers
+		// Modal panel removed — Health Check & Delivery Sim now live in Tools page.
+		// AJAX handlers remain active.
 		add_action( 'wp_ajax_o100_run_health_check', array( $this, 'ajax_health_check' ) );
 		add_action( 'wp_ajax_o100_run_shipping_sim', array( $this, 'ajax_shipping_simulator' ) );
 	}
@@ -131,7 +130,7 @@ class O100_Diagnostic {
 		// we will instantiate O100_Shipping and use reflection or override methods for simulation,
 		// OR we can just read the raw options and calculate them ourselves here to show the breakdown.
 		
-		$shipping = new O100_Shipping();
+		$shipping = O100_Shipping::instance();
 		
 		// 1. Get Effective Minimum
 		$reflection = new ReflectionClass( $shipping );
@@ -442,7 +441,7 @@ class O100_Diagnostic {
 						$.each(res.data, function(i, item) {
 							var icon = item.status === 'ok' ? 'dashicons-yes-alt' : (item.status === 'warning' ? 'dashicons-warning' : 'dashicons-dismiss');
 							var color = item.status === 'ok' ? '#10b981' : (item.status === 'warning' ? '#f59e0b' : '#e11d48');
-							var actionHtml = (item.action && item.status !== 'ok') ? '<a href="'+item.action+'" style="font-size:12px; color:#3b82f6; text-decoration:none; display:block; margin-top:4px;">Fix Issue &rarr;</a>' : '';
+							var actionHtml = (item.action && item.status !== 'ok') ? '<a href="'+item.action+'" style="font-size:12px; color:#F59322; text-decoration:none; display:block; margin-top:4px;">Fix Issue &rarr;</a>' : '';
 							html += '<li class="'+item.status+'">';
 							html += '<div><div class="o100-diag-item-label">'+item.label+'</div><div class="o100-diag-item-msg">'+item.msg+'</div>'+actionHtml+'</div>';
 							html += '<span class="dashicons '+icon+'" style="color:'+color+';"></span>';
@@ -539,5 +538,3 @@ class O100_Diagnostic {
 	}
 }
 
-
-// TS: 20260108122020
