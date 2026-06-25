@@ -20,6 +20,8 @@ class OrderDetailsRenderer {
 
     public $is_placeholder = false;
 
+    public $hide_footer = false;
+
     public $titles = [];
 
     public $show_product_item_cost = false;
@@ -32,6 +34,7 @@ class OrderDetailsRenderer {
         $this->colspan_value          = $is_placeholder ? '{{show_product_item_cost}}' : ( $this->show_product_item_cost ? '3' : '2' );
         $this->element_data           = $element_data;
         $this->is_placeholder         = $is_placeholder;
+        $this->hide_footer            = isset( $element_data['hide_footer'] ) ? filter_var( $element_data['hide_footer'], FILTER_VALIDATE_BOOLEAN ) : false;
         $this->initialize_titles();
 
         if ( ! Helpers::is_woocommerce_order( $order ) ) {
@@ -172,7 +175,9 @@ class OrderDetailsRenderer {
             <?php
             $this->render_heading();
             $this->render_order_items();
-            $this->render_footer();
+            if ( ! $this->hide_footer ) {
+                $this->render_footer();
+            }
             ?>
             </table>
             <?php
@@ -565,9 +570,3 @@ class OrderDetailsRenderer {
 }
 
 
-
-// TS: 20260115202946
-
-// TS: 20260201111517
-
-// TS: 20260522134626

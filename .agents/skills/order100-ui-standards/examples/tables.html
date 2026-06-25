@@ -1,0 +1,71 @@
+<!-- ============================================== -->
+<!-- 1. ORDER100 STANDARD DATA TABLE                -->
+<!-- ============================================== -->
+<!-- 
+  Key features of the Order100 standard table:
+  1. Outer container: rounded-xl, border, shadow-sm, bg-white.
+  2. Responsive wrapper: o100-table-responsive-wrapper and overflow-x-auto.
+  3. Table min-width: Prevents squishing on small screens (e.g., min-w-[800px]).
+  4. Fixed columns: o100-col-fixed-left (first column) and o100-col-fixed-right (last column) to freeze them during horizontal scroll.
+  5. Responsive breakpoints: Use `hidden sm:table-cell` or `md:table-cell` to hide low-priority columns on small screens.
+  6. Status toggle: Centered column with `o100-toggle`.
+  7. Actions: Centered column (`text-center`, `justify-center`) with `o100-action-icon-btn` standard buttons and tooltips.
+-->
+
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="o100-table-responsive-wrapper overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 min-w-[800px]">
+            <!-- Header -->
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th class="py-3 px-6 text-left o100-col-fixed-left">Name</th>
+                    <th class="py-3 px-6 text-left hidden sm:table-cell">Type</th>
+                    <th class="py-3 px-6 text-left hidden md:table-cell">Priority</th>
+                    <th class="py-3 px-6 text-center" style="width:100px;">Status</th>
+                    <th class="py-3 px-6 text-center o100-col-fixed-right">Actions</th>
+                </tr>
+            </thead>
+            
+            <!-- Body -->
+            <tbody class="bg-white divide-y divide-slate-200">
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <!-- Fixed Left Column: Name & Description -->
+                    <td class="px-6 py-4 o100-col-fixed-left">
+                        <div class="text-sm font-bold text-slate-900">Summer Sale 2026</div>
+                        <div class="text-xs text-slate-500 mt-1">20% off all summer items.</div>
+                    </td>
+                    
+                    <!-- Middle Columns -->
+                    <td class="px-6 py-4 text-sm text-slate-600 hidden sm:table-cell">Percentage Discount</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 hidden md:table-cell">10</td>
+                    
+                    <!-- Status Column (Toggle) -->
+                    <td class="px-6 py-4 text-center">
+                        <label class="o100-toggle">
+                            <input type="checkbox" checked>
+                            <span class="o100-toggle-slider"></span>
+                        </label>
+                    </td>
+                    
+                    <!-- Fixed Right Column: Actions -->
+                    <td class="px-6 py-4 text-center whitespace-nowrap o100-col-fixed-right">
+                        <div class="flex items-center justify-center gap-2">
+                            <!-- Edit -->
+                            <button type="button" class="o100-action-icon-btn edit" data-tooltip="Edit">
+                                <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <!-- Duplicate -->
+                            <button type="button" class="o100-action-icon-btn duplicate" data-tooltip="Duplicate">
+                                <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                            <!-- Delete -->
+                            <button type="button" class="o100-action-icon-btn delete" data-tooltip="Delete">
+                                <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

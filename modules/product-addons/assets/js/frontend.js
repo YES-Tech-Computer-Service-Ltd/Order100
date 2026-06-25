@@ -124,8 +124,76 @@ jQuery(document).ready(function($) {
 		}
 	});
 
+	function evaluateConditions($container) {
+		$container.find('.o100-has-conditions').each(function() {
+			var $group = $(this);
+			var rulesStr = $group.attr('data-rules');
+			if (!rulesStr) return;
+			var rules;
+			try {
+				rules = JSON.parse(rulesStr);
+			} catch(e) {
+				return;
+			}
+			var matchType = $group.attr('data-rules-match') || 'any';
+			
+			var isMatch = matchType === 'all' ? true : false;
+			
+			if (rules.length === 0) {
+				isMatch = true; // No rules means it shows
+			} else {
+				for (var i = 0; i < rules.length; i++) {
+					var rule = rules[i];
+					var targetModId = rule.type_op;
+					var targetVal = rule.val;
+					
+					var targetGroup = $container.find('.o100-addon-group[data-id="' + targetModId + '"]');
+					var ruleMatched = false;
+					
+					if (targetGroup.length > 0) {
+						// Check if targetVal is selected
+						targetGroup.find('input[type="checkbox"]:checked, input[type="radio"]:checked, option:selected').each(function() {
+							var label = $(this).attr('data-label') || '';
+							if ($(this).val() === targetVal || label === targetVal) {
+								ruleMatched = true;
+							}
+						});
+					} else {
+						// Target group doesn't exist on page, so rule cannot match
+						ruleMatched = false;
+					}
+					
+					if (matchType === 'any' && ruleMatched) {
+						isMatch = true;
+						break;
+					}
+					if (matchType === 'all' && !ruleMatched) {
+						isMatch = false;
+						break;
+					}
+				}
+			}
+			
+			if (isMatch) {
+				if ($group.hasClass('o100-condition-hidden')) {
+					$group.removeClass('o100-condition-hidden').slideDown(200);
+				}
+			} else {
+				if (!$group.hasClass('o100-condition-hidden')) {
+					$group.addClass('o100-condition-hidden').slideUp(200);
+					// Clear internal values so they don't count towards total
+					$group.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+					$group.find('input[type="number"], input[type="text"], textarea').val('');
+					$group.find('select').prop('selectedIndex', 0);
+				}
+			}
+		});
+	}
+
 	function calculateTotal($container) {
 		if (!$container || !$container.length) return;
+		
+		evaluateConditions($container);
 		
 		var additionalPrice = 0;
 		
@@ -373,11 +441,3 @@ jQuery(document).ready(function($) {
 		}
 	}, true); // use capture phase
 });
-
-/* TS: 20260325224507 */
-
-/* TS: 20260508022905 */
-
-/* TS: 20260510221958 */
-
-/* TS: 20260526031104 */

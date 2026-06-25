@@ -848,5 +848,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
-
-/* TS: 20260117162749 */

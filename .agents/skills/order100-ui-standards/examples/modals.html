@@ -1,0 +1,35 @@
+<!-- ============================================== -->
+<!-- 1. STANDARD SWEETALERT2 CONFIGURATION          -->
+<!-- ============================================== -->
+<!-- 
+  NOTE: For standard alerts, confirmations, and warnings, 
+  always use SweetAlert2 (Swal) with standard Tailwind colors injected via customClass.
+-->
+<script>
+// SUCCESS ALERT
+Swal.fire({
+    title: 'Success!',
+    text: 'Settings have been saved successfully.',
+    icon: 'success',
+    confirmButtonText: 'Got it!',
+    customClass: {
+        confirmButton: 'bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-colors text-sm border-0'
+    },
+    buttonsStyling: false
+});
+
+// WARNING / CONFIRMATION ALERT
+Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this action!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+    customClass: {
+        confirmButton: 'bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-colors text-sm border-0 mr-3',
+        cancelButton: 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-6 py-2.5 rounded-xl font-bold shadow-sm transition-colors text-sm'
+    },
+    buttonsStyling: false
+});
+</script>
