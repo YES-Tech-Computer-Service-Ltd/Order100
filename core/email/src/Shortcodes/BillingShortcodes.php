@@ -18,79 +18,79 @@ class BillingShortcodes extends BaseShortcode {
             'name'        => 'o100_billing_address',
             'description' => __( 'Billing Address', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_address' ],
+            'callback'    => [ $this, 'o100ne_billing_address' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_address_1',
             'description' => __( 'Billing Address 1', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_address_1' ],
+            'callback'    => [ $this, 'o100ne_billing_address_1' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_address_2',
             'description' => __( 'Billing Address 2', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_address_2' ],
+            'callback'    => [ $this, 'o100ne_billing_address_2' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_first_name',
             'description' => __( 'Billing First Name', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_first_name' ],
+            'callback'    => [ $this, 'o100ne_billing_first_name' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_last_name',
             'description' => __( 'Billing Last Name', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_last_name' ],
+            'callback'    => [ $this, 'o100ne_billing_last_name' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_company',
             'description' => __( 'Billing Company', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_company' ],
+            'callback'    => [ $this, 'o100ne_billing_company' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_city',
             'description' => __( 'Billing City', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_city' ],
+            'callback'    => [ $this, 'o100ne_billing_city' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_country',
             'description' => __( 'Billing Country', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_country' ],
+            'callback'    => [ $this, 'o100ne_billing_country' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_state',
             'description' => __( 'Billing State', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_state' ],
+            'callback'    => [ $this, 'o100ne_billing_state' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_postcode',
             'description' => __( 'Billing Postal Code', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_postcode' ],
+            'callback'    => [ $this, 'o100ne_billing_postcode' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_phone',
             'description' => __( 'Billing Phone', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_phone' ],
+            'callback'    => [ $this, 'o100ne_billing_phone' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_email',
             'description' => __( 'Billing Email', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_email' ],
+            'callback'    => [ $this, 'o100ne_billing_email' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_billing_shipping_address',
             'description' => __( 'Billing Shipping Address', 'order100' ),
             'group'       => 'billings',
-            'callback'    => [ $this, 'o100_billing_shipping_address' ],
+            'callback'    => [ $this, 'o100ne_billing_shipping_address' ],
         ];
         return $shortcodes;
     }
@@ -423,7 +423,3 @@ class BillingShortcodes extends BaseShortcode {
     }
 }
 
-
-// TS: 20260408195903
-
-// TS: 20260503194024

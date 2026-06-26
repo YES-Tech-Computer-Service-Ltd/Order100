@@ -16,7 +16,3 @@ class ConstantsHandler {
         Sources::get_instance();
     }
 }
-
-// TS: 20260105223132
-
-// TS: 20260318022011
