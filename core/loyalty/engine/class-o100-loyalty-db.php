@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) or die;
 class O100_Loyalty_DB {
 
 	/** @var string DB version for schema migrations */
-	const DB_VERSION = '1.1.0';
+	const DB_VERSION = '1.2.0';
 
 	/** @var string Option key for tracking DB version */
 	const DB_VERSION_KEY = 'o100_loyalty_db_version';
@@ -72,6 +72,8 @@ class O100_Loyalty_DB {
 			source_id BIGINT UNSIGNED DEFAULT 0,
 			campaign_id BIGINT UNSIGNED DEFAULT NULL,
 			note TEXT,
+			points_remaining INT NOT NULL DEFAULT 0,
+			expires_at DATETIME DEFAULT NULL,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			KEY idx_account_date (account_id, created_at),
@@ -286,13 +288,28 @@ class O100_Loyalty_DB {
 		$acct = self::get_account( $account_id );
 		if ( ! $acct || $points <= 0 ) return false;
 
+		$settings = self::get_settings();
+		$expiry_value = isset( $settings['points_expiry_value'] ) ? intval( $settings['points_expiry_value'] ) : 0;
+		$expiry_unit = isset( $settings['points_expiry_unit'] ) ? $settings['points_expiry_unit'] : 'days';
+		
+		// Fallback for older configurations
+		if ( !isset($settings['points_expiry_value']) && isset( $settings['points_expiry_days'] ) ) {
+			$expiry_value = intval( $settings['points_expiry_days'] );
+			$expiry_unit = 'days';
+		}
+
+		$expires_at = null;
+		if ( $expiry_value > 0 ) {
+			$expires_at = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_value} {$expiry_unit}" ) );
+		}
+
 		$new_balance = $acct->points_balance + $points;
 		$wpdb->update( self::table_accounts(), [
 			'points_balance' => $new_balance,
 			'points_earned'  => $acct->points_earned + $points,
 		], [ 'id' => $account_id ] );
 
-		return self::log_transaction( $account_id, 'earn', $points, $new_balance, $source, $source_id, $campaign_id, $note );
+		return self::log_transaction( $account_id, 'earn', $points, $new_balance, $source, $source_id, $campaign_id, $note, $points, $expires_at );
 	}
 
 	/**
@@ -309,6 +326,23 @@ class O100_Loyalty_DB {
 			'points_balance' => $new_balance,
 			'points_spent'   => $acct->points_spent + $points,
 		], [ 'id' => $account_id ] );
+		
+		// FIFO Logic: deduct from oldest unexpired points buckets
+		$active_buckets = $wpdb->get_results( $wpdb->prepare(
+			"SELECT id, points_remaining FROM %i WHERE account_id = %d AND type = 'earn' AND points_remaining > 0 AND (expires_at IS NULL OR expires_at > %s) ORDER BY (expires_at IS NULL) ASC, expires_at ASC, id ASC",
+			self::table_transactions(), $account_id, current_time('mysql', 1)
+		) );
+		
+		$remaining_to_deduct = $points;
+		foreach ( $active_buckets as $bucket ) {
+			if ( $remaining_to_deduct <= 0 ) break;
+			$deduct = min( $bucket->points_remaining, $remaining_to_deduct );
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE %i SET points_remaining = points_remaining - %d WHERE id = %d",
+				self::table_transactions(), $deduct, $bucket->id
+			) );
+			$remaining_to_deduct -= $deduct;
+		}
 
 		return self::log_transaction( $account_id, 'spend', $points, $new_balance, $source, $source_id, $campaign_id, $note );
 	}
@@ -321,16 +355,43 @@ class O100_Loyalty_DB {
 		$acct = self::get_account( $account_id );
 		if ( ! $acct ) return false;
 
-		$diff = $new_balance - $acct->points_balance;
+		$diff = max(0, $new_balance) - $acct->points_balance;
+		if ( $diff == 0 ) return true;
+
 		$update = [ 'points_balance' => max( 0, $new_balance ) ];
 		if ( $diff > 0 ) {
 			$update['points_earned'] = $acct->points_earned + $diff;
-		} elseif ( $diff < 0 ) {
+			$wpdb->update( self::table_accounts(), $update, [ 'id' => $account_id ] );
+			
+			$settings = self::get_settings();
+			$expiry_days = isset( $settings['points_expiry_days'] ) ? intval( $settings['points_expiry_days'] ) : 0;
+			$expires_at = null;
+			if ( $expiry_days > 0 ) {
+				$expires_at = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_days} days" ) );
+			}
+			return self::log_transaction( $account_id, 'adjust', abs( $diff ), max( 0, $new_balance ), 'admin', get_current_user_id(), null, $note, abs( $diff ), $expires_at );
+		} else {
 			$update['points_spent'] = $acct->points_spent + abs( $diff );
+			$wpdb->update( self::table_accounts(), $update, [ 'id' => $account_id ] );
+			
+			// FIFO Logic
+			$active_buckets = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, points_remaining FROM %i WHERE account_id = %d AND type IN ('earn','adjust') AND points_remaining > 0 AND (expires_at IS NULL OR expires_at > %s) ORDER BY (expires_at IS NULL) ASC, expires_at ASC, id ASC",
+				self::table_transactions(), $account_id, current_time('mysql', 1)
+			) );
+			
+			$remaining_to_deduct = abs($diff);
+			foreach ( $active_buckets as $bucket ) {
+				if ( $remaining_to_deduct <= 0 ) break;
+				$deduct = min( $bucket->points_remaining, $remaining_to_deduct );
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE %i SET points_remaining = points_remaining - %d WHERE id = %d",
+					self::table_transactions(), $deduct, $bucket->id
+				) );
+				$remaining_to_deduct -= $deduct;
+			}
+			return self::log_transaction( $account_id, 'adjust', abs( $diff ), max( 0, $new_balance ), 'admin', get_current_user_id(), null, $note );
 		}
-		$wpdb->update( self::table_accounts(), $update, [ 'id' => $account_id ] );
-
-		return self::log_transaction( $account_id, 'adjust', abs( $diff ), max( 0, $new_balance ), 'admin', get_current_user_id(), null, $note );
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -340,17 +401,19 @@ class O100_Loyalty_DB {
 	/**
 	 * Log a transaction.
 	 */
-	public static function log_transaction( $account_id, $type, $points, $balance_after, $source = '', $source_id = 0, $campaign_id = null, $note = '' ) {
+	public static function log_transaction( $account_id, $type, $points, $balance_after, $source = '', $source_id = 0, $campaign_id = null, $note = '', $points_remaining = 0, $expires_at = null ) {
 		global $wpdb;
 		return $wpdb->insert( self::table_transactions(), [
-			'account_id'    => $account_id,
-			'type'          => $type,
-			'points'        => $points,
-			'balance_after' => $balance_after,
-			'source'        => $source,
-			'source_id'     => $source_id,
-			'campaign_id'   => $campaign_id,
-			'note'          => $note,
+			'account_id'       => $account_id,
+			'type'             => $type,
+			'points'           => $points,
+			'balance_after'    => $balance_after,
+			'source'           => $source,
+			'source_id'        => $source_id,
+			'campaign_id'      => $campaign_id,
+			'note'             => $note,
+			'points_remaining' => $points_remaining,
+			'expires_at'       => $expires_at
 		] );
 	}
 
@@ -422,7 +485,40 @@ class O100_Loyalty_DB {
 		}
 
 		$sql = "SELECT * FROM {$t} WHERE {$where} ORDER BY priority ASC, id DESC";
-		return $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
+		$campaigns = $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
+
+		// --- Advanced CRM Rules Engine: Secret Rewards Filtering ---
+		$is_frontend = ( ! is_admin() || wp_doing_ajax() ) && ! ( is_user_logged_in() && current_user_can( 'manage_woocommerce' ) );
+		if ( $is_frontend && class_exists( 'O100_Privilege_Manager' ) ) {
+			$all_secret_rewards = O100_Privilege_Manager::get_all_secret_rewards();
+			if ( ! empty( $all_secret_rewards ) ) {
+				$allowed_secrets = array();
+				if ( is_user_logged_in() ) {
+					$loc_id = isset( WC()->session ) ? WC()->session->get( 'o100_location_id' ) : 0;
+					$method = isset( WC()->session ) ? WC()->session->get( '_o100_order_method' ) : 'delivery';
+					$context = array(
+						'branch'     => $loc_id ? intval( $loc_id ) : null,
+						'order_type' => $method,
+						'timestamp'  => current_time( 'timestamp' ),
+					);
+					$user_secrets = O100_Privilege_Manager::get_privilege( get_current_user_id(), 'loyalty', 'secret_rewards', $context );
+					if ( is_array( $user_secrets ) ) {
+						$allowed_secrets = array_map( 'intval', $user_secrets );
+					}
+				}
+
+				$campaigns = array_filter( $campaigns, function( $camp ) use ( $all_secret_rewards, $allowed_secrets ) {
+					$camp_id = intval( $camp->id );
+					if ( in_array( $camp_id, $all_secret_rewards ) && ! in_array( $camp_id, $allowed_secrets ) ) {
+						return false; // Hide secret campaign
+					}
+					return true;
+				});
+				$campaigns = array_values( $campaigns );
+			}
+		}
+
+		return $campaigns;
 	}
 
 	/**
@@ -644,7 +740,15 @@ class O100_Loyalty_DB {
 			'thankyou_message'       => 'You earned {o100_earned_points} {o100_points_label} for this order!',
 		];
 		$saved = get_option( 'o100_loyalty_settings', [] );
-		return wp_parse_args( $saved, $defaults );
+		$settings = wp_parse_args( $saved, $defaults );
+		
+		// Fallback for global conversion if uninitialized (fixes blank "Ways to redeem" after migration)
+		if ( empty($settings['conversion_points']) || $settings['conversion_points'] <= 0 ) {
+			$settings['conversion_points'] = 100;
+			$settings['conversion_value'] = 1;
+		}
+		
+		return $settings;
 	}
 
 	/**
@@ -699,9 +803,3 @@ class O100_Loyalty_DB {
 	}
 }
 
-
-// TS: 20260121213158
-
-// TS: 20260123215546
-
-// TS: 20260316202348

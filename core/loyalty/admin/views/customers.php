@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
         <div class="o100-view-header">
             <div class="o100-header-left" style="display: flex; flex-direction: column; gap: 5px;">
                 <h2 style="margin:0; font-size:18px; font-weight:600; text-transform:uppercase;"><?php esc_html_e( 'CUSTOMERS', 'order100' ); ?></h2>
-                <div class="o100-counter-badge" style="background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; width: fit-content;">
+                <div class="o100-counter-badge" style="background: #fff7ed; color: #d97b06; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; width: fit-content;">
                     <span id="o100-customer-count-display">0</span> <?php esc_html_e( 'Total Members', 'order100' ); ?>
                 </div>
             </div>
@@ -89,7 +89,7 @@ defined( 'ABSPATH' ) || exit;
 
         <!-- Detail Header -->
         <div class="o100-customer-detail-top" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-            <div class="o100-detail-avatar" style="width: 70px; height: 70px; background: #4338ca; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
+            <div class="o100-detail-avatar" style="width: 70px; height: 70px; background: #d97b06; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
                <span class="dashicons dashicons-admin-users" style="font-size: 35px; width: 35px; height: 35px;"></span>
             </div>
             <div class="o100-detail-main-info">
@@ -114,7 +114,7 @@ defined( 'ABSPATH' ) || exit;
                         <label style="display:block; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;"><?php esc_html_e( 'Referral Code', 'order100' ); ?></label>
                         <div class="o100-copy-box" style="display:flex; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden;">
                             <input type="text" id="detail-referral-code" value="-" readonly style="flex:1; border:none; background:#f8fafc; font-weight:700; color:#334155; font-family:monospace; padding:8px 12px;" />
-                            <button type="button" id="o100-copy-refer-btn" style="border:none; background:#4338ca; color:#fff; padding:0 15px; cursor:pointer;"><span class="dashicons dashicons-admin-page" style="font-size:16px;"></span></button>
+                            <button type="button" id="o100-copy-refer-btn" style="border:none; background:#d97b06; color:#fff; padding:0 15px; cursor:pointer;"><span class="dashicons dashicons-admin-page" style="font-size:16px;"></span></button>
                         </div>
                     </div>
 
@@ -122,7 +122,7 @@ defined( 'ABSPATH' ) || exit;
                         <label style="display:block; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;"><?php esc_html_e( 'Birthday', 'order100' ); ?></label>
                         <div style="display:flex; align-items:center; justify-content:space-between;">
                             <span id="detail-birthday-display" style="font-weight:600; color:#334155;">-</span>
-                            <button type="button" class="o100-btn-edit-profile" style="background:none; border:none; color:#4338ca; font-weight:600; cursor:pointer; font-size:12px;"><?php esc_html_e( 'Edit', 'order100' ); ?></button>
+                            <button type="button" class="o100-btn-edit-profile" style="background:none; border:none; color:#d97b06; font-weight:600; cursor:pointer; font-size:12px;"><?php esc_html_e( 'Edit', 'order100' ); ?></button>
                         </div>
                     </div>
 
@@ -159,10 +159,10 @@ defined( 'ABSPATH' ) || exit;
                     <!-- Stat 1: Current Points -->
                     <div class="o100-stat-box" style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div style="width:40px; height:40px; background:#e0e7ff; color:#4338ca; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                            <div style="width:40px; height:40px; background:#fff7ed; color:#d97b06; border-radius:10px; display:flex; align-items:center; justify-content:center;">
                                 <span class="dashicons dashicons-awards"></span>
                             </div>
-                            <button type="button" class="o100-btn-adjust-points-inline" style="background:none; border:none; color:#4338ca; font-weight:700; font-size:11px; cursor:pointer; text-transform:uppercase;"><?php esc_html_e( 'Adjust', 'order100' ); ?></button>
+                            <button type="button" class="o100-btn-adjust-points-inline" style="background:none; border:none; color:#d97b06; font-weight:700; font-size:11px; cursor:pointer; text-transform:uppercase;"><?php esc_html_e( 'Adjust', 'order100' ); ?></button>
                         </div>
                         <div style="margin-top:15px;">
                             <span id="stat-current-points" style="display:block; font-size:28px; font-weight:800; color:#1e293b;">0</span>
@@ -193,7 +193,7 @@ defined( 'ABSPATH' ) || exit;
                     </div>
 
                     <!-- Stat 4: Reward Value -->
-                    <div class="o100-stat-box" style="background:linear-gradient(135deg, #4338ca 0%, #6366f1 100%); border:none; border-radius:12px; padding:20px; box-shadow: 0 4px 12px rgba(67, 56, 202, 0.2);">
+                    <div class="o100-stat-box" style="background:linear-gradient(135deg, #d97b06 0%, #F59322 100%); border:none; border-radius:12px; padding:20px; box-shadow: 0 4px 12px rgba(67, 56, 202, 0.2);">
                         <div style="width:40px; height:40px; background:rgba(255,255,255,0.2); color:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center;">
                             <span class="dashicons dashicons-cart"></span>
                         </div>
@@ -291,7 +291,7 @@ defined( 'ABSPATH' ) || exit;
             </div>
             <div class="o100-modal-footer" style="padding:15px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px; background:#f9fafb;">
                 <button type="button" class="button o100-modal-close-btn" style="border-radius:6px;"><?php esc_html_e( 'Cancel', 'order100' ); ?></button>
-                <button type="button" class="button button-primary o100-btn-confirm-adjust" style="border-radius:6px; background:#4338ca; border-color:#4338ca;"><?php esc_html_e( 'Save Adjustment', 'order100' ); ?></button>
+                <button type="button" class="button button-primary o100-btn-confirm-adjust" style="border-radius:6px; background:#d97b06; border-color:#d97b06;"><?php esc_html_e( 'Save Adjustment', 'order100' ); ?></button>
             </div>
         </div>
     </div>
@@ -316,7 +316,7 @@ defined( 'ABSPATH' ) || exit;
             </div>
             <div class="o100-modal-footer" style="padding:15px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px; background:#f9fafb;">
                 <button type="button" class="button o100-modal-close-btn" style="border-radius:6px;"><?php esc_html_e( 'Cancel', 'order100' ); ?></button>
-                <button type="button" class="button button-primary o100-btn-confirm-edit" style="border-radius:6px; background:#4338ca; border-color:#4338ca;"><?php esc_html_e( 'Update Data', 'order100' ); ?></button>
+                <button type="button" class="button button-primary o100-btn-confirm-edit" style="border-radius:6px; background:#d97b06; border-color:#d97b06;"><?php esc_html_e( 'Update Data', 'order100' ); ?></button>
             </div>
         </div>
     </div>
@@ -341,16 +341,16 @@ defined( 'ABSPATH' ) || exit;
 /* Sortable Headers */
 th.sortable:hover { background: #f1f5f9 !important; }
 th.sortable span.dashicons { font-size: 14px; color: #94a3b8; }
-th.sort-asc span.dashicons:before { content: "\f142"; color: #4338ca; }
-th.sort-desc span.dashicons:before { content: "\f140"; color: #4338ca; }
+th.sort-asc span.dashicons:before { content: "\f142"; color: #d97b06; }
+th.sort-desc span.dashicons:before { content: "\f140"; color: #d97b06; }
 
 /* Toggle Switch Styling */
 .o100-toggle { position: relative; display: inline-block; width: 44px; height: 22px; }
 .o100-toggle input { opacity: 0; width: 0; height: 0; }
 .o100-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
 .o100-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .o100-slider { background-color: #4338ca; }
-input:focus + .o100-slider { box-shadow: 0 0 1px #4338ca; }
+input:checked + .o100-slider { background-color: #F59322; }
+input:focus + .o100-slider { box-shadow: 0 0 1px #F59322; }
 input:checked + .o100-slider:before { transform: translateX(22px); }
 
 /* Custom Scrollbar for the table if needed */
@@ -363,11 +363,3 @@ input:checked + .o100-slider:before { transform: translateX(22px); }
 
 
 
-
-// TS: 20260104170421
-
-// TS: 20260113143610
-
-// TS: 20260220231800
-
-// TS: 20260428153347

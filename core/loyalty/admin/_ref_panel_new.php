@@ -6,7 +6,7 @@
 							<div class="grid grid-cols-2 gap-6 mb-4">
 								<!-- ADVOCATE -->
 								<div class="p-4 bg-slate-50 rounded-lg">
-									<h5 class="font-bold text-indigo-700 mb-3" style="border-left:3px solid #4F46E5; padding-left:8px;">Advocate (Referrer)</h5>
+									<h5 class="font-bold text-indigo-700 mb-3" style="border-left:3px solid #F59322; padding-left:8px;">Advocate (Referrer)</h5>
 									<label class="block text-xs font-bold text-slate-700 mb-1">Reward Type</label>
 									<select id="wizard_advocate_type" class="w-full mb-3 text-sm" onchange="o100RefToggle('advocate', this.value)">
 										<option value="point">Points</option>
@@ -79,5 +79,3 @@
 							document.getElementById('ref-' + role + '-custom-coupon').style.display = val === '__custom__' ? '' : 'none';
 						}
 						</script>
-
-// TS: 20260211205228
