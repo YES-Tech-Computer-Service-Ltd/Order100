@@ -218,5 +218,3 @@ class SimpleOffer extends BaseElement {
     }
 }
 
-
-// TS: 20260319172012

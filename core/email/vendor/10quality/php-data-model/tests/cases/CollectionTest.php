@@ -178,10 +178,3 @@ class CollectionTest extends TestCase
         $this->assertEquals('Peach', $collection['Mario Bros'][1]->name);
     }
 }
-// TS: 20260105142737
-
-// TS: 20260113171415
-
-// TS: 20260407144735
-
-// TS: 20260505003233

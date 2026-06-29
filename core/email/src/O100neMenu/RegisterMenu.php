@@ -55,8 +55,8 @@ class RegisterMenu {
             define( 'O100NE_MENU_PRIORITY', 100 );
         }
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_o100ne_menu_scripts' ] );
-        add_action( 'admin_menu', [ $this, 'settings_menu' ] );
-        add_action( 'admin_menu', [ $this, 'add_placeholder_menu' ], O100NE_MENU_PRIORITY + 1 );
+        // add_action( 'admin_menu', [ $this, 'settings_menu' ] );
+        // add_action( 'admin_menu', [ $this, 'add_placeholder_menu' ], O100NE_MENU_PRIORITY + 1 );
         OtherPluginsMenu::get_instance();
     }
 
@@ -182,5 +182,3 @@ class RegisterMenu {
 
 
 
-
-// TS: 20260212003201

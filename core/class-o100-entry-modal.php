@@ -20,8 +20,19 @@ class O100_Entry_Modal {
 	}
 
 	public function render_entry_modal() {
+		global $o100_disable_entry_modal, $o100_enable_entry_modal;
+		if ( ! empty( $o100_disable_entry_modal ) ) {
+			return;
+		}
+
 		// Skip on admin or if WooCommerce session is not loaded
 		if ( is_admin() ) return;
+
+		// Only show on Menu pages (Shop, Category, or if explicitly enabled by shortcode)
+		$is_menu_page = ( function_exists('is_shop') && ( is_shop() || is_product_category() ) );
+		if ( ! $is_menu_page && empty( $o100_enable_entry_modal ) ) {
+			return;
+		}
 		
 		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
 			return;
@@ -75,13 +86,26 @@ class O100_Entry_Modal {
 		// Check if we already have session data
 		$has_method   = WC()->session ? WC()->session->get( '_o100_order_method' ) : false;
 		$has_location = WC()->session ? WC()->session->get( 'ex_userloc' ) : false;
+		if ( ! $has_location && WC()->session && WC()->session->get( 'o100_location_id' ) ) {
+			$has_location = WC()->session->get( 'o100_location_id' );
+		}
+
+		$selected_is_closed = false;
+		// Verify if the selected location is currently closed (Emergency Closure)
+		if ( $has_location && class_exists( 'O100_Emergency_Closure' ) ) {
+			$closure_check = O100_Emergency_Closure::get_active_closure_data( intval( $has_location ) );
+			if ( $closure_check !== false ) {
+				// The branch the user selected is currently closed! We should force the modal so they can pick another.
+				$selected_is_closed = true;
+			}
+		}
 
 		// We need the modal if the enabled features are missing from the session
 		$need_method   = ( $enable_delivery || $enable_pickup ) && ! $has_method;
 		$need_location = $enable_location && ! $has_location;
 
-		// Force modal if features are enabled but session is empty
-		$force_modal = $need_method || $need_location;
+		// Force modal if features are enabled but session is empty, OR if selected branch is closed.
+		$force_modal = $need_method || $need_location || ( $enable_location && $selected_is_closed );
 
 		// The modal can be closed if it's just triggered manually (not forced)
 		// User request: always show the close button so users can browse menu first.
@@ -158,6 +182,15 @@ class O100_Entry_Modal {
 								window.o100_branches = <?php 
 									$branch_data = array();
 									foreach($locations as $loc) {
+										$is_closed = false;
+										$closure_reason = '';
+										if ( class_exists( 'O100_Emergency_Closure' ) ) {
+											$c = O100_Emergency_Closure::get_active_closure_data( $loc->ID );
+											if ( $c !== false ) {
+												$is_closed = true;
+												$closure_reason = ! empty( $c['reason'] ) ? $c['reason'] : __( 'Closed', 'order100' );
+											}
+										}
 										$branch_data[] = array(
 											'id' => $loc->ID,
 											'name' => $loc->post_title,
@@ -166,6 +199,8 @@ class O100_Entry_Modal {
 											'distance_limit' => get_post_meta($loc->ID, 'o100_distance_restrict', true),
 											'enable_delivery' => get_post_meta($loc->ID, 'o100_enable_delivery', true) !== 'no',
 											'enable_pickup' => get_post_meta($loc->ID, 'o100_enable_pickup', true) !== 'no',
+											'is_closed' => $is_closed,
+											'closure_reason' => $closure_reason,
 										);
 									}
 									echo json_encode($branch_data);
@@ -215,7 +250,7 @@ class O100_Entry_Modal {
 								<div class="o100-address-summary" style="background:#f9fafb; border-radius:8px; padding:12px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
 									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 21c-2.5-3.5-7-8-7-12A7 7 0 0 1 19 9c0 1.4-.4 2.8-1 4"></path><circle cx="12" cy="9" r="2.5"></circle></svg>
 									<span id="o100-user-address-display" style="flex:1; font-size:14px; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
-									<a href="#" id="o100-change-address" style="color:#2563eb; font-size:13px; font-weight:600; text-decoration:none;"><?php esc_html_e('Change', 'order100'); ?></a>
+									<a href="#" id="o100-change-address" style="color:#F59322; font-size:13px; font-weight:600; text-decoration:none;"><?php esc_html_e('Change', 'order100'); ?></a>
 								</div>
 								<label class="o100-branches-label" style="display:block; font-size:15px; font-weight:600; color:#111827; margin-bottom:12px;"><?php esc_html_e( 'Select a branch', 'order100' ); ?></label>
 								<div class="o100-branches-list" id="o100-delivery-branches" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
@@ -237,11 +272,29 @@ class O100_Entry_Modal {
 								</button>
 								<div class="o100-branches-list" id="o100-pickup-branches" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
 									<?php foreach ($locations as $loc): ?>
-										<?php if ( get_post_meta($loc->ID, 'o100_enable_pickup', true) === 'no' ) continue; ?>
-										<div class="o100-branch-card o100-selectable-branch" data-id="<?php echo esc_attr($loc->ID); ?>" style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; cursor:pointer; transition:all 0.2s;">
-											<div class="o100-branch-name" style="font-weight:600; color:#0f172a; font-size:15px; margin-bottom:4px;"><?php echo esc_html($loc->post_title); ?></div>
+										<?php 
+											if ( get_post_meta($loc->ID, 'o100_enable_pickup', true) === 'no' ) continue; 
+											$is_closed = false;
+											$closure_reason = '';
+											if ( class_exists( 'O100_Emergency_Closure' ) ) {
+												$c = O100_Emergency_Closure::get_active_closure_data( $loc->ID );
+												if ( $c !== false ) {
+													$is_closed = true;
+													$closure_reason = ! empty( $c['reason'] ) ? $c['reason'] : __( 'Closed', 'order100' );
+												}
+											}
+											$closed_style = $is_closed ? 'opacity:0.5; cursor:not-allowed;' : 'cursor:pointer;';
+											$sel_class = $is_closed ? '' : 'o100-selectable-branch';
+										?>
+										<div class="o100-branch-card <?php echo esc_attr($sel_class); ?>" data-id="<?php echo esc_attr($loc->ID); ?>" style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; transition:all 0.2s; <?php echo esc_attr($closed_style); ?>">
+											<div class="o100-branch-name" style="font-weight:600; color:#0f172a; font-size:15px; margin-bottom:4px;">
+												<?php echo esc_html($loc->post_title); ?>
+												<?php if ( $is_closed ): ?>
+													<span style="background:#ef4444; color:#fff; font-size:11px; padding:2px 6px; border-radius:4px; margin-left:6px;"><?php echo esc_html($closure_reason); ?></span>
+												<?php endif; ?>
+											</div>
 											<div class="o100-branch-address" style="color:#64748b; font-size:13px;"><?php echo esc_html(get_post_meta($loc->ID, 'o100_address', true)); ?></div>
-											<div class="o100-branch-distance" style="display:none; color:#2563eb; font-weight:600; font-size:13px; margin-top:6px;"></div>
+											<div class="o100-branch-distance" style="display:none; color:#F59322; font-weight:600; font-size:13px; margin-top:6px;"></div>
 										</div>
 									<?php endforeach; ?>
 								</div>
@@ -661,10 +714,16 @@ class O100_Entry_Modal {
 						} else {
 							validBranches.sort(function(a,b){ return a.calc_dist - b.calc_dist; });
 							$.each(validBranches, function(i, b) {
-								var html = '<div class="o100-branch-card o100-selectable-branch" data-id="'+b.id+'" style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; cursor:pointer; transition:all 0.2s;">';
-								html += '<div style="font-weight:600; color:#0f172a; font-size:15px; margin-bottom:4px;">'+b.name+'</div>';
+								var closedStyle = b.is_closed ? 'opacity:0.5; cursor:not-allowed;' : 'cursor:pointer;';
+								var selClass = b.is_closed ? '' : 'o100-selectable-branch';
+								var html = '<div class="o100-branch-card '+selClass+'" data-id="'+b.id+'" style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; transition:all 0.2s; '+closedStyle+'">';
+								html += '<div style="font-weight:600; color:#0f172a; font-size:15px; margin-bottom:4px;">'+b.name;
+								if ( b.is_closed ) {
+									html += ' <span style="background:#ef4444; color:#fff; font-size:11px; padding:2px 6px; border-radius:4px; margin-left:6px;">'+b.closure_reason+'</span>';
+								}
+								html += '</div>';
 								html += '<div style="color:#64748b; font-size:13px;">'+b.address+'</div>';
-								html += '<div style="color:#2563eb; font-weight:600; font-size:13px; margin-top:6px;">'+b.calc_dist.toFixed(1)+' km</div>';
+								html += '<div style="color:#F59322; font-weight:600; font-size:13px; margin-top:6px;">'+b.calc_dist.toFixed(1)+' km</div>';
 								html += '</div>';
 								$list.append(html);
 							});
@@ -857,11 +916,3 @@ class O100_Entry_Modal {
 
 new O100_Entry_Modal();
 
-
-// TS: 20260109212635
-
-// TS: 20260218211418
-
-// TS: 20260220120627
-
-// TS: 20260331204320
