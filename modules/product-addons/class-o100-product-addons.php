@@ -119,7 +119,7 @@ class O100_Product_Addons {
 			'classes' => 'o100-addon-type',
 			'default' => '',
 			'options' => array(
-				''         => __( 'Checkboxes', 'order100' ),
+				'checkbox' => __( 'Checkboxes', 'order100' ),
 				'radio'    => __( 'Radio Buttons', 'order100' ),
 				'select'   => __( 'Dropdown', 'order100' ),
 				'text'     => __( 'Text Field', 'order100' ),
@@ -140,6 +140,7 @@ class O100_Product_Addons {
 				''      => __( 'Default', 'order100' ),
 				'nor'   => __( 'Normal', 'order100' ),
 				'accor' => __( 'Accordion', 'order100' ),
+				'inline' => __( 'Inline (Same row)', 'order100' ),
 			),
 		) );
 
@@ -313,14 +314,15 @@ class O100_Product_Addons {
 
 	public function render_price_options( $field, $value, $object_id, $object_type, $field_type ) {
 		$value = wp_parse_args( $value, array(
-			'name'  => '',
-			'type'  => '',
-			'def'   => '',
-			'dis'   => '',
-			'price' => '',
-			'image' => '',
-			'min'   => '',
-			'max'   => '',
+			'name'       => '',
+			'type'       => '',
+			'def'        => '',
+			'dis'        => '',
+			'price'      => '',
+			'sale_price' => '',
+			'image'      => '',
+			'min'        => '',
+			'max'        => '',
 		) );
 		?>
 		<div class="o100-addon-choice-row">
@@ -380,6 +382,18 @@ class O100_Product_Addons {
 					'value' => $value['price'],
 					'type'  => 'text',
 					'desc'  => '',
+				) ); ?>
+			</div>
+
+			<div class="o100-addon-col o100-addon-col-price">
+				<label><?php esc_html_e( 'Sale Price', 'order100' ); ?></label>
+				<?php echo $field_type->input( array(
+					'name'        => $field_type->_name( '[sale_price]' ),
+					'id'          => $field_type->_id( '_sale_price' ),
+					'value'       => $value['sale_price'],
+					'type'        => 'text',
+					'desc'        => '',
+					'placeholder' => __( 'Sale Price', 'order100' ),
 				) ); ?>
 			</div>
 
@@ -452,7 +466,7 @@ class O100_Product_Addons {
 		}
 		foreach ( $meta_value as $key => $val ) {
 			if ( is_array( $val ) ) {
-				$meta_value[ $key ] = array_filter( array_map( 'sanitize_text_field', $val ) );
+				$meta_value[ $key ] = array_filter( array_map( 'sanitize_text_field', $val ), function( $v ) { return $v !== ''; } );
 			}
 		}
 		return array_filter( $meta_value );
@@ -714,7 +728,3 @@ class O100_Product_Addons {
 	}
 }
 
-
-// TS: 20260324231416
-
-// TS: 20260507231920

@@ -144,7 +144,7 @@
 
 #o100_addon_options .cmb-td input.regular-text:focus,
 #o100_addon_options .cmb-td select:focus {
-	border-color: #6366f1 !important;
+	border-color: #F59322 !important;
 	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
 	outline: none !important;
 }
@@ -302,7 +302,7 @@
 .o100-addon-col input[type="text"]:focus,
 .o100-addon-col input[type="number"]:focus,
 .o100-addon-col select:focus {
-	border-color: #6366f1 !important;
+	border-color: #F59322 !important;
 	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
 	outline: none !important;
 }
@@ -310,7 +310,7 @@
 .o100-addon-col input[type="checkbox"] {
 	width: 18px !important;
 	height: 18px !important;
-	accent-color: #6366f1 !important;
+	accent-color: #F59322 !important;
 }
 
 /* ── Name field in group title ── */
@@ -368,7 +368,7 @@
 
 #o100_addon_options .cmb-repeat .cmb-add-row button {
 	background: #f8fafc !important;
-	color: #6366f1 !important;
+	color: #F59322 !important;
 	border: 1px dashed #c7d2fe !important;
 	padding: 6px 16px !important;
 	border-radius: 6px !important;
@@ -411,9 +411,3 @@
 }
 
 
-
-/* TS: 20260130215710 */
-
-/* TS: 20260314162020 */
-
-/* TS: 20260410135035 */
