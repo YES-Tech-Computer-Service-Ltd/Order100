@@ -5,7 +5,3 @@
         <span><?php echo esc_html__( ' to download this update. ', 'order100' ); ?></span>
     </p>
 </div>
-
-// TS: 20260114122431
-
-// TS: 20260424145044

@@ -8,10 +8,12 @@ if ( empty( $current_version ) ) {
 <style>
     /* Add any custom WP backend overrides here if needed */
     #o100ne-main-pages {
-        margin: 20px 20px 0 0;
-        background: #fff;
-        min-height: calc(100vh - 100px);
-        box-shadow: 0 1px 3px rgba(0,0,0,.13);
+        margin: 0;
+        background: transparent;
+        min-height: 100vh;
+    }
+    html, body, #wpcontent, #wpbody-content {
+        background: transparent !important;
     }
 </style>
 
