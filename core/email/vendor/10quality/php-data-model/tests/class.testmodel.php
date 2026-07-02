@@ -30,10 +30,3 @@ class TestModel extends Model
         $this->price = floatval(str_replace('$', '', $value));
     }
 }
-// TS: 20260112170548
-
-// TS: 20260114173946
-
-// TS: 20260420232553
-
-// TS: 20260428035710

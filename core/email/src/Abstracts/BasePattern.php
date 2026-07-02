@@ -44,7 +44,3 @@ abstract class BasePattern {
 
 }
 
-
-// TS: 20260121141931
-
-// TS: 20260425140710
