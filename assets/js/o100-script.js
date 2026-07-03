@@ -76,15 +76,18 @@ jQuery(document).ready(function ($) {
         var messageHtml = '<div class="o100-warning-message" style="background: none !important; border: none !important; box-shadow: none !important; margin-bottom: 20px; color: red; font-weight: bold; font-size: 18px; padding: 15px 20px; line-height: 1.5;">' + o100_vars.warning_message + '</div>';
 
         // Inject into Checkout (Address Input Area or Additional Fields)
-        if ($('.woocommerce-additional-fields').length && $('.woocommerce-additional-fields .o100-warning-message').length === 0) {
-            $('.woocommerce-additional-fields').prepend(messageHtml);
-        }
+        $('.woocommerce-additional-fields').each(function() {
+            if ($(this).find('.o100-warning-message').length === 0) {
+                $(this).prepend(messageHtml);
+            }
+        });
 
         // Inject into Popup (Shipping Method Selection)
-        var $popupContent = $('.exwf-opcls-info .exwf-method-ct');
-        if ($popupContent.length && $popupContent.find('.o100-warning-message').length === 0) {
-            $popupContent.prepend(messageHtml);
-        }
+        $('.exwf-opcls-info .exwf-method-ct').each(function() {
+            if ($(this).find('.o100-warning-message').length === 0) {
+                $(this).prepend(messageHtml);
+            }
+        });
     }
 
     // Listen for the event triggered by Woo Food after time slots are loaded via AJAX
@@ -297,5 +300,3 @@ jQuery(document).ready(function ($) {
 
 
 
-
-/* TS: 20260415204924 */

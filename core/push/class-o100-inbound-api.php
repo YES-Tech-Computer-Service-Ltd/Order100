@@ -117,6 +117,17 @@ class O100_Inbound_API {
 			}
 		}
 
+		// Fire notification triggers for confirmed orders
+		if ( $action === 'confirm' || empty( $action ) ) {
+			do_action( 'o100_app_order_confirmed', $order_id );
+
+			// If delivery order, also dispatch the driver SMS notification
+			$order_type = $order->get_meta( 'o100_order_type' ) ?: 'Delivery';
+			if ( strtolower( $order_type ) === 'delivery' ) {
+				do_action( 'o100_app_driver_dispatch', $order_id );
+			}
+		}
+
 		return rest_ensure_response( array(
 			'success' => true,
 			'message' => 'Order ' . ( $action === 'delay' ? 'delayed' : 'confirmed' ) . ' successfully.',
@@ -124,7 +135,3 @@ class O100_Inbound_API {
 	}
 }
 
-
-// TS: 20260329130231
-
-// TS: 20260522231234
