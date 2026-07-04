@@ -231,6 +231,15 @@
 
     // Unified UI Confirm Modal
     window.o100Confirm = function(title, message, callback) {
+        if (!callback) {
+            return new Promise(function(resolve) {
+                window.o100Confirm(title, message, resolve);
+            });
+        }
+        if (document.querySelector('.o100-confirm-modal-overlay')) {
+            callback(false);
+            return;
+        }
         var modal = document.createElement('div');
         modal.className = 'o100-confirm-modal-overlay';
         modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.4); z-index:999999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); transition:opacity 0.2s; opacity:0;';
@@ -260,18 +269,26 @@
         }, 10);
         
         var close = function() {
+            console.log('[o100Confirm] close() called');
             modal.style.opacity = '0';
             content.style.transform = 'scale(0.95)';
-            setTimeout(function() { if(modal.parentNode) modal.parentNode.removeChild(modal); }, 200);
+            setTimeout(function() { 
+                if(modal.parentNode) {
+                    modal.parentNode.removeChild(modal);
+                    console.log('[o100Confirm] modal removed from DOM');
+                }
+            }, 200);
         };
         
         content.querySelector('.o100-cancel-btn').addEventListener('click', function(e) {
+            console.log('[o100Confirm] Cancel clicked', e);
             e.preventDefault();
             close();
             if (callback) callback(false);
         });
         
         content.querySelector('.o100-confirm-btn').addEventListener('click', function(e) {
+            console.log('[o100Confirm] Confirm clicked, e.detail:', e.detail);
             e.preventDefault();
             close();
             if (callback) callback(true);
@@ -279,6 +296,16 @@
     };
 
     $(document).ready(function () {
+        // Wrap CMB2 inputs with suffixes into a flex group so the description stays outside
+        $('.cmb-td').each(function() {
+            var $suffix = $(this).children('.o100-input-suffix');
+            if ($suffix.length) {
+                var $input = $(this).children('input:not([type="hidden"])').first();
+                if ($input.length) {
+                    $input.add($suffix).wrapAll('<div class="o100-cmb-input-group"></div>');
+                }
+            }
+        });
 
         // ── Mobile Responsive Sidebar Toggle ──────────────
         if ($('.o100-fluent-sidebar').length && !$('.o100-fluent-mobile-toggle').length) {
@@ -298,7 +325,7 @@
             });
         }
 
-        // Notification sub-tab switching (Email / SMS)
+        // Notification sub-tab switching (Email / SMS) with localStorage persistence
         var $notifyTabs = $('.o100-notify-subtabs a');
         $notifyTabs.on('click', function (e) {
             e.preventDefault();
@@ -307,7 +334,32 @@
             $(this).addClass('o100-subtab-active');
             $('.o100-notify-subtab-content').hide();
             $('.o100-notify-subtab-content[data-subtab="' + id + '"]').show();
+            try { localStorage.setItem('o100_notify_subtab', id); } catch(e) {}
+            // Reset hash to root so React HashRouter doesn't break
+            if (location.hash && location.hash.indexOf('notify') !== -1) {
+                history.replaceState(null, '', location.pathname + location.search);
+            }
         });
+        // Clean up any leftover notify- hashes that break React HashRouter
+        (function() {
+            var h = location.hash;
+            if (h && (h.indexOf('notify-') !== -1 || h === '#notify-sms' || h === '#notify-email')) {
+                history.replaceState(null, '', location.pathname + location.search);
+            }
+        })();
+        // Restore subtab from localStorage on page load
+        (function() {
+            var saved = '';
+            try { saved = localStorage.getItem('o100_notify_subtab'); } catch(e) {}
+            if (saved && ['email', 'sms', 'voice', 'settings', 'reports'].indexOf(saved) !== -1) {
+                $notifyTabs.removeClass('o100-subtab-active');
+                $notifyTabs.filter('[data-subtab="' + saved + '"]').addClass('o100-subtab-active');
+                $('.o100-notify-subtab-content').hide();
+                $('.o100-notify-subtab-content[data-subtab="' + saved + '"]').show();
+            }
+            // Remove preload override so normal click switching works
+            $('#o100-subtab-preload').remove();
+        })();
 
         // ── Store Features: Auto-focus on new row ──────────────
         var $featuresWrap = $('#o100_store_features_repeat');
@@ -476,7 +528,10 @@
             mcdSearchTimer = setTimeout(function() {
                 $results.html('<div class="o100-mcd-loader">Searching...</div>');
                 
-                var action = type === 'category' ? 'o100_mcd_search_categories' : 'o100_mcd_search_products';
+                var action = 'o100_mcd_search_products';
+                if (type === 'category' || type === 'categories') action = 'o100_mcd_search_categories';
+                else if (type === 'tags') action = 'o100_mcd_search_crm_tags';
+                else if (type === 'lists') action = 'o100_mcd_search_crm_lists';
                 var exclude = $wrapper.find('.o100-mcd-hidden-input').val();
                 
                 $.ajax({
@@ -499,18 +554,27 @@
                             
                             var html = '';
                             $.each(res.data, function(i, item) {
-                                html += '<label class="o100-mcd-item">';
-                                html += '<input type="checkbox" value="' + item.id + '">';
-                                html += '<span>' + item.text + '</span>';
-                                html += '</label>';
+                                if (item.is_header) {
+                                    html += '<div class="o100-mcd-group-header">' + item.text + '</div>';
+                                } else {
+                                    var extraClass = '';
+                                    if (item.hasOwnProperty('is_system')) {
+                                        extraClass = item.is_system == 1 ? ' o100-tag-system' : ' o100-tag-manual';
+                                    }
+                                    html += '<label class="o100-mcd-item' + extraClass + '">';
+                                    html += '<input type="checkbox" value="' + item.id + '">';
+                                    html += '<span>' + item.text + '</span>';
+                                    html += '</label>';
+                                }
                             });
                             $results.html(html);
                         } else {
                             $results.html('<div class="o100-mcd-loader">Error loading results</div>');
                         }
                     },
-                    error: function() {
-                        $results.html('<div class="o100-mcd-loader">Network error</div>');
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("MCD Ajax Error:", textStatus, errorThrown, jqXHR.responseText);
+                        $results.html('<div class="o100-mcd-loader">Network error: ' + errorThrown + '</div>');
                     }
                 });
             }, 400);
@@ -519,4 +583,169 @@
     });
 
 })(jQuery);
+
+window.o100InitMCS = function(wrapId, searchType) {
+    const wrap = document.getElementById(wrapId);
+    if (!wrap) return;
+    const hidden = wrap.querySelector('.promo-cond-value') || wrap.querySelector('.o100-cond-val');
+    const tags = wrap.querySelector('.o100-mcs-tags');
+    const input = wrap.querySelector('.o100-mcs-input');
+    const dd = wrap.querySelector('.o100-mcs-dd');
+    let selected = {};
+    let timer = null;
+    let fetchedData = null;
+    let isFetching = false;
+    let theAjaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : (typeof o100PromoAjaxUrl !== 'undefined' ? o100PromoAjaxUrl : (typeof o100Settings !== 'undefined' ? o100Settings.ajaxurl : ''));
+
+    function renderTags() {
+        tags.innerHTML = '';
+        Object.entries(selected).forEach(([id, name]) => {
+            const t = document.createElement('span');
+            t.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+            t.innerHTML = name + ' <button type="button" class="ml-0.5 text-blue-500 hover:text-red-600 font-bold" data-id="'+id+'">&times;</button>';
+            t.querySelector('button').onclick = function(e) { e.stopPropagation(); delete selected[this.dataset.id]; renderTags(); renderDD(fetchedData); };
+            tags.appendChild(t);
+        });
+        hidden.value = Object.keys(selected).join(',');
+    }
+
+    function loadOptions(term = '') {
+        if (isFetching) return;
+        isFetching = true;
+        dd.innerHTML = '<div class="px-3 py-2 text-sm text-slate-400">Loading...</div>';
+        dd.classList.remove('hidden');
+        
+        const fd = new FormData();
+        if (searchType === 'products') {
+            fd.append('action', 'o100_mcd_search_products');
+        } else if (searchType === 'tags') {
+            fd.append('action', 'o100_mcd_search_crm_tags');
+        } else if (searchType === 'lists') {
+            fd.append('action', 'o100_mcd_search_crm_lists');
+        } else {
+            fd.append('action', 'o100_mcd_search_categories');
+        }
+        fd.append('term', term);
+        const n = (typeof o100Settings !== 'undefined') ? o100Settings.adminNonce : ((typeof o100PromoNonce !== 'undefined') ? o100PromoNonce : '');
+        fd.append('nonce', n);
+        
+        fetch(theAjaxUrl, {method:'POST', body:fd})
+            .then(r => r.json())
+            .then(res => {
+                isFetching = false;
+                if (res.success && res.data) {
+                    if (term === '') fetchedData = res.data;
+                    
+                    let needsRerender = false;
+                    Object.keys(selected).forEach(id => {
+                        if (selected[id] === id) {
+                            const found = res.data.find(i => !i.is_header && String(i.id) === String(id));
+                            if (found) {
+                                selected[id] = found.text;
+                                needsRerender = true;
+                            }
+                        }
+                    });
+                    if (needsRerender) renderTags();
+                    
+                    renderDD(term === '' ? fetchedData : res.data);
+                } else {
+                    dd.innerHTML = '<div class="px-3 py-2 text-sm text-slate-400">Error or empty</div>';
+                }
+            }).catch(() => { isFetching = false; dd.innerHTML = '<div class="px-3 py-2 text-sm text-slate-400">Error</div>'; });
+    }
+
+    function renderDD(data) {
+        if (!data) return;
+        dd.innerHTML = '';
+        let hasItems = false;
+        if (Array.isArray(data)) hasItems = data.length > 0;
+        else hasItems = Object.keys(data).length > 0;
+        
+        if (hasItems) {
+            let dataArray = Array.isArray(data) ? data : Object.entries(data).map(([id, text]) => ({id, text}));
+            dataArray.forEach(itemData => {
+                if (itemData.is_header) {
+                    const hdr = document.createElement('div');
+                    hdr.className = 'px-3 py-1 text-xs font-bold bg-slate-100 text-slate-500 uppercase tracking-wider o100-mcd-group-header';
+                    hdr.innerHTML = itemData.text;
+                    dd.appendChild(hdr);
+                    return;
+                }
+                const id = itemData.id;
+                const text = itemData.text;
+                const clean = (typeof text === 'string') ? text.replace(/<[^>]*>/g,'') : text;
+                const isSelected = !!selected[id];
+                const item = document.createElement('label');
+                let extraClasses = '';
+                if (searchType === 'tags') {
+                    if (itemData.is_system) extraClasses = ' o100-tag-system';
+                    else extraClasses = ' o100-tag-manual';
+                }
+                item.className = 'flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 border-b border-slate-100 last:border-0' + (isSelected ? ' bg-blue-50' : '') + extraClasses;
+                item.innerHTML = '<input type="checkbox" class="rounded" '+(isSelected?'checked':'')+' value="'+id+'"> <span>'+clean+'</span>';
+                item.querySelector('input').onchange = function() {
+                    if (this.checked) { selected[id] = clean; } else { delete selected[id]; }
+                    renderTags();
+                    renderDD(data);
+                };
+                dd.appendChild(item);
+            });
+        } else {
+            dd.innerHTML = '<div class="px-3 py-2 text-sm text-slate-400">No results</div>';
+        }
+        dd.classList.remove('hidden');
+    }
+
+    input.addEventListener('focus', function() { 
+        if (!fetchedData) loadOptions('');
+        else { if (!this.value.trim()) renderDD(fetchedData); dd.classList.remove('hidden'); }
+    });
+    
+    input.addEventListener('click', function(e) { 
+        e.stopPropagation();
+        if (!fetchedData) loadOptions('');
+        else { if (!this.value.trim()) renderDD(fetchedData); dd.classList.remove('hidden'); }
+    });
+
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        const term = this.value.trim();
+        if (term.length === 0) { 
+            if (fetchedData) renderDD(fetchedData);
+            else loadOptions('');
+            return; 
+        }
+        timer = setTimeout(() => { loadOptions(term); }, 300);
+    });
+
+    document.addEventListener('click', function(e) { if (!e.target.closest('#'+wrapId)) dd.classList.add('hidden'); });
+
+    wrap._mcsSetValues = function(ids, names) {
+        selected = {};
+        if (Array.isArray(ids)) {
+            ids.forEach((id, i) => { selected[id] = (names && names[i]) ? names[i] : id; });
+        } else if (typeof ids === 'string' && ids) {
+            ids.split(',').forEach(id => { selected[id.trim()] = (names && names[id.trim()]) ? names[id.trim()] : id.trim(); });
+        }
+        renderTags();
+        
+        if (!names && ids) {
+            if (!fetchedData) loadOptions('');
+            else {
+                let needsRerender = false;
+                Object.keys(selected).forEach(id => {
+                    if (selected[id] === id) {
+                        const found = fetchedData.find(i => !i.is_header && String(i.id) === String(id));
+                        if (found) {
+                            selected[id] = found.text;
+                            needsRerender = true;
+                        }
+                    }
+                });
+                if (needsRerender) renderTags();
+            }
+        }
+    };
+};
 

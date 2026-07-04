@@ -87,12 +87,3 @@ class DataTest extends TestCase
         $this->assertEquals('$19.99', $model->displayPrice);
     }
 }
-// TS: 20260209121200
-
-// TS: 20260224224303
-
-// TS: 20260416114951
-
-// TS: 20260515232720
-
-// TS: 20260522134626

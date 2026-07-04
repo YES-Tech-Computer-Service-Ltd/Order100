@@ -293,5 +293,3 @@ class LicenseHandler {
         return $result;
     }
 }
-
-// TS: 20260206175108

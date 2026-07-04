@@ -43,6 +43,7 @@ class O100neTemplate {
         'is_v4_supported'          => '_o100ne_is_v4_supported',
         'global_header_settings'   => '_o100ne_global_header_settings',
         'global_footer_settings'   => '_o100ne_global_footer_settings',
+        'additional_recipients'    => '_o100ne_additional_recipients',
     ];
 
     public const DEFAULT_DATA = [
@@ -67,6 +68,7 @@ class O100neTemplate {
             'footer_content'   => '<p style="font-size: 14px; margin: 0px 0px 16px; text-align: center;">[o100_site_name] - Built with <a style="color: #873eff; font-weight: normal; text-decoration: underline;" href="https://woocommerce.com" target="_blank" rel="noopener">WooCommerce</a></p>',
             'hidden'           => false,
         ],
+        'additional_recipients'    => '',
     ];
 
     /**
@@ -82,15 +84,16 @@ class O100neTemplate {
         'title_color'            => self::DEFAULT_DATA['title_color'],
         'global_header_settings' => self::DEFAULT_DATA['global_header_settings'],
         'global_footer_settings' => self::DEFAULT_DATA['global_footer_settings'],
+        'additional_recipients'  => self::DEFAULT_DATA['additional_recipients'],
     ];
 
     public function __construct( $template_name = '', $language = '' ) {
 
         $this->model = TemplateModel::get_instance();
 
-        if ( is_string( $template_name ) && ! empty( $template_name ) && Helpers::is_o100ne_email( $template_name ) ) {
+        if ( is_string( $template_name ) && ! empty( $template_name ) ) {
             $template_data = $this->model::find_by_name( $template_name, $language );
-            if ( empty( $template_data['id'] ) && SupportedPlugins::get_instance()->get_support_info( $template_name )['status'] === 'already_supported' ) {
+            if ( empty( $template_data['id'] ) && Helpers::is_o100ne_email( $template_name ) && SupportedPlugins::get_instance()->get_support_info( $template_name )['status'] === 'already_supported' ) {
                 /** Insert new template when not exists */
                 $template_data = $this->model::insert(
                     [
@@ -169,14 +172,23 @@ class O100neTemplate {
 
     public function get_status( $context = 'view' ) {
         $value = $this->get_prop( 'status', $context );
+        
+        if ( $value === 0 || $value === '0' || $value === '' ) {
+            $name = $this->get_name();
+            if ( strpos($name, 'o100_loyalty_') === false && strpos($name, 'o100_promo_') === false && strpos($name, 'o100_reservation_') === false ) {
+                $value = 'active';
+            }
+        }
+        
         if ( is_numeric( $value ) || is_bool( $value ) ) {
             $value = empty( $value ) ? 'inactive' : 'active';
             // Process old value
         }
-        if ( 'inactve' !== $value && 'active' !== $value ) {
+        if ( 'inactive' !== $value && 'active' !== $value ) {
             $value = 'inactive';
         }
-        return $value;
+        
+        return apply_filters( 'o100_email_template_status', $value, $this->get_name() );
     }
 
     public function get_background_color( $context = 'view' ) {
@@ -329,6 +341,16 @@ class O100neTemplate {
         }
     }
 
+    public function get_additional_recipients( $context = 'view' ) {
+        return $this->get_prop( 'additional_recipients', $context );
+    }
+
+    public function set_additional_recipients( $value ) {
+        if ( ! is_null( $value ) && is_string( $value ) ) {
+            $this->set_prop( 'additional_recipients', $value );
+        }
+    }
+
     // UPDATE - DELETE METHOD
 
     public function save() {
@@ -346,7 +368,7 @@ class O100neTemplate {
         return false;
     }
 
-    public function get_content( $data ) {
+    public function get_content( $data ) { error_log("O100neTemplate::get_content CALLED for ID: " . $this->id);
         try {
             $type = get_post_meta( $this->id, '_o100ne_template_elements_type', true );
             
@@ -366,7 +388,8 @@ class O100neTemplate {
                     
                     $html = do_shortcode( $html );
                     $html = $this->process_conditional_sections( $html, $data );
-                    return $html;
+                    // Wrap MJML HTML in a base64 placeholder to bypass WooCommerce style_inline
+                    return '[O100NE_MJML_START]' . base64_encode( $html ) . '[O100NE_MJML_END]';
                 }
             }
 
@@ -445,11 +468,11 @@ class O100neTemplate {
                     $class = $node->getAttribute('class');
                     if ( preg_match('/cond_o100_([a-zA-Z0-9\-_]+)/', $class, $matches) ) {
                         $base64 = str_replace( ['-', '_'], ['+', '/'], $matches[1] );
-                        $mod = strlen($base64) % 4;
-                        if ($mod > 0) {
-                            $base64 .= str_repeat('=', 4 - $mod);
+                        $pad = strlen($base64) % 4;
+                        if ($pad) {
+                            $base64 .= str_repeat('=', 4 - $pad);
                         }
-                        $json = base64_decode( $base64 );
+                        $json = urldecode( base64_decode( $base64 ) );
                         $cdata = json_decode( $json, true );
 
                         if ( $cdata && isset($cdata['f']) ) {
@@ -497,11 +520,11 @@ class O100neTemplate {
                         }
 
                         $base64 = str_replace( ['-', '_'], ['+', '/'], $cond_match[1] );
-                        $mod = strlen($base64) % 4;
-                        if ($mod > 0) {
-                            $base64 .= str_repeat('=', 4 - $mod);
+                        $pad = strlen($base64) % 4;
+                        if ($pad) {
+                            $base64 .= str_repeat('=', 4 - $pad);
                         }
-                        $json = base64_decode( $base64 );
+                        $json = urldecode( base64_decode( $base64 ) );
                         $cdata = json_decode( $json, true );
 
                         if ( ! $cdata || ! isset($cdata['f']) ) {
@@ -544,18 +567,26 @@ class O100neTemplate {
             // Order100 fields — read o100_ first, fallback to exwfood_ for historical orders
             case 'o100_order_method':
             case 'exfood_order_method':
-                $val = $order->get_meta( 'o100_order_method' );
+                $val = $order->get_meta( '_o100_order_method' );
+                if ( $val === '' ) $val = $order->get_meta( 'o100_order_method' );
+                if ( $val === '' ) $val = $order->get_meta( '_o100_order_type' );
+                if ( $val === '' ) $val = $order->get_meta( 'o100_order_type' );
                 if ( $val === '' ) $val = $order->get_meta( 'exwfood_order_method' );
+                if ( $val === '' ) $val = $order->get_meta( 'exwfood_order_type' );
                 return (string) $val;
             case 'o100_prep_time':
             case 'exfood_prep_time':
                 $val = $order->get_meta( '_wooauto_confirmed_prep_time' );
+                if ( $val === '' ) $val = $order->get_meta( '_o100_prep_time' );
                 if ( $val === '' ) $val = $order->get_meta( 'o100_prep_time' );
                 if ( $val === '' ) $val = $order->get_meta( 'exwfood_prep_time' );
                 return (string) $val;
             case 'o100_timeslot':
             case 'exfood_timeslot':
-                $val = $order->get_meta( 'o100_timeslot' );
+                $val = $order->get_meta( '_o100_delivery_time' );
+                if ( $val === '' ) $val = $order->get_meta( '_o100_timeslot' );
+                if ( $val === '' ) $val = $order->get_meta( 'o100_timeslot' );
+                if ( $val === '' ) $val = $order->get_meta( '_o100_time_deli' );
                 if ( $val === '' ) $val = $order->get_meta( 'o100_time_deli' );
                 if ( $val === '' ) $val = $order->get_meta( 'exwfood_timeslot' );
                 if ( $val === '' ) $val = $order->get_meta( 'exwfood_time_deli' );
@@ -633,11 +664,24 @@ class O100neTemplate {
      * @return bool
      */
     private function evaluate_condition( $actual, $operator, $expected ) {
+        $actual_lower = strtolower( trim( $actual ) );
+        $expected_lower = strtolower( trim( $expected ) );
+
+        // Normalize order method synonyms across all evaluations to prevent mismatch
+        if ( in_array( $actual_lower, ['pickup', 'takeaway'] ) && in_array( $expected_lower, ['pickup', 'takeaway'] ) ) {
+            $actual_lower = 'takeaway';
+            $expected_lower = 'takeaway';
+        }
+        if ( in_array( $actual_lower, ['reservation', 'dinein', 'dine-in', 'dine in'] ) && in_array( $expected_lower, ['reservation', 'dinein', 'dine-in', 'dine in'] ) ) {
+            $actual_lower = 'dinein';
+            $expected_lower = 'dinein';
+        }
+
         switch ( $operator ) {
             case 'equals':
-                return strtolower( trim( $actual ) ) === strtolower( trim( $expected ) );
+                return $actual_lower === $expected_lower;
             case 'not_equals':
-                return strtolower( trim( $actual ) ) !== strtolower( trim( $expected ) );
+                return $actual_lower !== $expected_lower;
             case 'contains':
                 return stripos( $actual, $expected ) !== false;
             case 'not_contains':
@@ -656,7 +700,3 @@ class O100neTemplate {
     }
 }
 
-
-// TS: 20260324231416
-
-// TS: 20260522231234
