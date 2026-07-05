@@ -441,6 +441,14 @@ class Ajax {
             }
             $email_address = wp_get_current_user()->user_email ?? 'sample@example.com';
 
+            if ( strpos( $html, '[O100NE_MJML_START]' ) !== false ) {
+                preg_match( '/\[O100NE_MJML_START\](.*?)\[O100NE_MJML_END\]/s', $html, $matches );
+                if ( isset( $matches[1] ) ) {
+                    $html_unwrapped = base64_decode( $matches[1] );
+                    $html = preg_replace( '/\[O100NE_MJML_START\].*?\[O100NE_MJML_END\]/s', $html_unwrapped, $html );
+                }
+            }
+
             wp_send_json_success(
                 [
                     'html'          => $html,
@@ -478,6 +486,14 @@ class Ajax {
                 $send_mail      = $class_wc_email->send( $email_address, $subject, $email_preview_output['html'], $headers, [] );
                 if ( ! $send_mail ) {
                     return wp_send_json_error( [ 'mess' => __( 'Can\'t send email', 'order100' ) ] );
+                }
+            }
+
+            if ( strpos( $email_preview_output['html'], '[O100NE_MJML_START]' ) !== false ) {
+                preg_match( '/\[O100NE_MJML_START\](.*?)\[O100NE_MJML_END\]/s', $email_preview_output['html'], $matches );
+                if ( isset( $matches[1] ) ) {
+                    $html_unwrapped = base64_decode( $matches[1] );
+                    $email_preview_output['html'] = preg_replace( '/\[O100NE_MJML_START\].*?\[O100NE_MJML_END\]/s', $html_unwrapped, $email_preview_output['html'] );
                 }
             }
 
@@ -935,7 +951,3 @@ class Ajax {
     }
 }
 
-
-// TS: 20260122172628
-
-// TS: 20260505003233

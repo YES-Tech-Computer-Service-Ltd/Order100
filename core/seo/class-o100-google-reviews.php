@@ -453,9 +453,3 @@ class O100_Google_Reviews {
 		return $opening;
 	}
 }
-
-// TS: 20260124225607
-
-// TS: 20260202164835
-
-// TS: 20260408195903

@@ -15,5 +15,3 @@ $order_details = new OrderDetailsRenderer( $render_data['order'], $element_data,
 
 $order_details->render();
 
-
-// TS: 20260331171247
