@@ -55,6 +55,30 @@ class EmailsLoader {
         $o100ne_emails->register( \Order100\Notification\Engine\Emails\CustomerNewAccount::get_instance() );
         $o100ne_emails->register( \Order100\Notification\Engine\Emails\GlobalHeaderFooter::get_instance() );
 
+        // Loyalty Emails
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyBirthday.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyPointsEarned.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyTierUpgrade.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyRewardIssued.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyRewardExpiring.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyReferralInvite.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Loyalty/LoyaltyReferralReward.php';
+
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyBirthday::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyPointsEarned::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyTierUpgrade::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyRewardIssued::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyRewardExpiring::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyReferralInvite::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Loyalty\LoyaltyReferralReward::get_instance() );
+
+        // Promo Emails
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Promo/PromoWinBack.php';
+        require_once O100NE_PLUGIN_PATH . 'src/Emails/Promo/PromoCampaign.php';
+
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Promo\PromoWinBack::get_instance() );
+        $o100ne_emails->register( \Order100\Notification\Engine\Emails\Promo\PromoCampaign::get_instance() );
+
         /**
          * POS emails, WC 9.9.3
          *
@@ -92,9 +116,3 @@ class EmailsLoader {
     }
 }
 
-
-// TS: 20260126181332
-
-// TS: 20260218141618
-
-// TS: 20260525202102

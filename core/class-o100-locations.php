@@ -238,6 +238,20 @@ class O100_Locations {
 			$post_data['ID'] = $loc_id;
 			$loc_id = wp_update_post( $post_data );
 		} else {
+			// Limit Free version to 1 branch
+			$count_args = array(
+				'post_type'      => 'o100_location',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids'
+			);
+			$existing = get_posts( $count_args );
+			if ( count( $existing ) >= 1 ) {
+				if ( ! function_exists('O100_License') || ! O100_License()->is_premium() ) {
+					wp_send_json_error( 'Free version is limited to 1 branch. Please upgrade to Pro.' );
+				}
+			}
+			
 			$loc_id = wp_insert_post( $post_data );
 		}
 
@@ -494,7 +508,3 @@ class O100_Locations {
 }
 
 O100_Locations::init();
-
-// TS: 20260123020407
-
-// Update TS: 20260609165000

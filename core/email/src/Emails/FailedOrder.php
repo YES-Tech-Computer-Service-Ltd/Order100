@@ -86,7 +86,3 @@ class FailedOrder extends BaseEmail {
         return o100ne_get_template( 'emails/admin-failed-order.php', '', O100NE_PLUGIN_PATH . 'templates/' );
     }
 }
-
-// TS: 20260322012022
-
-// Update TS: 20260604214500
