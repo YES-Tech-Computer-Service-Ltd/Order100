@@ -47,6 +47,7 @@ class O100_Reservation_DB {
 			location_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
 			special_requests TEXT,
 			reminder_sent TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+			review_sent TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
 			source VARCHAR(20) NOT NULL DEFAULT 'website',
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -93,6 +94,7 @@ class O100_Reservation_DB {
 			'location_id'      => 0,
 			'special_requests' => '',
 			'reminder_sent'    => 0,
+			'review_sent'      => 0,
 			'source'           => 'website',
 		);
 
@@ -111,12 +113,19 @@ class O100_Reservation_DB {
 			'%d', // location_id
 			'%s', // special_requests
 			'%d', // reminder_sent
+			'%d', // review_sent
 			'%s', // source
 		);
 
 		$result = $wpdb->insert( self::table_name(), $data, $formats );
+		
+		if ( $result ) {
+			$insert_id = $wpdb->insert_id;
+			do_action( 'o100_new_reservation', $insert_id, $data );
+			return $insert_id;
+		}
 
-		return $result ? $wpdb->insert_id : false;
+		return false;
 	}
 
 	/**
@@ -159,14 +168,26 @@ class O100_Reservation_DB {
 	 * @return bool
 	 */
 	public static function update_status( $id, $status ) {
-		$allowed = array( 'pending', 'confirmed', 'cancelled' );
+		$allowed = array( 'pending', 'confirmed', 'rejected', 'cancelled', 'completed', 'no_show' );
 		if ( ! in_array( $status, $allowed, true ) ) {
 			return false;
 		}
-		return self::update( $id, array(
+
+		$old_row = self::get( $id );
+		if ( ! $old_row || $old_row->status === $status ) {
+			return false;
+		}
+
+		$result = self::update( $id, array(
 			'status'     => $status,
 			'updated_at' => current_time( 'mysql' ),
 		) );
+
+		if ( $result ) {
+			do_action( 'o100_reservation_status_changed', $id, $status, $old_row->status );
+		}
+		
+		return $result;
 	}
 
 	/**
@@ -325,6 +346,68 @@ class O100_Reservation_DB {
 	}
 
 	/**
+	 * Get total pax count of active reservations for a given date + time slot.
+	 *
+	 * @param string $date         YYYY-MM-DD
+	 * @param string $time         e.g. "18:00"
+	 * @param string $booking_type "table" or "private_room"
+	 * @param int    $location_id  Location filter (0 = all)
+	 * @return int
+	 */
+	public static function get_active_pax_count( $date, $time, $booking_type = 'table', $location_id = 0 ) {
+		global $wpdb;
+		$table = self::table_name();
+
+		$sql = "SELECT SUM(party_size) FROM {$table}
+			WHERE reservation_date = %s
+			AND reservation_time = %s
+			AND booking_type = %s
+			AND status IN ('pending', 'confirmed')";
+		$values = array( $date, $time, $booking_type );
+
+		if ( $location_id > 0 ) {
+			$sql     .= ' AND location_id = %d';
+			$values[] = $location_id;
+		}
+
+		return (int) $wpdb->get_var( $wpdb->prepare( $sql, ...$values ) );
+	}
+
+	/**
+	 * Get guest stats (total visits, fulfillments)
+	 * 
+	 * @param string $email
+	 * @return array {total: int, fulfilled: int}
+	 */
+	public static function get_guest_stats( $email ) {
+		global $wpdb;
+		$table = self::table_name();
+
+		$stats = array(
+			'total'     => 0,
+			'fulfilled' => 0
+		);
+
+		if ( empty( $email ) ) {
+			return $stats;
+		}
+
+		$sql = "SELECT status, COUNT(*) as cnt FROM {$table} WHERE guest_email = %s GROUP BY status";
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $email ) );
+
+		if ( $results ) {
+			foreach ( $results as $row ) {
+				$stats['total'] += (int) $row->cnt;
+				if ( in_array( $row->status, array( 'confirmed', 'completed' ), true ) ) {
+					$stats['fulfilled'] += (int) $row->cnt;
+				}
+			}
+		}
+
+		return $stats;
+	}
+
+	/**
 	 * Check if a table slot is available.
 	 *
 	 * @param string $date
@@ -474,5 +557,3 @@ class O100_Reservation_DB {
 		return self::update( $id, array( 'reminder_sent' => 1 ) );
 	}
 }
-
-// TS: 20260503194024
