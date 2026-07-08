@@ -88,5 +88,3 @@ class Footer extends BaseElement {
     }
 }
 
-
-// TS: 20260406171431
