@@ -191,11 +191,3 @@ foreach ( $order_items as $item_id => $item ) :
 
 <?php endforeach; ?>
 
-
-// TS: 20260125232559
-
-// TS: 20260324014806
-
-// TS: 20260426003107
-
-// TS: 20260510221958

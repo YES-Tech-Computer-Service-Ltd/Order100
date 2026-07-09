@@ -6,7 +6,7 @@
 /* ── 1. Page Layout (Sidebar + Content) ──────────────────── */
 .o100-fluent-container {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     margin-top: 24px;
     align-items: flex-start;
     box-sizing: border-box;
@@ -16,7 +16,7 @@
 }
 
 .o100-fluent-sidebar {
-    width: 260px;
+    width: 190px;
     flex-shrink: 0;
     background: #f8fafc;
     border-radius: 12px;
@@ -28,7 +28,7 @@
     flex: 1;
     background: #ffffff;
     border-radius: 12px;
-    padding: 32px;
+    padding: 24px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
     min-width: 0;
@@ -64,10 +64,10 @@
 .o100-fluent-nav a:hover { background: #e2e8f0; color: #0f172a; }
 .o100-fluent-nav a:hover .dashicons { color: #475569; }
 .o100-fluent-nav a.active {
-    background: #4f46e5;
+    background: #F59322;
     color: #ffffff;
     font-weight: 600;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(245, 147, 34, 0.2);
 }
 .o100-fluent-nav a.active .dashicons { color: #ffffff; }
 
@@ -85,10 +85,10 @@
     z-index: 99;
     padding-top: 24px;
     margin-top: -24px;
-    margin-left: -32px;
-    margin-right: -32px;
-    padding-left: 32px;
-    padding-right: 32px;
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: 24px;
+    padding-right: 24px;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .o100-fluent-header.is-stuck {
@@ -102,7 +102,7 @@
     color: #0f172a;
 }
 .o100-fluent-top-save {
-    background: #4f46e5 !important;
+    background: #F59322 !important;
     border: none !important;
     color: white !important;
     padding: 8px 24px !important;
@@ -117,7 +117,7 @@
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
 }
 .o100-fluent-top-save:hover {
-    background: #4338ca !important;
+    background: #d97b06 !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
 }
@@ -152,6 +152,7 @@
     border-bottom: 1px solid #f1f5f9;
     padding: 8px 0 !important;
     margin: 0 !important;
+    min-width: 0 !important;
 }
 .o100-fluent-content .cmb-row:last-child { border-bottom: none; }
 
@@ -167,6 +168,95 @@
     flex: 0 0 30.66% !important;
     border-bottom: none !important;
     padding: 8px 0 !important;
+}
+
+/* ── Horizontal Card Row ─────────────────────────────────── */
+.o100-fluent-content .cmb-row.o100-horizontal-card-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 20px 24px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+    flex-wrap: nowrap !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row::before,
+.o100-fluent-content .cmb-row.o100-horizontal-card-row::after {
+    display: none !important;
+    content: none !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb-th {
+    width: auto !important;
+    flex: 0 1 auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    padding-right: 24px !important;
+    text-align: left !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb-td {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-left: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb-th label {
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin-bottom: 6px !important;
+    display: block !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb2-metabox-description {
+    font-size: 13.5px !important;
+    color: #64748b !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+}
+.o100-fluent-content .cmb-row.o100-horizontal-card-row input:not([type="radio"]):not([type="checkbox"]),
+.o100-fluent-content .cmb-row.o100-horizontal-card-row select {
+    min-width: 140px !important;
+}
+@media (max-width: 768px) {
+    .o100-fluent-content .cmb-row.o100-horizontal-card-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb-th {
+        padding-right: 0 !important;
+        margin-bottom: 16px !important;
+    }
+    .o100-fluent-content .cmb-row.o100-horizontal-card-row .cmb-td {
+        justify-content: flex-start !important;
+    }
+}
+
+/* ── Horizontal Card Group ───────────────────────────────── */
+.o100-fluent-content .o100-horizontal-card-group {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+    overflow: hidden !important;
+}
+.o100-fluent-content .o100-horizontal-card-group .cmb-row.o100-horizontal-card-row {
+    border: none !important;
+    border-top: 1px solid #f1f5f9 !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+}
+.o100-fluent-content .o100-horizontal-card-group > :first-child .cmb-row.o100-horizontal-card-row,
+.o100-fluent-content .o100-horizontal-card-group > .cmb-row.o100-horizontal-card-row:first-child {
+    border-top: none !important;
 }
 
 /* ── 7. Labels ───────────────────────────────────────────── */
@@ -232,9 +322,57 @@
 .o100-fluent-content input[type="tel"]:focus,
 .o100-fluent-content select:focus,
 .o100-fluent-content textarea:focus {
-    border-color: #4f46e5 !important;
+    border-color: #F59322 !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(245, 147, 34, 0.15) !important;
+}
+
+/* ── 8b. Input Suffix ────────────────────────────────────── */
+.o100-cmb-input-group {
+    display: inline-flex !important;
+    align-items: stretch !important;
+    width: auto;
+    max-width: 100%;
+}
+.o100-fluent-content .o100-cmb-input-group > input[type="text"],
+.o100-fluent-content .o100-cmb-input-group > input[type="number"],
+.o100-fluent-content .o100-cmb-input-group > input[type="tel"],
+.o100-fluent-content .o100-cmb-input-group > input {
+    flex: 1 1 0% !important;
+    width: 0 !important;
+    min-width: 60px !important;
+    border-radius: 6px 0 0 6px !important;
+    border-right: none !important;
+    margin: 0 !important;
+}
+.o100-fluent-content .o100-cmb-input-group > .o100-input-suffix {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: none !important;
+    padding: 0 15px !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    border-radius: 0 6px 6px 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+.o100-fluent-content .o100-cmb-input-group:focus-within > .o100-input-suffix {
+    border-color: #F59322 !important;
+}
+.o100-fluent-content .o100-cmb-input-group > input:focus {
+    box-shadow: none !important;
+}
+.o100-fluent-content .o100-cmb-input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(245, 147, 34, 0.15) !important;
+    border-radius: 6px !important;
+}
+.o100-fluent-content .cmb-td:has(> .o100-input-suffix) > .cmb2-metabox-description {
+    order: 3 !important;
+    width: 100% !important;
+    margin-top: 8px !important;
 }
 
 /* Kill browser autofill background */
@@ -399,7 +537,7 @@
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    background: #4f46e5;
+    background: #F59322;
     color: #fff;
     font-size: 15px;
     font-weight: 600;
@@ -619,8 +757,8 @@
     box-sizing: border-box;
 }
 .o100-custom-cb.o100-cb-checked {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: #F59322;
+    border-color: #F59322;
 }
 .o100-custom-cb.o100-cb-checked::after {
     content: '';

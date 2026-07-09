@@ -128,7 +128,3 @@ class Header7 extends BasePattern {
 }
 
 
-
-// TS: 20260117222013
-
-// TS: 20260204171600
