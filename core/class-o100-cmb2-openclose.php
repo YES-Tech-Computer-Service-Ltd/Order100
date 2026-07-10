@@ -540,7 +540,7 @@ class O100_CMB2_Field_OpenClose {
 				border-radius: 6px;
 				background: white;
 				border: 1px dashed #cbd5e1;
-				color: #3b82f6; /* Order100 Blue */
+				color: #F59322; /* Order100 Blue */
 				font-weight: 600;
 				font-size: 13px;
 				cursor: pointer;
@@ -597,7 +597,7 @@ class O100_CMB2_Field_OpenClose {
 				border-radius: 50%;
 			}
 			.o100-switch input:checked + .o100-slider {
-				background-color: #3b82f6; /* Order100 Blue */
+				background-color: #F59322; /* Order100 Blue */
 			}
 			.o100-switch input:checked + .o100-slider:before {
 				transform: translateX(20px);
@@ -1054,9 +1054,3 @@ new O100_CMB2_Field_OpenClose();
 
 
 
-
-// TS: 20260106104601
-
-// TS: 20260217223106
-
-// TS: 20260426003107
