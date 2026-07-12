@@ -1,0 +1,106 @@
+@@ -107,4 +107,133 @@
+ 		}
+ 	}
++
++	// ═══════════════════════════════════════════════════════════
++	// TAGS & LISTS MANAGEMENT
++	// ═══════════════════════════════════════════════════════════
++
++	public static function get_lists() {
++		global $wpdb;
++		$table = self::get_table_lists();
++		return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY title ASC" );
++	}
++
++	public static function add_list( $title ) {
++		global $wpdb;
++		$slug = sanitize_title( $title );
++		$wpdb->insert(
++			self::get_table_lists(),
++			[ 'title' => $title, 'slug' => $slug, 'created_at' => current_time( 'mysql' ), 'updated_at' => current_time( 'mysql' ) ],
++			[ '%s', '%s', '%s', '%s' ]
++		);
++		return $wpdb->insert_id;
++	}
++
++	public static function delete_list( $id ) {
++		global $wpdb;
++		$wpdb->delete( self::get_table_lists(), [ 'id' => $id ] );
++		$wpdb->delete( self::get_table_relationships(), [ 'object_id' => $id, 'object_type' => 'list' ] );
++	}
++
++	public static function get_tags() {
++		global $wpdb;
++		$table = self::get_table_tags();
++		return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY title ASC" );
++	}
++
++	public static function add_tag( $title ) {
++		global $wpdb;
++		$slug = sanitize_title( $title );
++		$wpdb->insert(
++			self::get_table_tags(),
++			[ 'title' => $title, 'slug' => $slug, 'created_at' => current_time( 'mysql' ), 'updated_at' => current_time( 'mysql' ) ],
++			[ '%s', '%s', '%s', '%s' ]
++		);
++		return $wpdb->insert_id;
++	}
++
++	public static function delete_tag( $id ) {
++		global $wpdb;
++		$wpdb->delete( self::get_table_tags(), [ 'id' => $id ] );
++		$wpdb->delete( self::get_table_relationships(), [ 'object_id' => $id, 'object_type' => 'tag' ] );
++	}
++
++	// ═══════════════════════════════════════════════════════════
++	// CUSTOMER RELATIONSHIPS
++	// ═══════════════════════════════════════════════════════════
++
++	public static function attach_object( $customer_id, $object_id, $object_type ) {
++		global $wpdb;
++		$table = self::get_table_relationships();
++		$exists = $wpdb->get_var( $wpdb->prepare( 
++			"SELECT id FROM {$table} WHERE customer_id = %d AND object_id = %d AND object_type = %s",
++			$customer_id, $object_id, $object_type
++		) );
++		if ( ! $exists ) {
++			$wpdb->insert(
++				$table,
++				[ 'customer_id' => $customer_id, 'object_id' => $object_id, 'object_type' => $object_type ],
++				[ '%d', '%d', '%s' ]
++			);
++		}
++	}
++
++	public static function detach_object( $customer_id, $object_id, $object_type ) {
++		global $wpdb;
++		$wpdb->delete(
++			self::get_table_relationships(),
++			[ 'customer_id' => $customer_id, 'object_id' => $object_id, 'object_type' => $object_type ]
++		);
++	}
++
++	public static function get_customer_tags( $customer_id ) {
++		global $wpdb;
++		$rel_table = self::get_table_relationships();
++		$tag_table = self::get_table_tags();
++		return $wpdb->get_results( $wpdb->prepare(
++			"SELECT t.* FROM {$tag_table} t
++			INNER JOIN {$rel_table} r ON t.id = r.object_id
++			WHERE r.customer_id = %d AND r.object_type = 'tag'",
++			$customer_id
++		) );
++	}
++
++	public static function get_customer_lists( $customer_id ) {
++		global $wpdb;
++		$rel_table = self::get_table_relationships();
++		$list_table = self::get_table_lists();
++		return $wpdb->get_results( $wpdb->prepare(
++			"SELECT l.* FROM {$list_table} l
++			INNER JOIN {$rel_table} r ON l.id = r.object_id
++			WHERE r.customer_id = %d AND r.object_type = 'list'",
++			$customer_id
++		) );
++	}
+ }

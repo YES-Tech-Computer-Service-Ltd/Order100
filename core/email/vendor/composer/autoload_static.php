@@ -267,5 +267,3 @@ class ComposerStaticInitO100ne
         }, null, ClassLoader::class);
     }
 }
-
-// TS: 20260223175006

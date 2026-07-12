@@ -12,11 +12,3 @@ $order_details = new OrderDetailsRenderer( null, $element_data, $is_placeholder 
 $order_details->render();
 
 
-
-// TS: 20260109165037
-
-// TS: 20260220173750
-
-// TS: 20260407014801
-
-// TS: 20260507184715

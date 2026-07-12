@@ -25,5 +25,3 @@ class Intro extends BaseSectionTemplate {
     }
 }
 
-
-// TS: 20260211122805

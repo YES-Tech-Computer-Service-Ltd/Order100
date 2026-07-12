@@ -110,5 +110,3 @@ class Header2 extends BasePattern {
         ];
     }
 }
-
-// TS: 20260305163713
