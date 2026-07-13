@@ -97,7 +97,3 @@ class Text extends BaseElement {
     }
 }
 
-
-// TS: 20260108122020
-
-// TS: 20260113114226

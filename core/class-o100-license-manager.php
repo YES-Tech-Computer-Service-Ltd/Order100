@@ -1,177 +1,218 @@
 <?php
 /**
- * Order100 License & Quota Manager
- *
- * Handles Freemium limits, feature toggles, and upgrade prompts.
- * Designed to be dynamically updated via API in the future.
- *
- * @package Order100
+ * O100 License Manager
+ * Wraps Freemius SDK and provides methods for feature limitation checking.
  */
 
-defined( 'ABSPATH' ) or die();
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 class O100_License_Manager {
+	private static $instance = null;
+	public $fs = null;
 
-	/**
-	 * Instance of this class.
-	 *
-	 * @var object
-	 */
-	protected static $instance = null;
-
-	/**
-	 * Cached quotas array.
-	 *
-	 * @var array
-	 */
-	protected $quotas = array();
-
-	/**
-	 * Default fallback limits for the Freemium version.
-	 *
-	 * @var array
-	 */
-	protected $default_limits = array(
-		'discount_rules_limit'  => 1,      // Max active complex discount rules
-		'visible_crm_customers' => 100,    // Max fully visible customers in CRM
-		'punch_card_ui'         => false,  // Is visual punch card enabled?
-		'item_based_rewards'    => false,  // Can points be redeemed for products?
-		'ai_features'           => false,  // Is AI Copywriter / Menu Generator enabled?
-		'automation_triggers'   => false,  // Are advanced automation hooks enabled?
-	);
-
-	/**
-	 * Return an instance of this class.
-	 *
-	 * @return object A single instance of this class.
-	 */
-	public static function get_instance() {
-		if ( null === self::$instance ) {
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
 	}
 
-	/**
-	 * Constructor.
-	 */
 	private function __construct() {
-		$this->init_quotas();
+		$this->init_freemius();
+		add_action( 'admin_footer', array( $this, 'render_upgrade_modal' ) );
+		add_action( 'admin_head', array( $this, 'fix_freemius_pricing_css' ) );
 	}
 
-	/**
-	 * Initialize and load the quotas from the database.
-	 */
-	private function init_quotas() {
-		$saved_quotas = get_option( 'o100_freemium_limits', array() );
-
-		if ( empty( $saved_quotas ) || ! is_array( $saved_quotas ) ) {
-			// Save default limits on first run
-			update_option( 'o100_freemium_limits', $this->default_limits );
-			$this->quotas = $this->default_limits;
-		} else {
-			// Merge saved with defaults to ensure all keys exist
-			$this->quotas = wp_parse_args( $saved_quotas, $this->default_limits );
+	public function fix_freemius_pricing_css() {
+		global $plugin_page;
+		if ( false !== strpos( (string)$plugin_page, '-pricing' ) ) {
+			echo '<style>
+				/* Force Freemius pricing boxes to be wider and title to wrap */
+				.fs-pricing-page h1, .fs-pricing h1 {
+					font-size: 24px !important;
+					white-space: normal !important;
+					line-height: 1.4 !important;
+					text-align: center !important;
+					margin-bottom: 30px !important;
+					max-width: 800px;
+					margin-left: auto;
+					margin-right: auto;
+				}
+				.fs-plans {
+					display: flex !important;
+					justify-content: center !important;
+					gap: 30px !important;
+				}
+				.fs-plan {
+					min-width: 280px !important;
+					width: 100% !important;
+					max-width: 350px !important;
+				}
+				.fs-plan .fs-features {
+					min-height: 100px; /* Ensure boxes are reasonably tall even with no features */
+				}
+			</style>';
 		}
 	}
 
-	/**
-	 * Check if the current installation has an active PRO license.
-	 * 
-	 * @return bool
-	 */
-	public function is_pro() {
-		// @todo: Implement real license verification logic later.
-		// For now, we simulate Free mode unless a filter overrides it.
-		return apply_filters( 'o100_is_pro_license_active', false );
-	}
-
-	/**
-	 * Get the numeric or boolean limit for a specific feature.
-	 *
-	 * @param string $feature_key The key of the feature (e.g., 'discount_rules_limit').
-	 * @return mixed The limit value, or null if key does not exist.
-	 */
-	public function get_quota( $feature_key ) {
-		// If PRO, return infinite limits (or true for booleans)
-		if ( $this->is_pro() ) {
-			if ( is_bool( $this->default_limits[ $feature_key ] ) ) {
-				return true;
+	private function init_freemius() {
+		if ( ! function_exists( 'order100_fs' ) ) {
+			function order100_fs() {
+				global $order100_fs;
+				if ( ! isset( $order100_fs ) ) {
+					// Load Freemius SDK
+					require_once dirname( __FILE__, 2 ) . '/freemius/start.php';
+					
+					// Initialize Freemius
+					$order100_fs = fs_dynamic_init( array(
+						'id'                  => '33984',
+						'slug'                => 'order100-all-in-one-food-ordering-loyalty-rewards-marketing-auto',
+						'type'                => 'plugin',
+						'public_key'          => 'pk_b703048bab7ee7a65056ca6d22167',
+						'is_premium'          => true,
+						'premium_suffix'      => 'Premium',
+						'has_premium_version' => true,
+						'has_addons'          => false,
+						'has_paid_plans'      => true,
+						'is_org_compliant'    => true,
+						'wp_org_gatekeeper'   => 'OA7#BoRiBNqdf52FvzEf!!074aRLPs8fspif$7K1#4u4Csys1fQlCecVcUTOs2mcpeVHi#C2j9d09fOTvbC0HloPT7fFee5WdS3G',
+						'menu'                => array(
+							'slug'           => 'order100',
+							'first-path'     => 'admin.php?page=order100',
+							'account'        => true,
+							'contact'        => true,
+							'support'        => false,
+						),
+					) );
+				}
+				return $order100_fs;
 			}
-			return 999999999; 
+			$this->fs = order100_fs();
+			
+			// Optional: Hook into freemius to add custom logic on activation, etc.
+			$this->fs->add_action('after_uninstall', array( $this, 'uninstall_cleanup' ) );
 		}
+	}
 
-		return isset( $this->quotas[ $feature_key ] ) ? $this->quotas[ $feature_key ] : null;
+	public function uninstall_cleanup() {
+		// Cleanup options when plugin is deleted and user chooses to delete data
 	}
 
 	/**
-	 * Check if a specific usage amount is within the allowed limits.
-	 *
-	 * @param string $feature_key The key of the feature.
-	 * @param int    $current_usage The current amount already used/active.
-	 * @return bool True if within limits, False if limit exceeded.
+	 * Check if user is premium (paying or active free trial).
 	 */
-	public function check_limit( $feature_key, $current_usage = 0 ) {
-		if ( $this->is_pro() ) {
+	public function is_premium() {
+		if ( $this->fs && $this->fs->can_use_premium_code() ) {
+			return true;
+		}
+		
+		// For local testing without a license, we might mock it if O100_ENV is set to mock-pro
+		if ( defined( 'O100_ENV' ) && O100_ENV === 'mock-pro' ) {
 			return true;
 		}
 
-		$limit = $this->get_quota( $feature_key );
-
-		if ( is_bool( $limit ) ) {
-			return $limit; // e.g. ai_features is true or false
-		}
-
-		return $current_usage < $limit;
+		return false;
 	}
 
 	/**
-	 * Helper function to render a unified "Upgrade to PRO" popup or inline banner.
-	 *
-	 * @param string $feature_name The human-readable name of the feature being restricted.
-	 * @param string $display_type 'modal' or 'banner'.
+	 * Render a beautiful upgrade notice UI box.
 	 */
-	public function render_upgrade_prompt( $feature_name, $display_type = 'modal' ) {
-		if ( 'banner' === $display_type ) {
-			?>
-			<div class="o100-upgrade-banner" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; padding: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-				<div>
-					<h4 style="margin: 0 0 8px 0; color: #166534; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-						<span class="dashicons dashicons-lock" style="color: #22c55e;"></span>
-						Unlock <?php echo esc_html( $feature_name ); ?>
-					</h4>
-					<p style="margin: 0; color: #15803d; font-size: 14px;">Upgrade to Order100 Pro to scale your restaurant marketing without limits.</p>
-				</div>
-				<a href="https://order100.io/pricing" target="_blank" class="button button-primary" style="background: #22c55e; border-color: #16a34a; color: white;">Upgrade Now</a>
-			</div>
-			<?php
-		} else {
-			// Render Modal (Hidden by default, triggered via JS)
-			?>
-			<div id="o100-upgrade-modal-<?php echo esc_attr( sanitize_title( $feature_name ) ); ?>" class="o100-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center;">
-				<div class="o100-modal-content" style="background: #fff; width: 400px; border-radius: 12px; padding: 32px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-					<span class="dashicons dashicons-lock" style="font-size: 48px; width: 48px; height: 48px; color: #cbd5e1; margin-bottom: 16px;"></span>
-					<h2 style="margin: 0 0 12px; font-size: 22px;">Upgrade to Unlock</h2>
-					<p style="color: #64748b; margin-bottom: 24px; line-height: 1.5;">You've reached the free limit. Upgrade to Order100 Pro to unlock <strong><?php echo esc_html( $feature_name ); ?></strong> and grow your sales.</p>
-					<a href="https://order100.io/pricing" target="_blank" class="button button-primary button-large" style="width: 100%; padding: 8px 0; font-size: 16px;">Upgrade to Pro</a>
-					<button type="button" class="button-link o100-modal-close" style="margin-top: 16px; color: #94a3b8; text-decoration: none;" onclick="jQuery(this).closest('.o100-modal-overlay').hide();">Maybe later</button>
-				</div>
-			</div>
-			<?php
+	public function render_upgrade_notice( $feature_name, $message = '' ) {
+		if ( empty( $message ) ) {
+			$message = sprintf( __( 'To use %s, please upgrade to Order100 Pro.', 'order100' ), esc_html( $feature_name ) );
 		}
+		$upgrade_url = $this->fs ? $this->fs->get_upgrade_url() : '#';
+		
+		echo '<div class="o100-upgrade-notice" style="position:relative; overflow:hidden; padding:40px 30px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border:1px solid #e2e8f0; border-radius:16px; text-align:center; margin: 24px 0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);">';
+		echo '<div style="position:absolute; top:0; left:0; right:0; height:4px; background: linear-gradient(90deg, #F59322, #f59e0b, #fbbf24);"></div>';
+		echo '<div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; background:#fff7ed; color:#F59322; margin-bottom:20px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>';
+		echo '<h3 style="color:#0f172a; margin:0 0 12px 0; font-size:20px; font-weight:700;">' . esc_html( $feature_name ) . ' <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; background:linear-gradient(135deg, #F59322, #c2410c); color:#fff; padding:3px 8px; border-radius:12px; vertical-align:middle; margin-left:6px; box-shadow:0 2px 4px rgba(217,119,6,0.2);">PRO</span></h3>';
+		echo '<p style="color:#475569; font-size:15px; margin:0 auto 28px auto; line-height:1.6; max-width:500px;">' . esc_html( $message ) . '</p>';
+		echo '<a href="' . esc_url( $upgrade_url ) . '" style="display:inline-block; background: #0f172a; color: #fff; text-decoration: none; padding: 12px 28px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);" onmouseover="this.style.background=\'#1e293b\'" onmouseout="this.style.background=\'#0f172a\'">Upgrade to Unlock</a>';
+		echo '</div>';
+	}
+
+	/**
+	 * Return the HTML for a small inline [PRO] badge.
+	 */
+	public function get_pro_badge( $tooltip = '' ) {
+		$tooltip_attr = ! empty( $tooltip ) ? ' title="' . esc_attr( $tooltip ) . '"' : '';
+		return '<span class="o100-pro-badge"' . $tooltip_attr . ' style="display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:linear-gradient(135deg, #F59322, #c2410c); color:#fff; padding:2px 6px; border-radius:10px; vertical-align:middle; margin-left:6px; box-shadow:0 2px 4px rgba(217,119,6,0.2); cursor:pointer;">PRO</span>';
+	}
+
+	/**
+	 * Render a hidden global upgrade modal that can be triggered via JS.
+	 */
+	public function render_upgrade_modal() {
+		// Only render if not premium
+		if ( $this->is_premium() ) return;
+		
+		$upgrade_url = $this->fs ? $this->fs->get_upgrade_url() : '#';
+		
+		// The Modal HTML
+		echo '<div id="o100-pro-upgrade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">';
+		echo '<div class="o100-modal-content" style="position:relative; width:90%; max-width:480px; background:#fff; border-radius:16px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden; animation:o100PopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">';
+		// Top border
+		echo '<div style="position:absolute; top:0; left:0; right:0; height:4px; background: linear-gradient(90deg, #F59322, #f59e0b, #fbbf24);"></div>';
+		// Close button
+		echo '<button onclick="document.getElementById(\'o100-pro-upgrade-modal\').style.display=\'none\';" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:24px; color:#94a3b8; cursor:pointer; line-height:1;">&times;</button>';
+		
+		echo '<div style="padding:40px 30px; text-align:center;">';
+		
+		// Crown Icon
+		echo '<div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; background:#fffbeb; margin-bottom:24px; box-shadow: 0 4px 14px 0 rgba(251, 191, 36, 0.2);">';
+		echo '<svg width="32" height="32" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20v2H2z"/><path d="M12 15l-4-3-4 5V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12l-4-5-4 3z"/></svg>';
+		echo '</div>';
+		
+		// Title
+		echo '<h3 id="o100-pro-modal-title" style="color:#0f172a; margin:0 0 16px 0; font-size:22px; font-weight:800; font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">Upgrade to Access the Full Potential of Order100</h3>';
+		
+		// Description
+		echo '<p id="o100-pro-modal-desc" style="color:#64748b; font-size:15px; margin:0 auto 32px auto; line-height:1.6; max-width: 400px;">Unlock limitless marketing possibilities. Upgrade now to exceed your limit and access valuable tools that fuel your business.</p>';
+		
+		// Button
+		echo '<a href="' . esc_url( $upgrade_url ) . '" style="display:inline-block; background: #7c3aed; color: #fff; text-decoration: none; padding: 14px 36px; font-size: 16px; font-weight: 600; border-radius: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);" onmouseover="this.style.background=\'#6d28d9\'" onmouseout="this.style.background=\'#7c3aed\'">Upgrade Now</a>';
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
+		
+		// JS logic for showing modal and animation
+		echo '<style>@keyframes o100PopIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }</style>';
+		echo '<script>
+		function o100ShowProModal(featureName, featureDesc) {
+			var modal = document.getElementById("o100-pro-upgrade-modal");
+			if(!modal) return;
+			// For the new design, we keep the static title and just use featureDesc
+			if(featureDesc) {
+				document.getElementById("o100-pro-modal-desc").innerText = featureDesc;
+			}
+			modal.style.display = "flex";
+		}
+		
+		// Auto-bind to elements with data-pro-feature attribute
+		document.addEventListener("DOMContentLoaded", function() {
+			var proElements = document.querySelectorAll("[data-pro-feature]");
+			for(var i=0; i<proElements.length; i++) {
+				proElements[i].addEventListener("click", function(e) {
+					if (!this.hasAttribute("data-allow-default")) {
+						e.preventDefault();
+						e.stopPropagation();
+					}
+					var name = this.getAttribute("data-pro-feature");
+					var desc = this.getAttribute("data-pro-desc") || "Upgrade to Order100 Pro to unlock this feature and scale your business.";
+					o100ShowProModal(name, desc);
+				});
+			}
+		});
+		</script>';
 	}
 }
 
 /**
- * Global accessor function for the License Manager.
- *
- * @return O100_License_Manager
+ * Helper function to quickly access License Manager
  */
 function O100_License() {
-	return O100_License_Manager::get_instance();
+	return O100_License_Manager::instance();
 }
-
-
-
-
-// TS: 20260402232730
