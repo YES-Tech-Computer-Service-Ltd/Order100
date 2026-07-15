@@ -228,12 +228,3 @@ abstract class DataModel extends Model
         return $wpdb->delete( $this->tablename, $args );
     }
 }
-// TS: 20260124225607
-
-// TS: 20260206175108
-
-// TS: 20260207162611
-
-// TS: 20260215005541
-
-// TS: 20260503232255

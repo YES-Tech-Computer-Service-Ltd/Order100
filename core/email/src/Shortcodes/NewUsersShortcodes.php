@@ -22,23 +22,18 @@ class NewUsersShortcodes extends BaseShortcode {
             'name'        => 'o100_user_new_password',
             'description' => __( 'User New Password', 'order100' ),
             'group'       => 'new_users',
-            'callback'    => [ $this, 'o100_user_new_password' ],
+            'callback'    => [ $this, 'o100ne_user_new_password' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_set_password_link',
-            'description' => __( 'User Set New Password Link', 'order100' ),
+            'description' => __( 'Set Password Link (For New Accounts)', 'order100' ),
             'attributes'  => [
                 'text_link' => __( 'Click here to set your new password.', 'woocommerce' ),
             ],
             'group'       => 'new_users',
-            'callback'    => [ $this, 'o100_set_password_link' ],
+            'callback'    => [ $this, 'o100ne_set_password_link' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_set_password_url',
-            'description' => __( 'User Set New Password URL (String)', 'order100' ),
-            'group'       => 'new_users',
-            'callback'    => [ $this, 'o100_set_password_url' ],
-        ];
+
         return $shortcodes;
     }
 
@@ -81,19 +76,5 @@ class NewUsersShortcodes extends BaseShortcode {
         }
 
         return '';
-    }
-
-    public function o100ne_set_password_url( $data ) {
-
-        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
-
-        if ( ! empty( $render_data['is_sample'] ) ) {
-            /**
-             * Is sample order
-             */
-            return esc_url( wc_customer_edit_account_url() );
-        }
-
-        return ! empty( $render_data['set_password_url'] ) ? $render_data['set_password_url'] : '';
     }
 }
