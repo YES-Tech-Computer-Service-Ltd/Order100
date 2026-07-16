@@ -187,7 +187,3 @@ class ColumnLayout extends BaseElement {
         return isset( $icons[ $amount ] ) ? $icons[ $amount ] : $icons[1];
     }
 }
-
-// TS: 20260104123439
-
-// TS: 20260205165317

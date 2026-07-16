@@ -24,7 +24,7 @@ class RefundShortcodes extends BaseShortcode {
             'name'        => 'o100_refund_type',
             'description' => __( 'Refund Type', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_refund_type' ],
+            'callback'    => [ $this, 'o100ne_refund_type' ],
         ];
         return $shortcodes;
     }

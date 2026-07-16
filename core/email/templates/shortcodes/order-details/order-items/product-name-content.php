@@ -33,5 +33,3 @@ if ( $show_hyper_links || $is_placeholder ) {
 
 
 
-
-// TS: 20260130215710
