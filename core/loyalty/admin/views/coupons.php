@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 // Fetch all rewards/coupons natively via Promotions DB
 $all_rewards = class_exists( 'O100_Promotions_DB' ) ? O100_Promotions_DB::query( array( 'source' => 'loyalty' ) ) : array();
+?>
 
 <div class="o100-loyalty-coupons-wrap">
 	<input type="hidden" id="o100-reward-nonce" value="<?php echo esc_attr( wp_create_nonce( 'o100-reward-nonce' ) ); ?>" />
@@ -455,9 +456,3 @@ $all_rewards = class_exists( 'O100_Promotions_DB' ) ? O100_Promotions_DB::query(
 		</div>
 	</div>
 </script>
-
-// TS: 20260317162141
-
-// TS: 20260428153347
-
-// TS: 20260503153153

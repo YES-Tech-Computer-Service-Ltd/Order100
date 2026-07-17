@@ -11,7 +11,3 @@ if ( ! empty( $template ) ) {
     o100ne_kses_post_e( $content );
 }
 
-
-// TS: 20260109122458
-
-// TS: 20260302144411

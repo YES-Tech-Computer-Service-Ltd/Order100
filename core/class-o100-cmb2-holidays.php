@@ -194,8 +194,8 @@ class O100_CMB2_Field_Holidays {
 				min-width: 140px;
 			}
 			.o100-holiday-date-input:focus {
-				border-color: #3b82f6 !important;
-				box-shadow: 0 0 0 1px #3b82f6 !important;
+				border-color: #F59322 !important;
+				box-shadow: 0 0 0 1px #F59322 !important;
 			}
 			.o100-holiday-to {
 				color: #64748b;
@@ -243,7 +243,7 @@ class O100_CMB2_Field_Holidays {
 				transition: .3s;
 			}
 			.o100-annual-toggle input:checked + .o100-annual-slider {
-				background-color: #3b82f6;
+				background-color: #F59322;
 			}
 			.o100-annual-toggle input:checked + .o100-annual-slider:before {
 				transform: translateX(16px);
@@ -271,7 +271,7 @@ class O100_CMB2_Field_Holidays {
 				-webkit-appearance: none !important;
 			}
 			.o100-holiday-reason-select:focus {
-				border-color: #3b82f6 !important;
+				border-color: #F59322 !important;
 				background-color: #fff !important;
 			}
 			.o100-holiday-reason-custom-input {
@@ -287,8 +287,8 @@ class O100_CMB2_Field_Holidays {
 				box-shadow: none !important;
 			}
 			.o100-holiday-reason-custom-input:focus {
-				border-color: #3b82f6 !important;
-				box-shadow: 0 0 0 1px #3b82f6 !important;
+				border-color: #F59322 !important;
+				box-shadow: 0 0 0 1px #F59322 !important;
 			}
 			.o100-holiday-remove {
 				display: flex;
@@ -321,7 +321,7 @@ class O100_CMB2_Field_Holidays {
 				padding: 8px 16px;
 				background: #fff;
 				border: 1px dashed #cbd5e1;
-				color: #3b82f6;
+				color: #F59322;
 				border-radius: 6px;
 				font-size: 13px;
 				font-weight: 600;
@@ -454,9 +454,3 @@ class O100_CMB2_Field_Holidays {
 new O100_CMB2_Field_Holidays();
 
 
-
-// TS: 20260403222206
-
-// TS: 20260413213507
-
-// TS: 20260425171715

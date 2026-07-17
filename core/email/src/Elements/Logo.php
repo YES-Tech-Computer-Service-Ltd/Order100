@@ -21,6 +21,19 @@ class Logo extends BaseElement {
   <path d="M4.12,16.28c-.22,0-.43-.09-.58-.27-.26-.32-.22-.79.1-1.06l8.42-6.92c.31-.25.75-.22,1.02.06l4.65,4.93c.29.3.27.78-.03,1.06-.3.28-.78.27-1.06-.03l-4.17-4.42-7.88,6.48c-.14.11-.31.17-.48.17Z"/>
 </svg>';
 
+        $profile = get_option('o100_store_profile', []);
+        $store_logo = $profile['o100_store_logo'] ?? '';
+        if (empty($store_logo)) {
+            $custom_logo_id = get_theme_mod( 'custom_logo' );
+            if ($custom_logo_id) {
+                $image = wp_get_attachment_image_src( $custom_logo_id , 'full' );
+                if ($image) $store_logo = $image[0];
+            }
+        }
+        if (empty($store_logo)) {
+            $store_logo = esc_url( O100NE_PLUGIN_URL . 'assets/images/woocommerce-logo.png' );
+        }
+
         return [
             'id'        => uniqid(),
             'type'      => self::$type,
@@ -49,6 +62,7 @@ class Logo extends BaseElement {
                     $attributes,
                     [
                         'title' => __( 'Source image', 'order100' ),
+                        'default_value' => $store_logo,
                     ]
                 ),
                 'align'                      => ElementsHelper::get_align(
@@ -79,7 +93,3 @@ class Logo extends BaseElement {
 
 
 
-
-// TS: 20260111142730
-
-// TS: 20260119130554

@@ -19,7 +19,7 @@ class PaymentsShortcodes extends BaseShortcode {
             'name'        => 'o100_order_payment_method',
             'description' => __( 'Payment method', 'order100' ),
             'group'       => 'payments',
-            'callback'    => [ $this, 'o100_order_payment_method' ],
+            'callback'    => [ $this, 'o100ne_order_payment_method' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_payment_link',
@@ -28,25 +28,20 @@ class PaymentsShortcodes extends BaseShortcode {
                 'text_link' => __( 'Payment page', 'order100' ),
             ],
             'group'       => 'payments',
-            'callback'    => [ $this, 'o100_order_payment_link' ],
+            'callback'    => [ $this, 'o100ne_order_payment_link' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_order_payment_url',
-            'description' => __( 'Payment URL (String)', 'order100' ),
-            'group'       => 'payments',
-            'callback'    => [ $this, 'o100_order_payment_url' ],
-        ];
+
         $shortcodes[] = [
             'name'        => 'o100_payment_instructions',
             'description' => __( 'Payment Instructions', 'order100' ),
             'group'       => 'payments',
-            'callback'    => [ $this, 'o100_payment_instructions' ],
+            'callback'    => [ $this, 'o100ne_payment_instructions' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_payment_transaction_id',
             'description' => __( 'Payment Transaction ID', 'order100' ),
             'group'       => 'payments',
-            'callback'    => [ $this, 'o100_payment_transaction_id' ],
+            'callback'    => [ $this, 'o100ne_payment_transaction_id' ],
         ];
         return $shortcodes;
     }
@@ -103,28 +98,7 @@ class PaymentsShortcodes extends BaseShortcode {
         return '<a href="' . esc_url( $order->get_checkout_payment_url() ) . '">' . $text_link . '</a>';
     }
 
-    public function o100ne_order_payment_url( $data ) {
 
-        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
-
-        if ( ! empty( $render_data['is_sample'] ) ) {
-            /**
-             * Is sample order
-             */
-            return esc_url( wc_get_endpoint_url( 'order-pay', 0, wc_get_checkout_url() ) );
-        }
-
-        $order = Helpers::get_order_from_shortcode_data( $render_data );
-
-        if ( empty( $order ) ) {
-            /**
-             * Not having order_id
-             */
-            return '';
-        }
-
-        return $order->get_checkout_payment_url();
-    }
 
     public function o100ne_payment_instructions( $data ) {
 
@@ -177,7 +151,3 @@ class PaymentsShortcodes extends BaseShortcode {
     }
 }
 
-
-// TS: 20260113143610
-
-// TS: 20260116121926

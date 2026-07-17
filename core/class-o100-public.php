@@ -44,9 +44,13 @@ if ( ! class_exists( 'O100_Store_Data' ) ) {
 		}
 
 		public static function get_lead_time( $method = 'delivery' ) {
-			$opts = self::get_store_hours();
-			$prefix = ( $method === 'takeaway' || $method === 'pickup' ) ? 'o100_pickup_' : 'o100_delivery_';
-			return isset( $opts[$prefix . 'lead_time'] ) ? $opts[$prefix . 'lead_time'] : '';
+			if ( $method === 'takeaway' || $method === 'pickup' ) {
+				$opts = get_option( 'o100_pickup', array() );
+				return isset( $opts['o100_pickup_lead_time'] ) ? $opts['o100_pickup_lead_time'] : '';
+			} else {
+				$opts = get_option( 'o100_delivery', array() );
+				return isset( $opts['o100_delivery_lead_time'] ) ? $opts['o100_delivery_lead_time'] : '';
+			}
 		}
 
 		public static function is_location_enabled() {
@@ -244,6 +248,9 @@ class O100_Public {
 		add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $this, 'display_instruction_on_order_details' ) );
 		add_action( 'woocommerce_order_details_after_order_table', array( $this, 'display_instruction_on_order_details' ) );
 		add_action( 'woocommerce_email_after_order_table', array( $this, 'display_instruction_in_email' ), 10, 4 );
+
+		// Thank You Page Social Sharing
+		add_action( 'woocommerce_thankyou', array( $this, 'thankyou_social_share' ), 20 );
 
 		// REST API Extensions for Location Support
 		add_action( 'rest_api_init', array( $this, 'register_location_api_routes' ) );
@@ -870,8 +877,10 @@ class O100_Public {
 	 */
 	public function enqueue_scripts() {
 		$options = $this->get_options();
-				wp_enqueue_script( 'o100-script', O100_URL . 'assets/js/o100-script.js', array( 'jquery' ), '1.0.0', true );
-
+		
+		wp_enqueue_style( 'o100-frontend-launcher', O100_URL . 'assets/css/o100-frontend-launcher.css', array(), time() );
+		wp_enqueue_script( 'o100-frontend-launcher', O100_URL . 'assets/js/o100-frontend-launcher.js', array( 'jquery' ), time(), true );
+		wp_enqueue_script( 'o100-script', O100_URL . 'assets/js/o100-script.js', array( 'jquery' ), time(), true );
 		// Enqueue Google Maps API if configured
 		$api_opts = get_option( 'o100_api_integration', array() );
 		$api_key = !empty($api_opts['o100_ggmap_api_js']) ? $api_opts['o100_ggmap_api_js'] : '';
@@ -1121,6 +1130,8 @@ class O100_Public {
 
 		wp_localize_script( 'o100-script', 'o100_vars', array(
 			'ajaxurl'             => admin_url( 'admin-ajax.php' ),
+			'rest_url'            => esc_url_raw( rest_url( 'o100/v1/' ) ),
+			'rest_nonce'          => wp_create_nonce( 'wp_rest' ),
 			'addon_enabled'       => $addon_enabled ? 1 : 0,
 			'parent_setting'      => $parent_open_close_setting, 
 			'is_open'             => $is_store_open ? 1 : 0,
@@ -1288,9 +1299,18 @@ class O100_Public {
 	 * @param int $order_id
 	 */
 	public function save_asap_meta( $order_id ) {
+		$order = wc_get_order( $order_id );
+		$is_order_obj = ( $order instanceof WC_Order );
+		$changed = false;
+
 		if ( $this->is_asap_order ) {
+			if ( $is_order_obj ) {
+				$order->update_meta_data( 'o100_time_deli', 'ASAP' );
+				$order->update_meta_data( '_o100_time_deli', 'ASAP' );
+				$changed = true;
+			}
+			// Legacy fallback
 			update_post_meta( $order_id, 'o100_time_deli', 'ASAP' );
-			// Also update the underscore version just in case
 			update_post_meta( $order_id, '_o100_time_deli', 'ASAP' );
 		}
         
@@ -1298,40 +1318,74 @@ class O100_Public {
         if ( isset( WC()->session ) ) {
             $order_method = WC()->session->get( '_o100_order_method' );
             if ( $order_method ) {
-                update_post_meta( $order_id, '_o100_order_type', $order_method );
-                // Also save standard key if main plugin doesn't
-                update_post_meta( $order_id, '_o100_order_method', $order_method );
+				if ( $is_order_obj ) {
+                	$order->update_meta_data( '_o100_order_type', $order_method );
+                	$order->update_meta_data( '_o100_order_method', $order_method );
+                	$changed = true;
+				}
+				// Legacy fallback
+				update_post_meta( $order_id, '_o100_order_type', $order_method );
+				update_post_meta( $order_id, '_o100_order_method', $order_method );
             }
         }
+
+		if ( $is_order_obj && $changed ) {
+			$order->save_meta_data();
+		}
 	}
 
 	/**
 	 * Save Native Checkout Fields
 	 */
 	public function save_native_checkout_fields( $order_id ) {
+		$order = wc_get_order( $order_id );
+		$is_order_obj = ( $order instanceof WC_Order );
+		$changed = false;
+
 		// Save o100_location
 		if ( isset( $_POST['o100_location'] ) && ! empty( $_POST['o100_location'] ) ) {
 			$loc_id = intval( $_POST['o100_location'] );
+			if ( $is_order_obj ) {
+				$order->update_meta_data( '_o100_location_id', $loc_id );
+			}
 			update_post_meta( $order_id, '_o100_location_id', $loc_id );
 			
 			$loc_post = get_post($loc_id);
 			if ($loc_post) {
+				if ( $is_order_obj ) {
+					$order->update_meta_data( 'exwoofood_ck_loca', $loc_post->post_name );
+				}
 				update_post_meta( $order_id, 'exwoofood_ck_loca', $loc_post->post_name );
 			}
+			$changed = true;
 		}
 
 		// Save Date
 		if ( isset( $_POST['o100_date_deli'] ) && ! empty( $_POST['o100_date_deli'] ) ) {
 			$date_val = sanitize_text_field( $_POST['o100_date_deli'] );
-			update_post_meta( $order_id, 'exwfood_date_deli', $date_val );
-			update_post_meta( $order_id, '_o100_delivery_date', $date_val );
+			if ( $is_order_obj ) {
+				$order->update_meta_data( '_o100_date_deli', $date_val );
+				$order->update_meta_data( 'o100_date_deli', $date_val );
+			}
+			update_post_meta( $order_id, '_o100_date_deli', $date_val );
+			update_post_meta( $order_id, 'o100_date_deli', $date_val );
+			$changed = true;
 		}
 
 		// Save Time
 		if ( isset( $_POST['o100_time_deli'] ) && ! empty( $_POST['o100_time_deli'] ) ) {
 			$time_val = sanitize_text_field( $_POST['o100_time_deli'] );
-			update_post_meta( $order_id, 'exwfood_time_deli', $time_val );
-			update_post_meta( $order_id, '_o100_delivery_time', $time_val );
+			if ( $is_order_obj ) {
+				$order->update_meta_data( '_o100_time_deli', $time_val );
+				$order->update_meta_data( 'o100_time_deli', $time_val );
+			}
+			update_post_meta( $order_id, '_o100_time_deli', $time_val );
+			update_post_meta( $order_id, 'o100_time_deli', $time_val );
+			$changed = true;
+		}
+
+		if ( $is_order_obj && $changed ) {
+			$order->save_meta_data();
 		}
 	}
 
@@ -1800,6 +1854,32 @@ public function add_shipping_address_checkbox( $checkout ) {
 			foreach ( $disable_mt as $it_mt ) {
 				if ( isset( $gateways[ $it_mt ] ) ) {
 					unset( $gateways[ $it_mt ] );
+				}
+			}
+		}
+
+		// Advanced CRM Rules Engine Integration (Order100 v2)
+		if ( class_exists( 'O100_Privilege_Manager' ) && is_user_logged_in() ) {
+			$loc_id = WC()->session->get( 'o100_location_id' );
+			$subtotal = 0;
+			if ( did_action( 'wp_loaded' ) && ! is_null( WC()->cart ) ) {
+				$subtotal = WC()->cart->get_subtotal();
+			}
+			$context = array(
+				'branch'     => $loc_id ? intval( $loc_id ) : null,
+				'order_type' => $method,
+				'subtotal'   => apply_filters( 'exwf_total_cart_price_fee', $subtotal ),
+				'timestamp'  => current_time( 'timestamp' ),
+			);
+
+			$rule_allowed_gateways = O100_Privilege_Manager::get_privilege( get_current_user_id(), 'delivery', 'payment_gateways', $context );
+			
+			// If rule defines specific allowed gateways, we unset anything not in the list
+			if ( $rule_allowed_gateways !== null && is_array( $rule_allowed_gateways ) && ! empty( $rule_allowed_gateways ) ) {
+				foreach ( $gateways as $gateway_id => $gateway ) {
+					if ( ! in_array( $gateway_id, $rule_allowed_gateways ) ) {
+						unset( $gateways[ $gateway_id ] );
+					}
 				}
 			}
 		}
@@ -2345,6 +2425,47 @@ public function inject_shipping_address_script() {
 	/**
 	 * Save delivery instruction to order meta and add note
 	 */
+	/**
+	 * Render Social Sharing on Thank You Page
+	 *
+	 * @param int $order_id
+	 */
+	public function thankyou_social_share( $order_id ) {
+		if ( ! class_exists( 'O100_Social_Share' ) ) {
+			return;
+		}
+
+		$opts = get_option( 'o100_options', array() );
+		$enable_social = isset( $opts['o100_enable_social'] ) && $opts['o100_enable_social'] === 'on';
+		if ( ! $enable_social ) {
+			return;
+		}
+
+		$share_url = home_url();
+		$share_title = get_bloginfo( 'name' );
+
+		// Append referral code if logged in
+		if ( is_user_logged_in() ) {
+			$user_id = get_current_user_id();
+			$ref_code = get_user_meta( $user_id, 'wlr_ref_code', true );
+			if ( empty( $ref_code ) ) {
+				$ref_code = get_user_meta( $user_id, 'o100_referral_code', true );
+			}
+			if ( ! empty( $ref_code ) ) {
+				$share_url = add_query_arg( 'o100_ref', $ref_code, $share_url );
+			} else {
+				// Fallback to user id if no code is generated yet but we want them to have a link
+				$share_url = add_query_arg( 'o100_ref', 'u' . $user_id, $share_url );
+			}
+		}
+
+		echo '<div style="margin-top: 30px; margin-bottom: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">';
+		echo '<h3 style="margin-top: 0; margin-bottom: 10px; font-size: 16px; color: #0f172a;">' . esc_html__( 'Love our food? Share with your friends!', 'order100' ) . '</h3>';
+		echo '<p style="margin-bottom: 15px; font-size: 14px; color: #475569;">' . esc_html__( 'Share this link to invite your friends and family.', 'order100' ) . '</p>';
+		O100_Social_Share::render_share_buttons( $share_url, $share_title );
+		echo '</div>';
+	}
+
 	public function save_delivery_instruction_on_create( $order, $data ) {
 		if ( ! empty( $_POST['o100_delivery_instruction'] ) ) {
 			$val = sanitize_text_field( $_POST['o100_delivery_instruction'] );
@@ -2454,7 +2575,7 @@ public function inject_shipping_address_script() {
 		$success_txt = !empty( $opts['o100_color_success_txt'] ) ? $opts['o100_color_success_txt'] : '#15803d';
 		
 		$info_bg     = !empty( $opts['o100_color_info_bg'] ) ? $opts['o100_color_info_bg'] : '#eff6ff';
-		$info_txt    = !empty( $opts['o100_color_info_txt'] ) ? $opts['o100_color_info_txt'] : '#1e40af';
+		$info_txt    = !empty( $opts['o100_color_info_txt'] ) ? $opts['o100_color_info_txt'] : '#b06d04';
 
 		echo '<style>
 			:root {
@@ -2784,11 +2905,9 @@ public function inject_shipping_address_script() {
 
 							$_time_base = $time_option['start-time'];
 							if ( $_time_base != '' ) {
-								// Check against end-time to keep the slot open until the very end of the window
-								$_time_end = ! empty( $time_option['end-time'] ) ? $time_option['end-time'] : $time_option['start-time'];
-								$_timeck = explode( ':', $_time_end );
+								$_timeck = explode( ':', $_time_base );
 								$_timeck_sec = $_timeck[1] * 60 + $_timeck[0] * 3600;
-								if ( $time_option['start-time'] != '' && ( $comparison_midnight + $_timeck_sec ) < $cure_time ) {
+								if ( ( $comparison_midnight + $_timeck_sec ) < $cure_time ) {
 									$disable = 'disabled="disabled"';
 								}
 							}
@@ -2842,6 +2961,9 @@ public function inject_shipping_address_script() {
 		
 		if ( ob_get_length() ) {
 			ob_clean();
+		}
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return $output;
 		}
 		echo str_replace( '\/', '/', json_encode( $output ) );
 		die;
@@ -2963,15 +3085,29 @@ public function inject_shipping_address_script() {
 		$settings = get_option( 'o100_misc', array() );
 		$global_labels = isset( $settings['o100_global_food_labels'] ) ? $settings['o100_global_food_labels'] : array();
 
+		if ( is_string( $global_labels ) ) {
+			$global_labels = json_decode( $global_labels, true );
+			if ( ! is_array( $global_labels ) ) {
+				$global_labels = array();
+			}
+		}
+
 		if ( empty( $global_labels ) ) {
 			return '';
 		}
 
 		$html = '<div class="o100-food-labels-container">';
 		
-		foreach ( $product_labels as $label_index ) {
-			if ( isset( $global_labels[ $label_index ] ) ) {
-				$label_data = $global_labels[ $label_index ];
+		foreach ( $product_labels as $label_name ) {
+			$label_data = null;
+			foreach ( $global_labels as $gl ) {
+				if ( isset( $gl['name'] ) && $gl['name'] === $label_name ) {
+					$label_data = $gl;
+					break;
+				}
+			}
+
+			if ( $label_data ) {
 				$name    = isset( $label_data['name'] ) ? $label_data['name'] : '';
 				$bgcolor = isset( $label_data['bgcolor'] ) && $label_data['bgcolor'] !== '' ? $label_data['bgcolor'] : '#ffffff';
 				$icon    = isset( $label_data['icon'] ) ? $label_data['icon'] : '';
@@ -3005,9 +3141,6 @@ public function inject_shipping_address_script() {
 		wp_send_json_error( array( 'message' => 'Failed to update distance' ) );
 	}
 
+
+
 }
-
-
-// TS: 20260219215439
-
-// TS: 20260313122550
