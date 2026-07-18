@@ -58,7 +58,7 @@ class PreviewEmailWoo {
                 return self::render_sample_preview( $template_data, $current_email );
             }
 
-            self::trigger_email( $email_class, $current_email, $order_id );
+            error_log("PREVIEW LOG: email_class=$email_class, email_id=$email_id, current_email_id=" . $current_email->id); self::trigger_email( $email_class, $current_email, $order_id );
             $content               = self::get_email_content( $current_email );
             $is_disabled_send_mail = false;
         } else {
@@ -191,7 +191,3 @@ class PreviewEmailWoo {
         return $recipient;
     }
 }
-
-// TS: 20260218171613
-
-// TS: 20260317014914

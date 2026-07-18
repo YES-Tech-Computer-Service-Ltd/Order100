@@ -48,7 +48,17 @@ class O100_Admin_Menu {
 	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_menus' ), 9 );
+		add_action( 'admin_menu', array( $this, 'hide_native_woo_menus' ), 999 );
 		add_action( 'admin_head', array( $this, 'inject_menu_icon_css' ) );
+		add_action( 'wp_ajax_o100_run_health_check', array( $this, 'ajax_run_health_check' ) );
+
+		add_action( 'admin_init', function() {
+			if ( isset($_GET['o100_iframe']) && $_GET['o100_iframe'] == '1' ) {
+				if ( ! defined('IFRAME_REQUEST') ) {
+					define('IFRAME_REQUEST', true);
+				}
+			}
+		});
 
 		// Hide WP Admin UI if loaded via seamless iframe (Use admin_footer because WLL aggressively clears admin_head)
 		add_action( 'admin_footer', function() {
@@ -70,6 +80,16 @@ class O100_Admin_Menu {
 	}
 
 	/**
+	 * Hide native WooCommerce Products menu if configured
+	 */
+	public function hide_native_woo_menus() {
+		$misc = get_option( 'o100_misc', array() );
+		if ( isset( $misc['o100_hide_woo_products'] ) && $misc['o100_hide_woo_products'] === 'on' ) {
+			remove_menu_page( 'edit.php?post_type=product' );
+		}
+	}
+
+	/**
 	 * Register top-level menu + all sub-menus
 	 */
 	public function register_menus() {
@@ -86,6 +106,8 @@ class O100_Admin_Menu {
 			$icon_url,
 			self::POSITION
 		);
+
+		// (Menu Maker moved to after General Settings)
 
 		// ── Sub-menus (in display order) ────────────────────────────────
 
@@ -109,6 +131,16 @@ class O100_Admin_Menu {
 			array( $this, 'render_general_settings' )
 		);
 
+		// 2.5 Menu Maker
+		add_submenu_page(
+			self::MENU_SLUG,
+			__( 'Menu Management', 'order100' ),
+			__( 'Menu Management', 'order100' ),
+			self::CAPABILITY,
+			'o100-menu-maker',
+			array( O100_Menu_Maker_Admin::instance(), 'render_page' )
+		);
+
 		// 3. Food Ordering (conditionally shown)
 		if ( apply_filters( 'o100_module_food_ordering_active', false ) ) {
 			add_submenu_page(
@@ -128,7 +160,7 @@ class O100_Admin_Menu {
 			__( 'Customers', 'order100' ) . ' <span class="o100-menu-badge o100-menu-badge--pro">Pro</span>',
 			self::CAPABILITY,
 			'o100-customers',
-			array( $this, 'render_placeholder' )
+			array( $this, 'render_customers' )
 		);
 
 		// 5. Product Add-ons — removed from menu; now managed as "Item Modifiers" in General Settings > Misc tab.
@@ -180,27 +212,29 @@ class O100_Admin_Menu {
 			array( $this, 'render_notifications' )
 		);
 
-		// 8. SEO
+		// 8. Tools (SEO + Health Check + Delivery Sim)
 		add_submenu_page(
 			self::MENU_SLUG,
-			__( 'SEO', 'order100' ),
-			__( 'SEO', 'order100' ),
+			__( 'Tools', 'order100' ),
+			__( 'Tools', 'order100' ),
 			self::CAPABILITY,
-			'o100-seo',
-			array( $this, 'render_seo' )
+			'o100-tools',
+			array( $this, 'render_tools' )
 		);
 
 		// 9. Automation
 		add_submenu_page(
 			self::MENU_SLUG,
-			__( 'Automation', 'order100' ),
-			__( 'Automation', 'order100' ) . ' <span class="o100-menu-badge o100-menu-badge--pro">Pro</span>',
+			__( 'Automations', 'order100' ),
+			__( 'Automations', 'order100' ),
 			self::CAPABILITY,
 			'o100-automation',
-			array( $this, 'render_placeholder' )
+			array( $this, 'render_automation' )
 		);
 
 		// 10. Integration — REMOVED: consolidated into General Settings > Integrations tab
+
+		// 10. App Devices — REMOVED: consolidated into General Settings > Integrations tab
 
 		// 11. Documentation
 		add_submenu_page(
@@ -264,7 +298,7 @@ class O100_Admin_Menu {
 				margin-left: 4px;
 			}
 			.o100-menu-badge--pro {
-				background: linear-gradient(135deg, #1800AD, #6366f1);
+				background: linear-gradient(135deg, #1800AD, #F59322);
 				color: #fff;
 			}
 			.o100-menu-badge--new {
@@ -277,7 +311,7 @@ class O100_Admin_Menu {
 			}
 
 			/* ═══ Global Page Background (FluentCRM Style) ═══ */
-			body.toplevel_page_order100, body.order100_page_o100-settings, body.order100_page_o100-loyalty, body.order100_page_o100-seo, body.order100_page_o100-notifications {
+			body.toplevel_page_order100, body.order100_page_o100-settings, body.order100_page_o100-loyalty, body.order100_page_o100-seo, body.order100_page_o100-notifications, body.order100_page_o100-reservations {
 				background: #f3f4f6 !important;
 			}
 
@@ -300,10 +334,22 @@ class O100_Admin_Menu {
 				gap: 16px;
 			}
 			.o100-page-header-logo {
-				width: 36px; /* Slightly smaller logo */
+				object-fit: contain;
+			}
+			.o100-page-header-logo.o100-desktop-logo {
+				width: auto;
+				height: 32px;
+				border-radius: 0;
+			}
+			.o100-page-header-logo.o100-mobile-logo {
+				width: 36px;
 				height: 36px;
-				border-radius: 8px;
-				object-fit: cover;
+				border-radius: 0;
+				display: none;
+			}
+			@media (max-width: 960px) {
+				.o100-page-header-logo.o100-desktop-logo { display: none !important; }
+				.o100-page-header-logo.o100-mobile-logo { display: block !important; }
 			}
 
 			/* ═══ CMB2 Form Styling (FluentCRM White Card Style) ═══ */
@@ -354,8 +400,8 @@ class O100_Admin_Menu {
 				box-shadow: none;
 			}
 			.o100-wrap input[type="text"]:focus, .o100-wrap textarea:focus {
-				border-color: #6366f1;
-				box-shadow: 0 0 0 1px #6366f1;
+				border-color: #F59322;
+				box-shadow: 0 0 0 1px #F59322;
 			}
 			.o100-wrap .cmb2-metabox-description {
 				color: #6b7280;
@@ -363,8 +409,8 @@ class O100_Admin_Menu {
 				margin-top: 6px;
 			}
 			.o100-wrap .button-primary {
-				background: #6366f1 !important;
-				border-color: #4f46e5 !important;
+				background: #F59322 !important;
+				border-color: #F59322 !important;
 				border-radius: 6px !important;
 				padding: 0 20px !important;
 				height: 38px !important;
@@ -372,7 +418,7 @@ class O100_Admin_Menu {
 				font-weight: 600 !important;
 			}
 			.o100-wrap .button-primary:hover {
-				background: #4f46e5 !important;
+				background: #F59322 !important;
 			}
 			/* Reposition CMB2 native submit button to card header area.
 			   Diagnostic confirmed: CMB2 outputs submit OUTSIDE the form tag,
@@ -384,7 +430,7 @@ class O100_Admin_Menu {
 				right: 32px !important;
 				z-index: 10;
 				margin: 0 !important;
-				background: #6366f1 !important;
+				background: #F59322 !important;
 				color: #fff !important;
 				border: none !important;
 				border-radius: 6px !important;
@@ -397,7 +443,7 @@ class O100_Admin_Menu {
 				box-shadow: none !important;
 			}
 			.o100-card-body > input[type="submit"]:hover {
-				background: #4f46e5 !important;
+				background: #F59322 !important;
 			}
 			/* ═══ FOUC Prevention: hide all CMB2 tab fields by default ═══ */
 			.o100-wrap .o100-tab-field { display: none !important; }
@@ -410,6 +456,57 @@ class O100_Admin_Menu {
 				letter-spacing: -0.2px;
 				margin-left: 4px;
 			}
+
+			/* ═══ Global Tailwind Blue/Indigo → Brand Orange Override ═══ */
+			/* Background colors */
+			.o100-wrap .bg-blue-600,
+			.o100-wrap .bg-indigo-600 { background-color: #F59322 !important; }
+			.o100-wrap .bg-blue-700,
+			.o100-wrap .bg-indigo-700 { background-color: #d97b06 !important; }
+			.o100-wrap .bg-blue-500,
+			.o100-wrap .bg-indigo-500 { background-color: #F59322 !important; }
+			.o100-wrap .bg-blue-100,
+			.o100-wrap .bg-indigo-100 { background-color: #fff7ed !important; }
+			.o100-wrap .bg-blue-50,
+			.o100-wrap .bg-indigo-50 { background-color: #fffaf5 !important; }
+			/* Text colors */
+			.o100-wrap .text-blue-600,
+			.o100-wrap .text-indigo-600 { color: #F59322 !important; }
+			.o100-wrap .text-blue-700,
+			.o100-wrap .text-indigo-700 { color: #d97b06 !important; }
+			.o100-wrap .text-blue-500,
+			.o100-wrap .text-indigo-500 { color: #F59322 !important; }
+			.o100-wrap .text-blue-800,
+			.o100-wrap .text-indigo-800 { color: #9a5c06 !important; }
+			/* Border colors */
+			.o100-wrap .border-blue-600,
+			.o100-wrap .border-indigo-600 { border-color: #F59322 !important; }
+			.o100-wrap .border-blue-500,
+			.o100-wrap .border-indigo-500 { border-color: #F59322 !important; }
+			.o100-wrap .border-blue-300,
+			.o100-wrap .border-indigo-300 { border-color: #fbb75c !important; }
+			/* Hover states */
+			.o100-wrap .hover\:bg-blue-700:hover,
+			.o100-wrap .hover\:bg-indigo-700:hover { background-color: #d97b06 !important; }
+			.o100-wrap .hover\:bg-blue-600:hover,
+			.o100-wrap .hover\:bg-indigo-600:hover { background-color: #F59322 !important; }
+			.o100-wrap .hover\:bg-blue-50:hover,
+			.o100-wrap .hover\:bg-indigo-50:hover { background-color: #fff7ed !important; }
+			.o100-wrap .hover\:text-blue-600:hover,
+			.o100-wrap .hover\:text-indigo-600:hover { color: #F59322 !important; }
+			.o100-wrap .hover\:text-blue-700:hover,
+			.o100-wrap .hover\:text-indigo-700:hover { color: #d97b06 !important; }
+			.o100-wrap .hover\:text-blue-800:hover,
+			.o100-wrap .hover\:text-indigo-800:hover { color: #9a5c06 !important; }
+			.o100-wrap .hover\:border-blue-500:hover,
+			.o100-wrap .hover\:border-indigo-500:hover { border-color: #F59322 !important; }
+			/* Focus states */
+			.o100-wrap .focus\:ring-blue-500:focus,
+			.o100-wrap .focus\:ring-indigo-500:focus { box-shadow: 0 0 0 2px rgba(245,147,34,0.4) !important; }
+			.o100-wrap .focus\:border-blue-500:focus,
+			.o100-wrap .focus\:border-indigo-500:focus { border-color: #F59322 !important; }
+			.o100-wrap .ring-blue-500,
+			.o100-wrap .ring-indigo-500 { --tw-ring-color: #F59322 !important; }
 			/* ═══ Extreme Minimalist Input Groups (Matching Schedule Style) ═══ */
 			.o100-flex-input-wrap {
 				display: flex !important;
@@ -441,6 +538,10 @@ class O100_Admin_Menu {
 			.o100-flex-input-wrap.has-suffix input.o100-modal-input { border-radius: 6px 0 0 6px !important; border-right: none !important; }
 			.o100-flex-input-wrap.has-suffix .o100-flex-suffix { border-left: none !important; border-radius: 0 6px 6px 0 !important; display: inline-flex !important; }
 			.o100-flex-input-wrap.has-suffix .o100-flex-prefix { display: none !important; }
+			/* Focus States */
+			.o100-flex-input-wrap:focus-within input.o100-modal-input { box-shadow: none !important; border-color: #F59322 !important; }
+			.o100-flex-input-wrap:focus-within .o100-flex-prefix, .o100-flex-input-wrap:focus-within .o100-flex-suffix { border-color: #F59322 !important; }
+			.o100-flex-input-wrap:focus-within { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important; border-radius: 6px !important; }
 			.o100-page-header-version {
 				display: inline-block;
 				background: #f3f4f6;
@@ -475,7 +576,7 @@ class O100_Admin_Menu {
 				font-size: 14px;
 				font-weight: 500;
 				text-decoration: none;
-				border-bottom: 2px solid transparent;
+				border: none !important; border-bottom: 2px solid transparent !important;
 				transition: all 0.15s ease;
 				white-space: nowrap;
 				box-sizing: border-box;
@@ -485,7 +586,7 @@ class O100_Admin_Menu {
 			}
 			.o100-page-header-nav a.o100-header-nav-active {
 				color: #1e293b;
-				border-bottom-color: #6366f1;
+				border-bottom-color: #F59322;
 				font-weight: 600;
 			}
 			.o100-page-header-sep {
@@ -498,7 +599,7 @@ class O100_Admin_Menu {
 				width: 32px;
 				height: 32px;
 				border-radius: 50%;
-				border: 1px solid #cbd5e1;
+				border: 1px solid #cbd5e1 !important;
 				color: #64748b;
 				font-size: 14px;
 				font-weight: 600;
@@ -508,8 +609,8 @@ class O100_Admin_Menu {
 				cursor: pointer;
 			}
 			.o100-page-header-help:hover {
-				border-color: #6366f1;
-				color: #6366f1;
+				border-color: #F59322;
+				color: #F59322;
 			}
 			/* Responsive */
 			@media (max-width: 1200px) {
@@ -545,66 +646,113 @@ class O100_Admin_Menu {
 			/* ═══ Toast Notification ═══ */
 			.o100-toast {
 				position: fixed;
-				bottom: 40px;
+				top: 2rem;
 				left: 50%;
-				transform: translateX(-50%) translateY(20px);
-				background: #fff;
-				border: 1px solid #e5e7eb;
-				border-radius: 10px;
-				box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-				padding: 14px 24px;
+				transform: translateX(-50%) translateY(-20px);
+				background: rgba(15, 23, 42, 0.95) !important;
+				backdrop-filter: blur(8px) !important;
+				-webkit-backdrop-filter: blur(8px) !important;
+				border: 1px solid rgba(255, 255, 255, 0.1) !important;
+				color: white !important;
+				padding: 12px 18px !important;
+				border-radius: 10px !important;
+				box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 				display: flex;
 				align-items: center;
 				gap: 12px;
 				z-index: 999999;
 				opacity: 0;
-				transition: opacity 0.3s ease, transform 0.3s ease;
-				min-width: 240px;
+				pointer-events: none;
+				transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+				min-width: 280px;
 			}
 			.o100-toast.o100-toast--visible {
 				opacity: 1;
 				transform: translateX(-50%) translateY(0);
+				pointer-events: auto;
 			}
 			.o100-toast-icon {
-				width: 28px;
-				height: 28px;
+				width: 24px;
+				height: 24px;
 				border-radius: 50%;
-				background: #22c55e;
-				color: #fff;
+				background: rgba(16, 185, 129, 0.15) !important;
+				color: #10b981 !important;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				font-size: 16px;
+				font-size: 14px;
 				flex-shrink: 0;
+				font-weight: bold;
+			}
+			.o100-toast-body {
+				flex: 1;
 			}
 			.o100-toast-body h4 {
-				margin: 0;
-				font-size: 14px;
-				font-weight: 600;
-				color: #111827;
+				margin: 0 !important;
+				font-size: 14px !important;
+				font-weight: 600 !important;
+				color: #fff !important;
 			}
 			.o100-toast-body p {
-				margin: 2px 0 0;
-				font-size: 13px;
-				color: #6b7280;
+				margin: 2px 0 0 !important;
+				font-size: 13px !important;
+				color: #94a3b8 !important;
 			}
 			.o100-toast-close {
 				background: none;
 				border: none;
-				color: #9ca3af;
+				color: #94a3b8 !important;
 				cursor: pointer;
 				font-size: 18px;
 				padding: 0 0 0 8px;
 				line-height: 1;
+				transition: color 0.15s ease;
 			}
-			.o100-toast-close:hover { color: #374151; }
+			.o100-toast-close:hover { color: #fff !important; }
 			/* Hide all native bottom-left CMB2 save buttons globally */
 			.cmb-form > input[type="submit"],
 			.cmb-button-submit,
 			.o100-card-body > input[name="submit-cmb"] {
 				display: none !important;
 			}
+
+			/* Hide border when conditional children are collapsed */
+			.cmb-row.o100-no-border { border-bottom: none !important; }
+
+			/* ═══ FOUC Preventer ═══ */
+			.o100-fluent-content, .o100-proxy-wrap, .o100-resv-page, .o100-customers-page-header, .o100-customers-content { 
+				opacity: 0; 
+				visibility: hidden; 
+			}
+			.o100-fouc-show, .o100-fluent-content.o100-fouc-show, .o100-proxy-wrap.o100-fouc-show, .o100-resv-page.o100-fouc-show, .o100-customers-page-header.o100-fouc-show, .o100-customers-content.o100-fouc-show { 
+				opacity: 1 !important; 
+				visibility: visible !important; 
+				transition: opacity 0.3s ease !important; 
+			}
+			/* Protect WP Admin Menu from Tailwind Base CSS */
+			#adminmenuback, #adminmenuwrap, #adminmenu, #adminmenu li, #adminmenu a, #adminmenu div {
+				border: none !important;
+				outline: none !important;
+				box-shadow: none !important;
+			}
+			
+			/* Kill WP Native focus outline on our SaaS UI */
+			body.toplevel_page_order100 a:focus, body[class*="order100_page"] a:focus,
+			body.toplevel_page_order100 button:focus, body[class*="order100_page"] button:focus,
+			.o100-subtabs a:focus {
+				box-shadow: none !important;
+				outline: none !important;
+			}
 		</style>
+		<script>
+		// FOUC Preventer — show content immediately once DOM is ready
+		document.addEventListener("DOMContentLoaded", function() {
+			var targetSelectors = ['.o100-fluent-content', '.o100-proxy-wrap', '.o100-resv-page', '.o100-customers-page-header', '.o100-customers-content'];
+			var els = document.querySelectorAll(targetSelectors.join(','));
+			els.forEach(function(el) { el.classList.add('o100-fouc-show'); });
+		});
+		</script>
+
 		<script>
 		jQuery(function($) {
 			// Handle save button interaction directly on click (handles buttons detached from form by malformed DOM)
@@ -641,14 +789,106 @@ class O100_Admin_Menu {
 			var $topSaveBtn = $('.o100-fluent-top-save');
 			var $fluentForm = $('.o100-fluent-content form');
 
-			// Global dirty checking: mark save button disabled initially and re-enable on change
+			// ═══ Snapshot-based dirty checking ═══
+			// Serialize ALL named inputs on the settings page, not just specific containers.
+			// Compare at both event-time (for save button) and beforeunload-time (for leave warning).
+			// Exposed on window so other scripts (Portal Builder, etc.) can reset snapshot after saving.
+			window.o100FormSnapshot = '';
+			window.o100SnapshotReady = false;
+
+			window.o100SerializePage = function() {
+				var parts = [];
+				$('#wpbody-content').find('input[name], select[name], textarea[name]').not('[type="button"], [type="submit"], [type="reset"], [name="security"], [name="_wp_http_referer"], [name="_wpnonce"], [name="submit-cmb"], [name="action"], [name="option_page"], [name^="o100_portal_nonce"]')
+				.filter(function() {
+					// Exclude fields inside Email and Reports subtabs to prevent React / dynamic mounts from breaking dirty checking
+					var $parentTab = $(this).closest('.o100-notify-subtab-content');
+					if ($parentTab.length) {
+						var tab = $parentTab.data('subtab');
+						if (tab === 'email' || tab === 'reports') {
+							return false;
+						}
+					}
+					return true;
+				}).each(function() {
+					var $el = $(this);
+					var name = $el.attr('name');
+					if (!name) return;
+					if ($el.is(':radio')) {
+						// Only serialize the CHECKED radio — use its value attribute
+						if ($el.is(':checked')) {
+							parts.push(name + '=' + ($el.val() || ''));
+						}
+					} else if ($el.is(':checkbox')) {
+						parts.push(name + '=' + ($el.is(':checked') ? '1' : '0'));
+					} else {
+						parts.push(name + '=' + ($el.val() || ''));
+					}
+				});
+				return parts.sort().join('&');
+			};
+
+			function o100IsDirtyNow() {
+				if (!window.o100SnapshotReady) return false;
+				return window.o100SerializePage() !== window.o100FormSnapshot;
+			}
+
+			function o100UpdateSaveBtn() {
+				if (!window.o100SnapshotReady) return;
+				if ($topSaveBtn.length) {
+					$topSaveBtn.toggleClass('o100-save-disabled', !o100IsDirtyNow());
+				}
+			}
+
+			// Stabilization: poll every 500ms until two consecutive reads match
+			var o100StabAttempt = 0;
+			var o100StabLast = '';
+			var o100StabTimer = setInterval(function() {
+				var current = window.o100SerializePage();
+				o100StabAttempt++;
+				if (current === o100StabLast && current !== '') {
+					clearInterval(o100StabTimer);
+					window.o100FormSnapshot = current;
+					window.o100SnapshotReady = true;
+					// Listen for user changes to update Save button state
+					$('#wpbody-content').on('input change', 'input, select, textarea', function() {
+						o100UpdateSaveBtn();
+					});
+				} else {
+					o100StabLast = current;
+				}
+				if (o100StabAttempt >= 20 && !window.o100SnapshotReady) {
+					clearInterval(o100StabTimer);
+					window.o100FormSnapshot = current;
+					window.o100SnapshotReady = true;
+					$('#wpbody-content').on('input change', 'input, select, textarea', function() {
+						o100UpdateSaveBtn();
+					});
+				}
+			}, 500);
+
+			// Disable save button initially
 			if ($topSaveBtn.length && $fluentForm.length) {
 				$topSaveBtn.addClass('o100-save-disabled');
-				
-				$fluentForm.on('input change', ':input', function() {
-					$topSaveBtn.removeClass('o100-save-disabled');
-				});
 			}
+
+			// ═══ Suppress CMB2 / WP native beforeunload ═══
+			var o100BeforeUnloadHandler = function() {
+				if (o100IsDirtyNow()) {
+					return 'You have unsaved changes. Are you sure you want to leave?';
+				}
+			};
+			var o100CleanupCount = 0;
+			var o100CleanupTimer = setInterval(function() {
+				if (window.onbeforeunload && window.onbeforeunload !== o100BeforeUnloadHandler) {
+					window.onbeforeunload = null;
+				}
+				$(window).off('beforeunload');
+				window.onbeforeunload = o100BeforeUnloadHandler;
+				o100CleanupCount++;
+				if (o100CleanupCount >= 10) {
+					clearInterval(o100CleanupTimer);
+				}
+			}, 500);
 
 			// Sticky header shadow
 			var $header = $('.o100-fluent-header');
@@ -663,15 +903,101 @@ class O100_Admin_Menu {
 				$(window).trigger('scroll');
 			}
 
+			// ═══ CMB2 Conditional Field Visibility ═══
+			function o100ApplyConditionals() {
+				$('[data-conditional-id]').each(function() {
+					var $el = $(this);
+					var condId = $el.data('conditional-id');
+					var condVal = String($el.data('conditional-value') || 'on');
+					
+					var $group = $el.closest('.cmb-repeatable-grouping');
+					var $control;
+					if ($group.length && !$el.hasClass('cmb-repeatable-group')) {
+						// Inside a group, match array-based name suffix: something[0][condId]
+						$control = $group.find('[name="' + condId + '"], [name$="[' + condId + ']"]');
+					} else {
+						$control = $('[name="' + condId + '"]');
+					}
+					
+					if (!$control.length) return;
+					
+					var isVisible = false;
+					if ($control.is(':checkbox')) {
+						isVisible = $control.is(':checked');
+					} else if ($control.is(':radio')) {
+						isVisible = $control.filter(':checked').val() === condVal;
+					} else {
+						isVisible = String($control.val()) === condVal;
+					}
+					
+					var $target;
+					if ($el.hasClass('cmb-repeatable-group')) {
+						$target = $el;
+					} else {
+						$target = $el.closest('.cmb-row');
+					}
+					if ($target.length) {
+						$target.toggle(isVisible);
+					}
+				});
+				
+				// Hide divider on toggle rows when children below are hidden
+				$('.o100-settings-group-content').each(function() {
+					$(this).find('.cmb-type-checkbox').each(function() {
+						var $checkRow = $(this);
+						var hasVisibleAfter = $checkRow.nextAll('.cmb-row:visible, .cmb-repeatable-group:visible').length > 0;
+						$checkRow.toggleClass('o100-no-border', !hasVisibleAfter);
+					});
+				});
+			}
+			
+			// CMB2 doesn't apply attributes to group wrappers — inject manually
+			$('.cmb2-id-o100-global-date-rules, #o100_global_date_rules_repeat').attr({'data-conditional-id': 'o100_menu_date', 'data-conditional-value': 'on'});
+			
+			o100ApplyConditionals();
+			
+			// Initialize Flatpickr for date rules
+			function o100InitFlatpickr() {
+				if (typeof flatpickr !== 'undefined') {
+					$('.o100-flatpickr-multi').each(function() {
+						// Prevent double initialization
+						if (!this._flatpickr) {
+							flatpickr(this, {
+								mode: 'multiple',
+								dateFormat: 'Y-m-d',
+								placeholder: 'Select dates...'
+							});
+						}
+					});
+				}
+			}
+			o100InitFlatpickr();
+			
+			// Event listeners
+			$('#wpbody-content').on('change', 'input[type="checkbox"], input[type="radio"], select', function() {
+				o100ApplyConditionals();
+			});
+			
+			// Handle new CMB2 rows (repeatable groups)
+			$('#wpbody-content').on('cmb2_add_row', function(e, newRow) {
+				setTimeout(function() {
+					o100InitFlatpickr();
+					o100ApplyConditionals();
+				}, 100);
+			});
+
 			// Fluent Settings top save button (General Settings page tabs)
 			$topSaveBtn.on('click', function(e) {
 				e.preventDefault();
 				var $btn = $(this);
 				if ($btn.hasClass('o100-save-disabled') || $btn.hasClass('o100-saving')) return;
 
-				var $customForm = $('#o100-delivery-form, #o100-pickup-form');
+				var $customForm = $('#o100-delivery-form, #o100-pickup-form, #o100-misc-form');
+
+				// 0. Portal Builder has its own save handler — skip
+				if ($('#o100-portal-form').length) return;
 				
-				// 1. Custom Ajax Forms (Delivery / Pickup)
+				// 1. Custom Ajax Forms (Delivery / Pickup / Misc)
 				if ($customForm.length > 0) {
 					var formId = $customForm.attr('id');
 					var actionName = '';
@@ -679,6 +1005,7 @@ class O100_Admin_Menu {
 					
 					if (formId === 'o100-delivery-form') { actionName = 'o100_save_delivery'; dataKey = 'o100_delivery'; }
 					else if (formId === 'o100-pickup-form') { actionName = 'o100_save_pickup'; dataKey = 'o100_pickup'; }
+					else if (formId === 'o100-misc-form') { actionName = 'o100_save_misc'; dataKey = 'o100_misc'; }
 
 					if (actionName) {
 						// Visual feedback
@@ -717,6 +1044,9 @@ class O100_Admin_Menu {
 					if (formId === 'o100-pickup-form' && $('#o100_enable_pickup').is(':checked')) {
 						postData[dataKey]['o100_enable_pickup'] = 'on';
 					}
+					if (formId === 'o100-misc-form') {
+						postData['security'] = $('#o100-misc-form input[name="security"]').val();
+					}
 
 					$.ajax({
 						url: o100Settings.ajaxurl,
@@ -724,8 +1054,26 @@ class O100_Admin_Menu {
 						data: postData,
 						success: function(response) {
 							if(response.success) {
-								sessionStorage.setItem('o100_settings_saved', '1');
-								location.reload();
+								// Reset snapshot to current state (no longer dirty)
+								window.o100FormSnapshot = window.o100SerializePage();
+								$btn.removeClass('o100-saving').addClass('o100-save-disabled').text('Save Settings').css('opacity', '1');
+
+								// Show toast inline instead of reloading
+								var $toast = $('<div class="o100-toast">' +
+									'<div class="o100-toast-icon">✓</div>' +
+									'<div class="o100-toast-body"><h4>Great!</h4><p>Settings Updated.</p></div>' +
+									'<button class="o100-toast-close" type="button">×</button>' +
+								'</div>');
+								$('body').append($toast);
+								setTimeout(function() { $toast.addClass('o100-toast--visible'); }, 50);
+								setTimeout(function() {
+									$toast.removeClass('o100-toast--visible');
+									setTimeout(function() { $toast.remove(); }, 300);
+								}, 4000);
+								$toast.find('.o100-toast-close').on('click', function() {
+									$toast.removeClass('o100-toast--visible');
+									setTimeout(function() { $toast.remove(); }, 300);
+								});
 							} else {
 								alert('Error: ' + (response.data && response.data.message ? response.data.message : 'Unknown'));
 								$btn.removeClass('o100-saving').text('Save Settings').css('opacity', '1');
@@ -738,6 +1086,7 @@ class O100_Admin_Menu {
 					});
 					
 					return; // Stop here, do not run native CMB2 submit
+					}
 				}
 				
 				// 2. Native CMB2 Form (Fallback for other tabs like Appearance, General, etc.)
@@ -747,14 +1096,64 @@ class O100_Admin_Menu {
 				// Visual feedback
 				$btn.addClass('o100-saving').text('Saving...').css('opacity', '0.7');
 				
-				// Set flag for toast notification after page reload
+				// AJAX Save for Notifications page to prevent page reload
+				if ($form.attr('id') === 'o100_notifications') {
+					var formData = $form.serialize();
+					if (formData.indexOf('submit-cmb=') === -1) {
+						formData += '&submit-cmb=1';
+					}
+					$.ajax({
+						url: $form.attr('action') || window.location.href,
+						method: 'POST',
+						data: formData,
+						success: function() {
+							// Reset dirty snapshot to current state
+							window.o100FormSnapshot = window.o100SerializePage();
+							$btn.removeClass('o100-saving').addClass('o100-save-disabled').text('Save Settings').css('opacity', '1');
+							
+							// Trigger success toast dynamically
+							var $toast = $('<div class="o100-toast">' +
+								'<div class="o100-toast-icon">✓</div>' +
+								'<div class="o100-toast-body"><h4>Great!</h4><p>Settings Updated.</p></div>' +
+								'<button class="o100-toast-close" type="button">×</button>' +
+							'</div>');
+							$('body').append($toast);
+							setTimeout(function() { $toast.addClass('o100-toast--visible'); }, 50);
+							setTimeout(function() {
+								$toast.removeClass('o100-toast--visible');
+								setTimeout(function() { $toast.remove(); }, 300);
+							}, 4000);
+							$toast.find('.o100-toast-close').on('click', function() {
+								$toast.removeClass('o100-toast--visible');
+								setTimeout(function() { $toast.remove(); }, 300);
+							});
+						},
+						error: function() {
+							alert('Error saving settings.');
+							$btn.removeClass('o100-saving').text('Save Settings').css('opacity', '1');
+						}
+					});
+					return;
+				}
+				
+				// Set flag for toast notification after page reload for other tabs
 				sessionStorage.setItem('o100_settings_saved', '1');
+				
+				// Clear dirty state so the "Leave page?" dialog doesn't fire during submit
+				window.onbeforeunload = null;
 				
 				// CMB2 requires submit-cmb in POST data to trigger save.
 				// The hidden field in form_format already provides this.
 				// Use HTMLFormElement.prototype.submit to bypass any naming collisions
 				// (if a form element is named 'submit', it shadows the native function).
 				HTMLFormElement.prototype.submit.call($form[0]);
+				
+				// Safety net: if submit somehow fails, restore button after 5s
+				setTimeout(function() {
+					if ($btn.hasClass('o100-saving')) {
+						$btn.removeClass('o100-saving').text('Save Settings').css('opacity', '1');
+					}
+				}, 5000);
 			});
 
 			// Check for save flag on page load
@@ -791,41 +1190,50 @@ class O100_Admin_Menu {
 	/**
 	 * Render the persistent page header bar (logo + name + version + nav + help)
 	 */
-	public function render_page_header() {
+	public static function render_page_header() {
 		$current_page = isset( $_GET['page'] ) ? sanitize_text_field( $_GET['page'] ) : '';
 
 		$nav_items = array(
 			'order100'           => __( 'Dashboard', 'order100' ),
 			'o100-settings'      => __( 'Settings', 'order100' ),
+			'o100-menu-maker'    => __( 'Menu Management', 'order100' ),
+			'o100-customers'     => __( 'Customers', 'order100' ),
+			'o100-promotions'    => __( 'Promotions', 'order100' ),
 			'o100-loyalty'       => __( 'Loyalty', 'order100' ),
 			'o100-notifications' => __( 'Notifications', 'order100' ),
-			'o100-seo'           => __( 'SEO', 'order100' ),
-			'o100-integration'   => __( 'Integration', 'order100' ),
+			'o100-automation'    => __( 'Automations', 'order100' ),
 		);
 		?>
 		<!-- Hidden H1 to trap WordPress admin notices before our flex layout -->
 		<h1 style="display:none; margin:0; padding:0;">Order100</h1>
 		<div class="o100-page-header">
 			<div class="o100-page-header-left">
-				<img src="<?php echo esc_url( O100_URL . 'assets/logo/logo-square.png' ); ?>" alt="Order100" class="o100-page-header-logo">
-				<span class="o100-page-header-title">Order100</span>
+				<img src="<?php echo esc_url( O100_URL . 'assets/logo/order100-logo-full.png' ); ?>" alt="Order100" class="o100-page-header-logo o100-desktop-logo">
+				<img src="<?php echo esc_url( O100_URL . 'assets/logo/order100-logo-icon.png' ); ?>" alt="Order100" class="o100-page-header-logo o100-mobile-logo">
 				<span class="o100-page-header-version">v<?php echo esc_html( O100_VERSION ); ?></span>
 			</div>
 			<div class="o100-page-header-right">
 				<nav class="o100-page-header-nav">
 					<?php foreach ( $nav_items as $slug => $label ) :
 						$active = ( $current_page === $slug ) ? ' o100-header-nav-active' : '';
+						// Use inline style to absolutely suppress any FOUC border artifacts before CSS loads
+						$inline_style = 'border-top: none !important; border-left: none !important; border-right: none !important; outline: none !important; box-shadow: none !important;';
 					?>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $slug ) ); ?>" class="<?php echo esc_attr( $active ); ?>">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $slug ) ); ?>" class="<?php echo esc_attr( $active ); ?>" style="<?php echo esc_attr( $inline_style ); ?>">
 							<?php echo esc_html( $label ); ?>
 						</a>
 					<?php endforeach; ?>
 				</nav>
 				<div class="o100-page-header-sep"></div>
-				<a href="#" id="o100-btn-diagnostic" class="o100-page-header-diag" title="<?php esc_attr_e( 'Diagnostic Center', 'order100' ); ?>" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; text-decoration:none; margin-right:8px; transition:all 0.2s;">
+				<?php if ( ! function_exists('O100_License') || ! O100_License()->is_premium() ) : ?>
+			<a href="#" onclick="if(typeof o100ShowProModal !== 'undefined'){o100ShowProModal('Order100 Pro', 'Unlock limitless marketing possibilities. Upgrade now to exceed your limits and access valuable tools that fuel your business.');}else{alert('Pro features are locked.');} return false;" class="o100-page-header-upgrade" style="display:flex; align-items:center; justify-content:center; padding:0 16px; height:32px; border-radius:16px; background:#0f172a; color:#F59322; text-decoration:none; margin-right:16px; font-weight:700; font-size:13px; transition:all 0.2s; border:1px solid #0f172a; box-shadow:0 2px 4px rgba(15,23,42,0.15);" onmouseover="this.style.background='#F59322'; this.style.color='#0f172a'; this.style.borderColor='#F59322';" onmouseout="this.style.background='#0f172a'; this.style.color='#F59322'; this.style.borderColor='#0f172a';">
+					<span style="margin-right:6px; font-size:14px;">✨</span> Upgrade
+				</a>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=o100-tools' ) ); ?>" class="o100-page-header-diag" title="<?php esc_attr_e( 'Tools', 'order100' ); ?>" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; text-decoration:none; margin-right:8px; transition:all 0.2s; border:none !important; outline:none !important; box-shadow:none !important;">
 					<span class="dashicons dashicons-admin-tools" style="font-size:18px; width:18px; height:18px;"></span>
 				</a>
-				<a href="#" class="o100-page-header-help" title="<?php esc_attr_e( 'Help & Support', 'order100' ); ?>">?</a>
+				<a href="#" class="o100-page-header-help" title="<?php esc_attr_e( 'Help & Support', 'order100' ); ?>" style="border:none !important; outline:none !important; box-shadow:none !important;">?</a>
 			</div>
 		</div>
 		<?php
@@ -842,14 +1250,19 @@ class O100_Admin_Menu {
 		?>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			<div class="o100-dashboard-header">
-				<h1><?php esc_html_e( 'Order100', 'order100' ); ?> <span class="o100-version">v<?php echo esc_html( O100_VERSION ); ?></span></h1>
-				<p><?php esc_html_e( 'All-in-one WooCommerce solution for Discounts, Loyalty, SEO, Email, and more.', 'order100' ); ?></p>
-			</div>
-
-			<div class="o100-dashboard-grid">
-				<?php $this->render_dashboard_cards(); ?>
-			</div>
+			<?php 
+				if ( class_exists( 'O100_Dashboard_Admin' ) ) {
+					O100_Dashboard_Admin::instance()->render();
+				} else {
+					echo '<div class="o100-dashboard-header">';
+					echo '<h1>' . esc_html__( 'Order100', 'order100' ) . ' <span class="o100-version">v' . esc_html( O100_VERSION ) . '</span></h1>';
+					echo '<p>' . esc_html__( 'All-in-one WooCommerce solution for Discounts, Loyalty, SEO, Email, and more.', 'order100' ) . '</p>';
+					echo '</div>';
+					echo '<div class="o100-dashboard-grid">';
+					$this->render_dashboard_cards();
+					echo '</div>';
+				}
+			?>
 		</div>
 		<?php
 	}
@@ -874,17 +1287,17 @@ class O100_Admin_Menu {
 				'status' => 'active',
 			),
 			array(
-				'title'  => __( 'SEO Engine', 'order100' ),
-				'desc'   => __( 'Auto-generate focus keywords and meta for products', 'order100' ),
-				'icon'   => 'dashicons-search',
-				'link'   => admin_url( 'admin.php?page=o100-seo' ),
-				'status' => 'active',
-			),
-			array(
 				'title'  => __( 'Notifications', 'order100' ),
 				'desc'   => __( 'Email templates and SMS notification settings', 'order100' ),
 				'icon'   => 'dashicons-email-alt',
 				'link'   => admin_url( 'admin.php?page=o100-notifications' ),
+				'status' => 'active',
+			),
+			array(
+				'title'  => __( 'Tools', 'order100' ),
+				'desc'   => __( 'SEO engine, health check, and delivery simulator', 'order100' ),
+				'icon'   => 'dashicons-admin-tools',
+				'link'   => admin_url( 'admin.php?page=o100-tools' ),
 				'status' => 'active',
 			),
 			array(
@@ -900,13 +1313,6 @@ class O100_Admin_Menu {
 				'icon'   => 'dashicons-controls-repeat',
 				'link'   => admin_url( 'admin.php?page=o100-automation' ),
 				'status' => 'pro',
-			),
-			array(
-				'title'  => __( 'Integration', 'order100' ),
-				'desc'   => __( 'API, push notifications, and third-party connections', 'order100' ),
-				'icon'   => 'dashicons-networking',
-				'link'   => admin_url( 'admin.php?page=o100-integration' ),
-				'status' => 'active',
 			),
 		);
 
@@ -936,565 +1342,32 @@ class O100_Admin_Menu {
 	 * General Settings page — renders old CMB2 form with time/checkout/nav tabs visible
 	 */
 	public function render_general_settings() {
-		$tabs = array(
-			// ── Step 1: Store Identity ──
-			'store_profile'    => array( 'title' => __( 'Profile', 'order100' ), 'icon' => 'dashicons-store' ),
-			'store_hours'      => array( 'title' => __( 'Schedule', 'order100' ), 'icon' => 'dashicons-clock' ),
-			'locations'        => array( 'title' => __( 'Branches', 'order100' ), 'icon' => 'dashicons-location-alt' ),
-			// ── Step 2: Build Your Menu ──
-			'menu_builder'     => array( 'title' => __( 'Menu Builder', 'order100' ), 'icon' => 'dashicons-menu-alt' ),
-			'product_options'  => array( 'title' => __( 'Item Modifiers', 'order100' ), 'icon' => 'dashicons-plus-alt' ),
-			'menu_rules'       => array( 'title' => __( 'Menu Rules', 'order100' ), 'icon' => 'dashicons-filter' ),
-			// ── Step 3: Order Methods ──
-			'delivery'         => array( 'title' => __( 'Delivery', 'order100' ), 'icon' => 'dashicons-car' ),
-			'pickup'           => array( 'title' => __( 'Pickup', 'order100' ), 'icon' => 'dashicons-cart' ),
-			'reservation'      => array( 'title' => __( 'Reservation', 'order100' ), 'icon' => 'dashicons-calendar-alt' ),
-			// ── Step 4: Checkout & Polish ──
-			'checkout_ext'     => array( 'title' => __( 'Tipping', 'order100' ), 'icon' => 'dashicons-money-alt' ),
-			'ui_prefs'         => array( 'title' => __( 'Appearance', 'order100' ), 'icon' => 'dashicons-art' ),
-			'portal'           => array( 'title' => __( 'Store Portal', 'order100' ), 'icon' => 'dashicons-layout' ),
-			'api_integration'  => array( 'title' => __( 'Integrations', 'order100' ), 'icon' => 'dashicons-rest-api' ),
-			'misc'             => array( 'title' => __( 'Misc', 'order100' ), 'icon' => 'dashicons-admin-generic' ),
-		);
-
-		$current_tab = isset( $_GET['tab'] ) && array_key_exists( $_GET['tab'], $tabs ) ? sanitize_text_field( $_GET['tab'] ) : 'store_profile';
+		include O100_PATH . 'core/views/view-settings-main.php';
+	}
+	public function render_customers() {
 		?>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			
-			<div class="o100-fluent-container">
-				<!-- Fluent Sidebar -->
-				<div class="o100-fluent-sidebar">
-					<ul class="o100-fluent-nav">
-						<?php foreach ( $tabs as $tab_id => $tab_data ) : ?>
-							<li>
-								<a href="?page=o100-settings&tab=<?php echo esc_attr( $tab_id ); ?>" 
-								   data-title="<?php echo esc_attr( $tab_data['title'] ); ?>"
-								   class="<?php echo $current_tab === $tab_id ? 'active' : ''; ?>">
-									<span class="dashicons <?php echo esc_attr( $tab_data['icon'] ); ?>"></span>
-									<span class="o100-nav-text"><?php echo esc_html( $tab_data['title'] ); ?></span>
-								</a>
-							</li>
-						<?php endforeach; ?>
-					</ul>
-				</div>
-				
-				<!-- Fluent Content -->
-				<div class="o100-fluent-content">
-					<div class="o100-fluent-header">
-						<h2><?php echo esc_html( $tabs[ $current_tab ]['title'] ); ?></h2>
-						<div class="o100-fluent-header-actions" style="display:flex; align-items:center; gap:16px;">
-							<button type="button" class="o100-fluent-top-save">
-								<?php esc_html_e( 'Save Settings', 'order100' ); ?>
-							</button>
-						</div>
-					</div>
-					<div class="o100-fluent-form-wrapper">
-						<?php 
-						if ( $current_tab === 'menu_builder' ) {
-							cmb2_metabox_form( "o100_{$current_tab}", "o100_{$current_tab}" ); 
-							echo '<style>.o100-fluent-top-save, .cmb-button-submit { display: none !important; }</style>';
-						} elseif ( $current_tab === 'store_profile' ) {
-							O100_Settings::render_fluent_store_profile();
-						} elseif ( $current_tab === 'checkout_ext' ) {
-							O100_Settings::render_fluent_checkout_ext();
-						} elseif ( $current_tab === 'delivery' ) {
-							O100_Settings::render_fluent_delivery();
-						} elseif ( $current_tab === 'pickup' ) {
-							O100_Settings::render_fluent_pickup();
-						} elseif ( $current_tab === 'portal' ) {
-							O100_Settings::render_fluent_store_portal();
-						} else {
-							// Use custom form_format to guarantee submit-cmb is always in POST data.
-							// CMB2 requires $_POST['submit-cmb'] to trigger save (helper-functions.php:323).
-							// Programmatic submit (top button) doesn't include submit button values,
-							// so we bake a hidden field directly into the form template.
-							cmb2_metabox_form( "o100_{$current_tab}", "o100_{$current_tab}", array(
-								'save_button' => __( 'Save Settings', 'order100' ),
-								'form_format' => '<form class="cmb-form" method="post" id="%1$s" enctype="multipart/form-data" encoding="multipart/form-data"><input type="hidden" name="object_id" value="%2$s"><input type="hidden" name="submit-cmb" value="1">%3$s<input type="submit" name="submit-cmb-btn" value="%4$s" class="button-primary"></form>',
-							) );
-						}
-						?>
-					</div>
-				</div>
-			</div>
+			<?php O100_Customers_Admin::render_page(); ?>
 		</div>
-		<script>
-		jQuery(document).ready(function($) {
-
-			// ═══ Save Button: Dirty Checking ═══
-			var $topSaveBtn = $('.o100-fluent-top-save');
-			var $fluentForm = $('.o100-fluent-content form');
-
-			if ($topSaveBtn.length && $fluentForm.length) {
-				// Start disabled (grey) until user makes a change
-				$topSaveBtn.addClass('o100-save-disabled');
-
-				function markDirty() {
-					$topSaveBtn.removeClass('o100-save-disabled');
-					$(document).trigger('o100:dirty');
-				}
-
-				// Standard form inputs (text, select, checkbox, radio, textarea)
-				$fluentForm.on('input change', ':input', markDirty);
-
-				// CMB2 Colorpicker (Iris) fires custom event on the container
-				$('.o100-fluent-content').on('irischange', markDirty);
-
-				// CMB2 file/image upload changes
-				$('.o100-fluent-content').on('cmb_media_modal_select cmb2_add_row cmb2_remove_row cmb2_shift_rows_complete', markDirty);
-
-				// Fallback: any click on a CMB2 interactive element (color swatch, toggle, etc.)
-				$('.o100-fluent-content').on('click', '.wp-color-result, .cmb2-upload-button, .cmb-remove-row-button, .cmb-add-row-button, .cmb2-checkbox label, input[type="checkbox"], input[type="radio"]', markDirty);
-			}
-
-			// ═══ Unsaved Changes Warning (Custom UI) ═══
-			var o100IsDirty = false;
-			var o100PendingUrl = null;
-
-			// Track dirty state in sync with save button
-			if ($topSaveBtn.length) {
-				// Watch for class changes on the save button
-				var origRemoveClass = $.fn.removeClass;
-				// Use a simpler approach: override markDirty to also set flag
-				$(document).on('o100:dirty', function() { o100IsDirty = true; });
-				$(document).on('o100:clean', function() { o100IsDirty = false; });
-			}
-
-			// Inject unsaved modal HTML
-			$('body').append(
-				'<div id="o100-unsaved-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:999998; backdrop-filter:blur(4px); opacity:0; transition:opacity 0.2s ease;">' +
-				'<div id="o100-unsaved-modal" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.95); background:#fff; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:32px; width:420px; max-width:90vw; z-index:999999; opacity:0; transition:all 0.2s ease;">' +
-					'<div style="text-align:center; margin-bottom:20px;">' +
-						'<div style="width:48px; height:48px; border-radius:50%; background:#fef3c7; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">' +
-							'<span class="dashicons dashicons-warning" style="color:#f59e0b; font-size:24px; width:24px; height:24px;"></span>' +
-						'</div>' +
-						'<h3 style="margin:0 0 8px; font-size:18px; font-weight:700; color:#0f172a;">Unsaved Changes</h3>' +
-						'<p style="margin:0; font-size:14px; color:#64748b; line-height:1.5;">You have unsaved changes on this page.<br>What would you like to do?</p>' +
-					'</div>' +
-					'<div style="display:flex; gap:10px; justify-content:center;">' +
-						'<button id="o100-unsaved-cancel" style="padding:10px 20px; border:1px solid #e2e8f0; background:#fff; color:#475569; font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; transition:all 0.15s;">Cancel</button>' +
-						'<button id="o100-unsaved-discard" style="padding:10px 20px; border:1px solid #fca5a5; background:#fef2f2; color:#dc2626; font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; transition:all 0.15s;">Discard</button>' +
-						'<button id="o100-unsaved-save" style="padding:10px 20px; border:none; background:#4f46e5; color:#fff; font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; transition:all 0.15s; box-shadow:0 1px 3px rgba(79,70,229,0.3);">Save & Go</button>' +
-					'</div>' +
-				'</div>' +
-				'</div>'
-			);
-
-			function showUnsavedModal(targetUrl) {
-				o100PendingUrl = targetUrl;
-				var $overlay = $('#o100-unsaved-overlay');
-				var $modal = $('#o100-unsaved-modal');
-				$overlay.css('display', 'block');
-				setTimeout(function() {
-					$overlay.css('opacity', '1');
-					$modal.css({ opacity: 1, transform: 'translate(-50%,-50%) scale(1)' });
-				}, 10);
-			}
-
-			function hideUnsavedModal() {
-				var $overlay = $('#o100-unsaved-overlay');
-				var $modal = $('#o100-unsaved-modal');
-				$modal.css({ opacity: 0, transform: 'translate(-50%,-50%) scale(0.95)' });
-				$overlay.css('opacity', '0');
-				setTimeout(function() { $overlay.css('display', 'none'); }, 200);
-				o100PendingUrl = null;
-			}
-
-			// Cancel — stay on page
-			$('#o100-unsaved-cancel').on('click', hideUnsavedModal);
-			$('#o100-unsaved-overlay').on('click', function(e) {
-				if (e.target === this) hideUnsavedModal();
-			});
-
-			// Discard — leave without saving
-			$('#o100-unsaved-discard').on('click', function() {
-				o100IsDirty = false;
-				if (o100PendingUrl) window.location.href = o100PendingUrl;
-			});
-
-			// Save & Go — save first, then navigate to pending URL after reload
-			$('#o100-unsaved-save').on('click', function() {
-				o100IsDirty = false; // Clear dirty flag so beforeunload doesn't fire
-				if (o100PendingUrl) {
-					sessionStorage.setItem('o100_redirect_after_save', o100PendingUrl);
-				}
-				hideUnsavedModal();
-				$topSaveBtn.removeClass('o100-save-disabled').trigger('click');
-			});
-
-			// Intercept navigation clicks when dirty
-			$(document).on('click', '.o100-fluent-nav a, .o100-page-header-nav a, #adminmenu a', function(e) {
-				if (o100IsDirty) {
-					e.preventDefault();
-					showUnsavedModal($(this).attr('href'));
-				}
-			});
-
-			// Also handle browser back/close with native fallback
-			$(window).on('beforeunload', function() {
-				if (o100IsDirty) {
-					return 'You have unsaved changes.';
-				}
-			});
-
-			// ═══ Save Button: Click Handler ═══
-			$topSaveBtn.on('click', function(e) {
-				e.preventDefault();
-				var $btn = $(this);
-				if ($btn.hasClass('o100-save-disabled') || $btn.hasClass('o100-saving')) return;
-
-				// Clear dirty flag so beforeunload doesn't fire during save
-				o100IsDirty = false;
-
-				var $customForm = $('#o100-delivery-form, #o100-pickup-form');
-
-				// 1. Custom Ajax Forms (Delivery / Pickup)
-				if ($customForm.length > 0) {
-					var formId = $customForm.attr('id');
-					var actionName = '';
-					var dataKey = '';
-
-					if (formId === 'o100-delivery-form') { actionName = 'o100_save_delivery'; dataKey = 'o100_delivery'; }
-					else if (formId === 'o100-pickup-form') { actionName = 'o100_save_pickup'; dataKey = 'o100_pickup'; }
-
-					if (actionName) {
-						$btn.addClass('o100-saving').text('Saving...').css('opacity', '0.7');
-
-						var rawData = $customForm.serializeArray();
-						var postData = { action: actionName };
-						postData[dataKey] = {};
-
-						$.each(rawData, function(i, field) {
-							var arrayMatch = field.name.match(/^([^\[]+)\[([^\]]+)\]\[([^\]]+)\]$/);
-							if (arrayMatch) {
-								var parent = arrayMatch[1];
-								var index = arrayMatch[2];
-								var child = arrayMatch[3];
-								if (!postData[dataKey][parent]) postData[dataKey][parent] = {};
-								if (!postData[dataKey][parent][index]) postData[dataKey][parent][index] = {};
-								postData[dataKey][parent][index][child] = field.value;
-							} else {
-								var multiMatch = field.name.match(/^([^\[]+)\[\]$/);
-								if (multiMatch) {
-									var keyName = multiMatch[1];
-									if (!postData[dataKey][keyName]) postData[dataKey][keyName] = [];
-									postData[dataKey][keyName].push(field.value);
-								} else {
-									postData[dataKey][field.name] = field.value;
-								}
-							}
-						});
-
-						if (formId === 'o100-delivery-form' && $('#o100_enable_delivery').is(':checked')) {
-							postData[dataKey]['o100_enable_delivery'] = 'on';
-						}
-						if (formId === 'o100-pickup-form' && $('#o100_enable_pickup').is(':checked')) {
-							postData[dataKey]['o100_enable_pickup'] = 'on';
-						}
-
-						$.ajax({
-							url: o100Settings.ajaxurl,
-							method: 'POST',
-							data: postData,
-							success: function(response) {
-								if(response.success) {
-									sessionStorage.setItem('o100_settings_saved', '1');
-									location.reload();
-								} else {
-									alert('Error: ' + (response.data && response.data.message ? response.data.message : 'Unknown'));
-									$btn.removeClass('o100-saving').text('Save Settings').css('opacity', '1');
-								}
-							},
-							error: function() {
-								alert('Server Error.');
-								$btn.removeClass('o100-saving').text('Save Settings').css('opacity', '1');
-							}
-						});
-
-						return;
-					}
-				}
-
-				// 2. Native CMB2 Form (Appearance, General, Locations, etc.)
-				var $form = $('.o100-fluent-content form.cmb-form');
-				if ($form.length === 0) return;
-
-				$btn.addClass('o100-saving').text('Saving...').css('opacity', '0.7');
-				sessionStorage.setItem('o100_settings_saved', '1');
-
-				// Use prototype.submit to bypass any naming collisions on form elements
-				HTMLFormElement.prototype.submit.call($form[0]);
-			});
-
-			// ═══ Toast: Show success notification after page reload ═══
-			if (sessionStorage.getItem('o100_settings_saved')) {
-				sessionStorage.removeItem('o100_settings_saved');
-
-				// Check if we need to redirect after save (from "Save & Go")
-				var redirectUrl = sessionStorage.getItem('o100_redirect_after_save');
-				if (redirectUrl) {
-					sessionStorage.removeItem('o100_redirect_after_save');
-					window.location.href = redirectUrl;
-					return; // Skip toast since we're navigating away
-				}
-
-				var $toast = $('<div class="o100-toast">' +
-					'<div class="o100-toast-icon">✓</div>' +
-					'<div class="o100-toast-body"><h4>Great!</h4><p>Settings Updated.</p></div>' +
-					'<button class="o100-toast-close" type="button">×</button>' +
-				'</div>');
-				$('body').append($toast);
-
-				setTimeout(function() { $toast.addClass('o100-toast--visible'); }, 50);
-				setTimeout(function() {
-					$toast.removeClass('o100-toast--visible');
-					setTimeout(function() { $toast.remove(); }, 300);
-				}, 4000);
-
-				$toast.find('.o100-toast-close').on('click', function() {
-					$toast.removeClass('o100-toast--visible');
-					setTimeout(function() { $toast.remove(); }, 300);
-				});
-			}
-
-			// Custom CMB2 Conditionals fallback for standalone checkboxes
-			function handleO100Conditionals() {
-				$('[data-conditional-id]').each(function() {
-					var $el = $(this);
-					var $row = $el.closest('.cmb-row');
-					if ($row.length === 0) return;
-					
-					var targetId = $el.attr('data-conditional-id');
-					var targetValue = $el.attr('data-conditional-value');
-					var $target = $('#' + targetId);
-					
-					if ($target.length) {
-						var checkVisibility = function() {
-							var isVisible = false;
-							if ($target.is(':checkbox')) {
-								isVisible = $target.is(':checked') && targetValue === 'on';
-							} else {
-								isVisible = $target.val() === targetValue;
-							}
-							
-							if (isVisible) {
-								$row.show();
-							} else {
-								$row.hide();
-							}
-						};
-						
-						$target.on('change', checkVisibility);
-						checkVisibility(); // Run on load
-					}
-				});
-
-				// Explicit handler for the Date Rules group (CMB2 doesn't output custom attrs correctly for groups)
-				var $dateSwitch = $('#o100_menu_date');
-				var $dateGroup = $('.cmb2-id-o100-global-date-rules');
-				if ($dateSwitch.length && $dateGroup.length) {
-					var toggleDateGroup = function() {
-						if ($dateSwitch.is(':checked')) {
-							$dateGroup.show();
-						} else {
-							$dateGroup.hide();
-						}
-					};
-					$dateSwitch.on('change', toggleDateGroup);
-					toggleDateGroup();
-				}
-
-				// Handle Assign To in Date Rules Repeater
-				function toggleAssignType() {
-					var $select = $(this);
-					var val = $select.val();
-					var $group = $select.closest('.cmb-repeatable-grouping');
-					
-					var $proRow = $group.find('[id$="_o100_rule_products"]').closest('.cmb-row');
-					var $catRow = $group.find('[id$="_o100_rule_categories"]').closest('.cmb-row');
-					
-					if (val === 'products') {
-						$proRow.show();
-						$catRow.hide();
-					} else {
-						$proRow.hide();
-						$catRow.show();
-					}
-				}
-				$(document).on('change', 'select[id^="o100_global_date_rules_"][id$="_o100_rule_assign_type"]', toggleAssignType);
-				
-				// Initialize all existing on load
-				$('select[id^="o100_global_date_rules_"][id$="_o100_rule_assign_type"]').each(toggleAssignType);
-				
-				// Re-initialize when a new row is added by CMB2
-				$('.cmb-repeatable-group').on('cmb2_add_row', function(e, newRow) {
-					var $newSelect = $(newRow).find('select[id$="_o100_rule_assign_type"]');
-					if ($newSelect.length) {
-						toggleAssignType.call($newSelect[0]);
-					}
-					
-					// Also initialize flatpickr on the new row
-					var $newDateInput = $(newRow).find('.o100-flatpickr-multi');
-					if ($newDateInput.length && typeof flatpickr !== 'undefined') {
-						flatpickr($newDateInput[0], {
-							mode: "multiple",
-							dateFormat: "Y-m-d"
-						});
-					}
-				});
-				
-				// Initialize flatpickr on load
-				if (typeof flatpickr !== 'undefined') {
-					$('.o100-flatpickr-multi').each(function() {
-						flatpickr(this, {
-							mode: "multiple",
-							dateFormat: "Y-m-d"
-						});
-					});
-				}
-			}
-			// Run immediately and also after short delay for dynamically initialized fields
-			handleO100Conditionals();
-			setTimeout(handleO100Conditionals, 500);
-		});
-		</script>
 		<?php
 	}
 
-
 	/**
-	/**
-	 * Discounts page — shows discount tab from CMB2 form
-	 */
-	/**
-	 * Reservations management page
+	 * Reservations page
 	 */
 	public function render_reservations() {
 		?>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			<div class="o100-fluent-container" style="display:block;">
-				<div class="o100-fluent-content" style="margin-left:0;">
-					<div class="o100-fluent-header">
-						<h2><?php esc_html_e( 'Reservations', 'order100' ); ?></h2>
-					</div>
-					<div class="o100-fluent-form-wrapper">
-						<?php O100_Reservation_Admin::render_page(); ?>
-					</div>
-				</div>
-			</div>
+			<?php 
+			if ( class_exists( 'O100_Reservation_Admin' ) ) {
+				O100_Reservation_Admin::render_page();
+			} else {
+				echo '<p>' . esc_html__( 'Reservation module not loaded.', 'order100' ) . '</p>';
+			}
+			?>
 		</div>
-		<style>
-		/* ═══ Reservation Admin Styles ═══ */
-		.o100-resv-page { padding: 0; }
-		.o100-resv-tabs {
-			display: flex; gap: 0; margin-bottom: 20px;
-			border-bottom: 2px solid #e5e7eb;
-		}
-		.o100-resv-tab {
-			padding: 10px 20px; font-size: 14px; font-weight: 500;
-			color: #64748b; text-decoration: none;
-			border-bottom: 2px solid transparent;
-			margin-bottom: -2px; transition: all 0.15s;
-		}
-		.o100-resv-tab:hover { color: #1e293b; }
-		.o100-resv-tab-active {
-			color: #1e293b; font-weight: 600;
-			border-bottom-color: #6366f1;
-		}
-		.o100-resv-status-pills {
-			display: flex; gap: 8px; margin-bottom: 16px;
-		}
-		.o100-resv-pill {
-			display: inline-flex; align-items: center; gap: 4px;
-			padding: 6px 14px; border-radius: 20px; font-size: 13px;
-			text-decoration: none; color: #475569;
-			background: #f8fafc; border: 1px solid #e2e8f0;
-			transition: all 0.15s;
-		}
-		.o100-resv-pill:hover { border-color: #cbd5e1; background: #f1f5f9; color: #1e293b; }
-		.o100-resv-pill.active { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; font-weight: 600; }
-		.o100-resv-pill .count { font-size: 12px; color: #94a3b8; }
-		.o100-resv-pill.active .count { color: #6366f1; }
-
-		/* Bulk actions bar */
-		.o100-resv-bulk-bar {
-			display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
-		}
-		.o100-resv-bulk-select {
-			padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px;
-			font-size: 13px; background: #fff; color: #374151;
-		}
-		.o100-resv-bulk-apply {
-			padding: 6px 16px; border: 1px solid #e2e8f0; border-radius: 6px;
-			font-size: 13px; background: #f8fafc; color: #475569; cursor: pointer;
-			transition: all 0.15s;
-		}
-		.o100-resv-bulk-apply:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
-
-		/* List Table overrides */
-		.o100-resv-page .wp-list-table {
-			border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
-			border-spacing: 0;
-		}
-		.o100-resv-page .wp-list-table thead th {
-			background: #f8fafc; border-bottom: 1px solid #e5e7eb;
-			font-size: 12px; font-weight: 600; text-transform: uppercase;
-			letter-spacing: 0.05em; color: #64748b; padding: 10px 12px;
-		}
-		.o100-resv-page .wp-list-table td {
-			padding: 12px; vertical-align: middle;
-			border-bottom: 1px solid #f1f5f9;
-		}
-		.o100-resv-page .wp-list-table tbody tr:hover td {
-			background: #fafbff;
-		}
-
-		/* Status badges */
-		.o100-resv-badge {
-			display: inline-block; padding: 3px 10px; border-radius: 12px;
-			font-size: 12px; font-weight: 600; line-height: 1.4;
-		}
-		.o100-resv-badge--pending { background: #fef3c7; color: #92400e; }
-		.o100-resv-badge--confirmed { background: #d1fae5; color: #065f46; }
-		.o100-resv-badge--cancelled { background: #fee2e2; color: #991b1b; }
-
-		/* Guest details */
-		.o100-resv-guest-detail { font-size: 12px; color: #94a3b8; }
-
-		/* Actions */
-		.o100-resv-action {
-			font-size: 13px; text-decoration: none; white-space: nowrap;
-		}
-		.o100-resv-action--confirm { color: #059669; font-weight: 600; }
-		.o100-resv-action--confirm:hover { color: #047857; }
-		.o100-resv-action--cancel { color: #dc2626; }
-		.o100-resv-action--cancel:hover { color: #b91c1c; }
-		.o100-resv-action--note { cursor: help; }
-
-		/* Party size */
-		.o100-resv-party {
-			display: inline-flex; align-items: center; justify-content: center;
-			width: 28px; height: 28px; border-radius: 50%;
-			background: #f1f5f9; font-size: 13px; font-weight: 600; color: #475569;
-		}
-
-		/* Empty state */
-		.o100-resv-empty {
-			text-align: center; padding: 60px 20px;
-		}
-		.o100-resv-empty p { color: #94a3b8; font-size: 15px; margin-top: 12px; }
-
-		/* Type icons */
-		.o100-resv-type { font-size: 18px; }
-
-		/* N/A dash */
-		.o100-resv-na { color: #cbd5e1; }
-
-		/* Time */
-		.o100-resv-time { font-size: 13px; color: #6366f1; font-weight: 500; }
-		</style>
 		<?php
 	}
 
@@ -1503,14 +1376,16 @@ class O100_Admin_Menu {
 	 */
 	public function render_promotions() {
 		// Load the Promotions Admin class
-		if ( ! class_exists( 'O100_Promotions_Admin' ) ) {
-			require_once O100_PATH . 'core/promotions/class-o100-promotions-admin.php';
+		if ( ! class_exists( 'O100_Promotions_Proxy_Admin' ) ) {
+			// Actually the loader should have loaded it. Just in case:
+			require_once O100_PATH . 'core/promotions/class-o100-promotions-loader.php';
+			O100_Promotions_Loader::init();
 		}
 		
 		?>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			<?php O100_Promotions_Admin::render_page(); ?>
+			<?php O100_Promotions_Proxy_Admin::render_page(); ?>
 		</div>
 		<?php
 	}
@@ -1523,6 +1398,22 @@ class O100_Admin_Menu {
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
 			<?php O100_Loyalty_Proxy_Admin::render_page(); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Automation page
+	 */
+	public function render_automation() {
+		?>
+		<div class="wrap o100-wrap">
+			<?php $this->render_page_header(); ?>
+			<?php 
+			if ( class_exists( 'O100_Automation_Admin' ) ) {
+				O100_Automation_Admin::render_page(); 
+			}
+			?>
 		</div>
 		<?php
 	}
@@ -1550,21 +1441,421 @@ class O100_Admin_Menu {
 	}
 
 	/**
-	 * SEO page — shows seo tab from CMB2 form
+	 * SEO page — kept for backward compat redirect
 	 */
 	public function render_seo() {
+		wp_safe_redirect( admin_url( 'admin.php?page=o100-tools&tab=seo' ) );
+		exit;
+	}
+
+	/**
+	 * Tools page — SEO, Health Check, Delivery Simulator
+	 */
+	public function render_tools() {
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'seo';
+		$tabs = array(
+			'seo'              => array( 'label' => __( 'SEO Engine', 'order100' ), 'icon' => 'dashicons-search' ),
+			'health_check'     => array( 'label' => __( 'Health Check', 'order100' ), 'icon' => 'dashicons-heart' ),
+			'config_check'     => array( 'label' => __( 'Config Check', 'order100' ), 'icon' => 'dashicons-clipboard' ),
+			'delivery_sim'     => array( 'label' => __( 'Delivery Simulator', 'order100' ), 'icon' => 'dashicons-car' ),
+			'backup_migration' => array( 'label' => __( 'Backup & Migration', 'order100' ), 'icon' => 'dashicons-database' ),
+		);
+
+		// Fallback if tab doesn't exist
+		if ( ! array_key_exists( $active_tab, $tabs ) ) {
+			$active_tab = 'seo';
+		}
 		?>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			<div class="o100-card-box">
-				<div class="o100-card-header">
-					<h2><?php esc_html_e( 'SEO Automation', 'order100' ); ?></h2>
+			
+			<div class="o100-fluent-container">
+				<!-- Fluent Sidebar -->
+				<div class="o100-fluent-sidebar">
+					<ul class="o100-fluent-nav">
+						<?php foreach ( $tabs as $slug => $tab ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=o100-tools&tab=' . $slug ) ); ?>"
+								   class="<?php echo $active_tab === $slug ? 'active' : ''; ?>">
+									<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+									<span class="o100-nav-text"><?php echo esc_html( $tab['label'] ); ?></span>
+								</a>
+							</li>
+						<?php endforeach; ?>
+					</ul>
 				</div>
-				<div class="o100-card-body">
-					<?php cmb2_metabox_form( 'o100_seo', 'o100_seo', array( 'save_button' => __( 'Save Settings', 'order100' ) ) ); ?>
+				
+				<!-- Fluent Content -->
+				<div class="o100-fluent-content">
+					<div class="o100-fluent-header">
+						<h2><?php echo esc_html( $tabs[ $active_tab ]['label'] ); ?></h2>
+						<?php if ( $active_tab === 'seo' ) : ?>
+							<div class="o100-fluent-header-actions" style="display:flex; align-items:center; gap:16px;">
+								<button type="button" class="o100-fluent-top-save">
+									<?php esc_html_e( 'Save Settings', 'order100' ); ?>
+								</button>
+							</div>
+						<?php endif; ?>
+					</div>
+					<div class="o100-fluent-form-wrapper">
+						<?php
+						if ( $active_tab === 'seo' ) {
+							// Use custom form_format to guarantee submit-cmb is always in POST data.
+							$form_format = '<form class="cmb-form" method="post" id="%1$s" enctype="multipart/form-data" encoding="multipart/form-data"><input type="hidden" name="object_id" value="%2$s"><input type="hidden" name="submit-cmb" value="1">%3$s<div class="cmb-submit-wrap" style="display:none;">%4$s</div></form>';
+							cmb2_metabox_form( 'o100_seo', 'o100_seo', array( 
+								'save_button' => __( 'Save Settings', 'order100' ),
+								'form_format' => $form_format
+							) );
+						} elseif ( $active_tab === 'health_check' ) {
+							$this->render_tools_health_check();
+						} elseif ( $active_tab === 'delivery_sim' ) {
+							$this->render_tools_delivery_sim();
+						} elseif ( $active_tab === 'config_check' ) {
+							$view_file = O100_PATH . 'core/tools/views/view-config-check.php';
+							if ( file_exists( $view_file ) ) {
+								include $view_file;
+							} else {
+								echo '<p>' . esc_html__( 'Config Check view not found.', 'order100' ) . '</p>';
+							}
+						} elseif ( $active_tab === 'backup_migration' ) {
+							$view_file = O100_PATH . 'core/tools/backup-migration/views/view-backup-migration.php';
+							if ( file_exists( $view_file ) ) {
+								include $view_file;
+							} else {
+								echo '<p>' . esc_html__( 'Backup & Migration module not found.', 'order100' ) . '</p>';
+							}
+						}
+						?>
+					</div>
 				</div>
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Tools > Health Check tab content
+	 */
+	private function render_tools_health_check() {
+		?>
+		<div class="o100-settings-group-card">
+			<div class="o100-settings-group-title">
+				<h3><?php esc_html_e( 'System Health', 'order100' ); ?></h3>
+				<p><?php esc_html_e( 'Run a system health check to ensure all dependencies and environment variables are configured correctly.', 'order100' ); ?></p>
+			</div>
+			<div class="o100-settings-group-content">
+				<button type="button" id="o100-btn-run-health-inline" class="button button-primary button-large" style="margin-bottom:20px;"><?php esc_html_e( 'Run Diagnosis', 'order100' ); ?></button>
+				<div id="o100-health-results-inline"></div>
+			</div>
+		</div>
+		<script>
+		jQuery(document).ready(function($) {
+			$('#o100-btn-run-health-inline').on('click', function() {
+				var $btn = $(this), $res = $('#o100-health-results-inline');
+				$btn.text('Running...').prop('disabled', true);
+				$res.html('<div style="text-align:center; padding:20px;"><span class="spinner is-active" style="float:none;"></span></div>');
+				$.post(ajaxurl, {
+					action: 'o100_run_health_check',
+					nonce: '<?php echo wp_create_nonce("o100_diag_nonce"); ?>'
+				}, function(res) {
+					$btn.text('<?php echo esc_js( __( 'Run Diagnosis', 'order100' ) ); ?>').prop('disabled', false);
+					if (res.success) {
+						var html = '<div style="display:grid; gap:10px;">';
+						$.each(res.data, function(i, item) {
+							var borderColor = item.status === 'ok' ? '#10b981' : (item.status === 'warning' ? '#f59e0b' : '#e11d48');
+							var icon = item.status === 'ok' ? '✓' : (item.status === 'warning' ? '⚠' : '✗');
+							var actionHtml = (item.action && item.status !== 'ok') ? '<a href="'+item.action+'" style="font-size:12px; color:#F59322; margin-top:4px; display:inline-block;">Fix Issue →</a>' : '';
+							html += '<div style="padding:14px 18px; border:1px solid #e2e8f0; border-left:4px solid '+borderColor+'; border-radius:8px; display:flex; justify-content:space-between; align-items:center;'+(item.status==='error'?' background:#fff1f2;':'')+'">';
+							html += '<div><div style="font-weight:600; color:#0f172a; font-size:14px;">'+item.label+'</div><div style="color:#64748b; font-size:13px; margin-top:2px;">'+item.msg+'</div>'+actionHtml+'</div>';
+							html += '<span style="font-size:18px; color:'+borderColor+';">'+icon+'</span>';
+							html += '</div>';
+						});
+						html += '</div>';
+						$res.html(html);
+					} else {
+						$res.html('<p style="color:red;">Error running check.</p>');
+					}
+				}).fail(function() {
+					$btn.text('<?php echo esc_js( __( 'Run Diagnosis', 'order100' ) ); ?>').prop('disabled', false);
+					$res.html('<p style="color:red;">Request failed. Please try again.</p>');
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+	/**
+	 * AJAX handler: Run system health check
+	 */
+	public function ajax_run_health_check() {
+		check_ajax_referer( 'o100_diag_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized' );
+		}
+
+		$checks = array();
+
+		// 1. PHP Version
+		$php_ver = phpversion();
+		$checks[] = array(
+			'label'  => 'PHP Version',
+			'msg'    => $php_ver,
+			'status' => version_compare( $php_ver, '7.4', '>=' ) ? 'ok' : 'error',
+		);
+
+		// 2. WordPress Version
+		global $wp_version;
+		$checks[] = array(
+			'label'  => 'WordPress Version',
+			'msg'    => $wp_version,
+			'status' => version_compare( $wp_version, '5.8', '>=' ) ? 'ok' : 'warning',
+		);
+
+		// 3. WooCommerce
+		if ( class_exists( 'WooCommerce' ) ) {
+			$checks[] = array(
+				'label'  => 'WooCommerce',
+				'msg'    => 'Active (v' . WC()->version . ')',
+				'status' => 'ok',
+			);
+		} else {
+			$checks[] = array(
+				'label'  => 'WooCommerce',
+				'msg'    => 'Not active — Order100 requires WooCommerce.',
+				'status' => 'error',
+				'action' => admin_url( 'plugins.php' ),
+			);
+		}
+
+		// 4. Memory Limit
+		$mem = ini_get( 'memory_limit' );
+		$mem_bytes = wp_convert_hr_to_bytes( $mem );
+		$checks[] = array(
+			'label'  => 'PHP Memory Limit',
+			'msg'    => $mem,
+			'status' => $mem_bytes >= 128 * 1024 * 1024 ? 'ok' : ( $mem_bytes >= 64 * 1024 * 1024 ? 'warning' : 'error' ),
+		);
+
+		// 5. cURL
+		$checks[] = array(
+			'label'  => 'cURL Extension',
+			'msg'    => function_exists( 'curl_version' ) ? 'Installed (v' . curl_version()['version'] . ')' : 'Missing',
+			'status' => function_exists( 'curl_version' ) ? 'ok' : 'error',
+		);
+
+		// 6. Timezone
+		$tz = wp_timezone_string();
+		$checks[] = array(
+			'label'  => 'Timezone',
+			'msg'    => $tz ?: 'Not set',
+			'status' => ! empty( $tz ) && $tz !== 'UTC+0' ? 'ok' : 'warning',
+		);
+
+		// 7. WP-Cron
+		$cron_disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
+		$checks[] = array(
+			'label'  => 'WP-Cron',
+			'msg'    => $cron_disabled ? 'Disabled (DISABLE_WP_CRON is true)' : 'Enabled',
+			'status' => $cron_disabled ? 'warning' : 'ok',
+		);
+
+		// 8. Uploads Directory
+		$upload_dir = wp_upload_dir();
+		$writable = ! empty( $upload_dir['basedir'] ) && wp_is_writable( $upload_dir['basedir'] );
+		$checks[] = array(
+			'label'  => 'Uploads Directory',
+			'msg'    => $writable ? 'Writable' : 'Not writable — file uploads will fail.',
+			'status' => $writable ? 'ok' : 'error',
+		);
+
+		// 9. Order100 Database Tables (module-aware)
+		global $wpdb;
+		$table_checks = array(
+			array( 'table' => $wpdb->prefix . 'o100_promotions',           'module' => 'Promotions',    'class' => 'O100_Promotions_DB' ),
+			array( 'table' => $wpdb->prefix . 'o100_customers',            'module' => 'CRM',           'class' => 'O100_Customers_DB' ),
+			array( 'table' => $wpdb->prefix . 'o100_loyalty_points',       'module' => 'Loyalty',       'class' => 'O100_Loyalty_DB' ),
+			array( 'table' => $wpdb->prefix . 'o100_loyalty_transactions', 'module' => 'Loyalty',       'class' => 'O100_Loyalty_DB' ),
+			array( 'table' => $wpdb->prefix . 'o100_automations',          'module' => 'Automations',   'class' => 'O100_Automation_DB' ),
+			array( 'table' => $wpdb->prefix . 'o100_notification_log',     'module' => 'Notifications', 'class' => 'O100_Notification_Log' ),
+		);
+		$missing  = array();
+		$skipped  = array();
+		$checked  = 0;
+		foreach ( $table_checks as $tc ) {
+			if ( ! class_exists( $tc['class'] ) ) {
+				$skipped[] = $tc['module'];
+				continue;
+			}
+			$checked++;
+			if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $tc['table'] ) ) !== $tc['table'] ) {
+				$missing[] = str_replace( $wpdb->prefix, '', $tc['table'] );
+			}
+		}
+		$skipped = array_unique( $skipped );
+		$msg = '';
+		if ( empty( $missing ) ) {
+			$msg = $checked . ' active module tables OK.';
+		} else {
+			$msg = 'Missing: ' . implode( ', ', $missing ) . '.';
+		}
+		if ( ! empty( $skipped ) ) {
+			$msg .= ' Skipped (module inactive): ' . implode( ', ', $skipped ) . '.';
+		}
+		$checks[] = array(
+			'label'  => 'Order100 DB Tables',
+			'msg'    => $msg,
+			'status' => empty( $missing ) ? 'ok' : 'error',
+		);
+
+		// 10. Key Options
+		$key_options = array( 'o100_misc', 'o100_portal' );
+		$opt_missing = array();
+		foreach ( $key_options as $opt ) {
+			if ( get_option( $opt, '__MISSING__' ) === '__MISSING__' ) {
+				$opt_missing[] = $opt;
+			}
+		}
+		$checks[] = array(
+			'label'  => 'Core Settings',
+			'msg'    => empty( $opt_missing ) ? 'All core option keys present.' : 'Missing: ' . implode( ', ', $opt_missing ) . '. Save Settings to initialize.',
+			'status' => empty( $opt_missing ) ? 'ok' : 'warning',
+			'action' => empty( $opt_missing ) ? '' : admin_url( 'admin.php?page=o100-settings' ),
+		);
+
+		wp_send_json_success( $checks );
+	}
+
+	/**
+	 * Tools > Delivery Simulator tab content
+	 */
+	private function render_tools_delivery_sim() {
+		$branches = array();
+		$q = new WP_Query( array( 'post_type' => 'o100_location', 'posts_per_page' => -1, 'post_status' => 'publish' ) );
+		if ( $q->have_posts() ) {
+			while ( $q->have_posts() ) {
+				$q->the_post();
+				$branches[] = array( 'id' => get_the_ID(), 'title' => get_the_title(), 'latlng' => get_post_meta( get_the_ID(), 'o100_latlng', true ) );
+			}
+			wp_reset_postdata();
+		}
+		?>
+		<script>window.o100_diag_branches = <?php echo wp_json_encode( $branches ); ?>;</script>
+		<div class="o100-settings-group-card">
+			<div class="o100-settings-group-title">
+				<h3><?php esc_html_e( 'Delivery Simulator', 'order100' ); ?></h3>
+				<p><?php esc_html_e( 'Simulate checkout conditions to verify shipping fees and restrictions without using the frontend.', 'order100' ); ?></p>
+			</div>
+			<div class="o100-settings-group-content">
+				<div class="cmb-row">
+					<div class="cmb-th"><label><?php esc_html_e( 'Order Method', 'order100' ); ?></label></div>
+					<div class="cmb-td">
+						<select id="o100-sim-method" class="regular-text">
+							<option value="delivery"><?php esc_html_e( 'Delivery', 'order100' ); ?></option>
+							<option value="pickup"><?php esc_html_e( 'Pickup', 'order100' ); ?></option>
+						</select>
+					</div>
+				</div>
+				<div class="cmb-row">
+					<div class="cmb-th"><label><?php esc_html_e( 'Selected Branch', 'order100' ); ?></label></div>
+					<div class="cmb-td">
+						<select id="o100-sim-location" class="regular-text">
+							<option value="0"><?php esc_html_e( 'Global (No specific branch)', 'order100' ); ?></option>
+							<?php foreach ( $branches as $b ) : ?>
+								<option value="<?php echo esc_attr( $b['id'] ); ?>"><?php echo esc_html( $b['title'] ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+				</div>
+				<div class="cmb-row">
+					<div class="cmb-th"><label><?php esc_html_e( 'Real Address', 'order100' ); ?></label></div>
+					<div class="cmb-td">
+						<input type="text" id="o100-sim-address" class="regular-text" placeholder="<?php esc_attr_e( 'Start typing address...', 'order100' ); ?>">
+					</div>
+				</div>
+				<div class="cmb-row" style="text-align:center; position:relative;">
+					<hr style="border:0; border-top:1px dashed #cbd5e1; position:absolute; top:50%; left:0; width:100%; z-index:1;">
+					<span style="background:#fff; padding:0 12px; font-size:12px; font-weight:bold; color:#94a3b8; position:relative; z-index:2;">— OR —</span>
+				</div>
+				<div class="cmb-row">
+					<div class="cmb-th"><label><?php esc_html_e( 'Distance (km)', 'order100' ); ?></label></div>
+					<div class="cmb-td">
+						<input type="number" id="o100-sim-distance" class="regular-text" step="0.1" value="5.5">
+					</div>
+				</div>
+				<div class="cmb-row">
+					<div class="cmb-th"><label><?php esc_html_e( 'Cart Subtotal ($)', 'order100' ); ?></label></div>
+					<div class="cmb-td">
+						<input type="number" id="o100-sim-subtotal" class="regular-text" step="0.01" value="45.00">
+					</div>
+				</div>
+				<div class="cmb-row">
+					<div class="cmb-th"></div>
+					<div class="cmb-td">
+						<button type="button" id="o100-btn-run-sim-inline" class="button button-primary button-large" style="background:#F59322; border-color:#F59322;"><?php esc_html_e( 'Simulate Checkout', 'order100' ); ?></button>
+						<div id="o100-sim-results-inline" style="margin-top:20px; padding:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; display:none; max-width: 480px;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			// Distance calculator
+			var distanceCalc = function(lat1, lon1, lat2, lon2) {
+				var p = 0.017453292519943295, c = Math.cos;
+				var a = 0.5 - c((lat2-lat1)*p)/2 + c(lat1*p)*c(lat2*p)*(1-c((lon2-lon1)*p))/2;
+				return 12742 * Math.asin(Math.sqrt(a));
+			};
+			var updateDistance = function() {
+				if (!window.o100DiagUserLatLng) return;
+				var locId = $('#o100-sim-location').val();
+				if (!locId || locId == '0') return;
+				var branch = window.o100_diag_branches.find(function(b) { return b.id == locId; });
+				if (branch && branch.latlng) {
+					var coords = branch.latlng.split(',');
+					if (coords.length === 2) {
+						var dist = distanceCalc(window.o100DiagUserLatLng.lat, window.o100DiagUserLatLng.lng, parseFloat(coords[0]), parseFloat(coords[1]));
+						$('#o100-sim-distance').val(dist.toFixed(2)).css({backgroundColor:'#ecfdf5',transition:'background 0.5s'});
+						setTimeout(function(){ $('#o100-sim-distance').css({backgroundColor:'#fff'}); }, 1000);
+					}
+				}
+			};
+			$('#o100-sim-location').on('change', updateDistance);
+
+			// Google Autocomplete
+			if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+				var input = document.getElementById('o100-sim-address');
+				if (input) {
+					var autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+					autocomplete.addListener('place_changed', function() {
+						var place = autocomplete.getPlace();
+						if (!place.geometry) return;
+						window.o100DiagUserLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+						updateDistance();
+					});
+				}
+			}
+
+			// Simulate
+			$('#o100-btn-run-sim-inline').on('click', function() {
+				var $btn = $(this), $res = $('#o100-sim-results-inline');
+				$btn.text('Simulating...').prop('disabled', true);
+				$res.hide().html('<div style="text-align:center; padding:20px;"><span class="spinner is-active" style="float:none;"></span></div>').fadeIn(200);
+				$.post(ajaxurl, {
+					action: 'o100_run_shipping_sim',
+					method: $('#o100-sim-method').val(),
+					location: $('#o100-sim-location').val(),
+					distance: $('#o100-sim-distance').val(),
+					subtotal: $('#o100-sim-subtotal').val(),
+					nonce: '<?php echo wp_create_nonce("o100_diag_nonce"); ?>'
+				}, function(res) {
+					$btn.text('<?php echo esc_js( __( 'Simulate Checkout', 'order100' ) ); ?>').prop('disabled', false);
+					if (res.success) { $res.html(res.data.html); console.log('Sim Debug:', res.data.debug); }
+					else { $res.html('<p style="color:red;">Simulation failed.</p>'); }
+				});
+			});
+		});
+		</script>
 		<?php
 	}
 
@@ -1573,15 +1864,131 @@ class O100_Admin_Menu {
 	 */
 	public function render_notifications() {
 		?>
+		<style>
+			/* Hide the native old wrapper styles */
+			#wpfooter { display: none !important; }
+			.o100-wrap .o100-card-box { background: transparent; border: none; box-shadow: none; padding: 0; }
+			.o100-wrap .o100-card-header { display: none; }
+			.o100-wrap .o100-card-body { padding: 0; }
+			/* Hide duplicate CMB2 title */
+			.o100-notifications-container .cmb2-metabox-title { display: none !important; }
+			/* Make the container full width */
+			.o100-notifications-container { margin-top: 0; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 32px 48px 32px !important; }
+			/* CMB2 wrappers — transparent, full width */
+			.o100-notifications-container .cmb2-wrap,
+			.o100-notifications-container .cmb2-wrap > .postbox,
+			.o100-notifications-container .cmb2-wrap .cmb2-metabox { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+			/* Custom callback rows — full width, no padding */
+			.o100-notifications-container .cmb-row.o100-tab-notification { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; border: none !important; box-sizing: border-box !important; }
+			/* Subtab content full width */
+			.o100-notifications-container .o100-notify-subtab-content { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+			/* Hide default save button at bottom, we don't need it if iframe handles save, or we put it inside SMS tab */
+			.o100-notifications-container > form > input[type="submit"],
+			.o100-notifications-container > form > .cmb-submit { display: none !important; }
+			.o100-notifications-container form.cmb-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+			.o100-notifications-container .cmb2-id-o100-notification-dummy { padding: 0 !important; border: none !important; background: transparent !important; }
+		</style>
+		<style>
+		/* ═══ Hand-written Tailwind utility subset for Email React app ═══ */
+		/* Layout */
+		.o100-notifications-container .w-full { width: 100% !important; }
+		.o100-notifications-container .relative { position: relative !important; }
+		.o100-notifications-container .absolute { position: absolute !important; }
+		.o100-notifications-container .flex { display: flex !important; }
+		.o100-notifications-container .flex-1 { flex: 1 1 0% !important; }
+		.o100-notifications-container .flex-wrap { flex-wrap: wrap !important; }
+		.o100-notifications-container .items-center { align-items: center !important; }
+		.o100-notifications-container .justify-center { justify-content: center !important; }
+		.o100-notifications-container .gap-3 { gap: 0.75rem !important; }
+		.o100-notifications-container .space-x-8 > * + * { margin-left: 2rem !important; }
+		.o100-notifications-container .overflow-hidden { overflow: hidden !important; }
+		/* Spacing */
+		.o100-notifications-container .mb-4 { margin-bottom: 1rem !important; }
+		.o100-notifications-container .mb-6 { margin-bottom: 1.5rem !important; }
+		.o100-notifications-container .ml-2 { margin-left: 0.5rem !important; }
+		.o100-notifications-container .-mb-px { margin-bottom: -1px !important; }
+		.o100-notifications-container .py-0\.5 { padding-top: 0.125rem !important; padding-bottom: 0.125rem !important; }
+		.o100-notifications-container .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+		.o100-notifications-container .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+		.o100-notifications-container .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+		.o100-notifications-container .py-8 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+		.o100-notifications-container .px-1 { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+		.o100-notifications-container .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+		.o100-notifications-container .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+		.o100-notifications-container .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+		.o100-notifications-container .px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+		/* Sizing */
+		.o100-notifications-container .w-4 { width: 1rem !important; }
+		.o100-notifications-container .h-4 { height: 1rem !important; }
+		.o100-notifications-container .min-w-\[200px\] { min-width: 200px !important; }
+		.o100-notifications-container .max-w-xs { max-width: 20rem !important; }
+		/* Typography */
+		.o100-notifications-container .text-xs { font-size: 0.75rem !important; line-height: 1rem !important; }
+		.o100-notifications-container .text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+		.o100-notifications-container .text-center { text-align: center !important; }
+		.o100-notifications-container .text-left { text-align: left !important; }
+		.o100-notifications-container .font-medium { font-weight: 500 !important; }
+		.o100-notifications-container .font-semibold { font-weight: 600 !important; }
+		.o100-notifications-container .uppercase { text-transform: uppercase !important; }
+		.o100-notifications-container .tracking-wider { letter-spacing: 0.05em !important; }
+		.o100-notifications-container .whitespace-nowrap { white-space: nowrap !important; }
+		/* Colors — unified to blue-500 (#F59322) instead of indigo */
+		.o100-notifications-container .text-slate-400 { color: #94a3b8 !important; }
+		.o100-notifications-container .text-slate-500 { color: #64748b !important; }
+		.o100-notifications-container .text-slate-700 { color: #334155 !important; }
+		.o100-notifications-container .text-indigo-600, .o100-notifications-container .text-blue-600 { color: #F59322 !important; }
+		.o100-notifications-container .bg-white { background-color: #fff !important; }
+		.o100-notifications-container .bg-slate-50 { background-color: #f8fafc !important; }
+		.o100-notifications-container .bg-slate-100 { background-color: #f1f5f9 !important; }
+		.o100-notifications-container .bg-indigo-100, .o100-notifications-container .bg-blue-100 { background-color: #fff7ed !important; }
+		.o100-notifications-container .bg-green-100 { background-color: #dcfce7 !important; }
+		.o100-notifications-container .bg-red-100 { background-color: #fee2e2 !important; }
+		.o100-notifications-container .text-green-700 { color: #15803d !important; }
+		.o100-notifications-container .text-red-700 { color: #b91c1c !important; }
+		.o100-notifications-container .bg-transparent { background-color: transparent !important; }
+		/* Borders */
+		.o100-notifications-container .border { border-width: 1px !important; }
+		.o100-notifications-container .border-b { border-bottom-width: 1px !important; }
+		.o100-notifications-container .border-b-2 { border-bottom-width: 2px !important; }
+		.o100-notifications-container .border-slate-200 { border-color: #e2e8f0 !important; }
+		.o100-notifications-container .border-slate-300 { border-color: #cbd5e1 !important; }
+		.o100-notifications-container .border-indigo-500, .o100-notifications-container .border-blue-500 { border-color: #F59322 !important; }
+		.o100-notifications-container .border-transparent { border-color: transparent !important; }
+		/* Border radius */
+		.o100-notifications-container .rounded-full { border-radius: 9999px !important; }
+		.o100-notifications-container .rounded-lg { border-radius: 0.5rem !important; }
+		.o100-notifications-container .rounded-xl { border-radius: 0.75rem !important; }
+		/* Shadows */
+		.o100-notifications-container .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05) !important; }
+		/* Transitions */
+		.o100-notifications-container .transition-colors { transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important; }
+		.o100-notifications-container .cursor-pointer { cursor: pointer !important; }
+		/* Focus */
+		.o100-notifications-container .focus\:outline-none:focus { outline: none !important; }
+		.o100-notifications-container .focus\:ring-2:focus { box-shadow: 0 0 0 2px #F59322 !important; }
+		.o100-notifications-container .focus\:ring-indigo-500:focus, .o100-notifications-container .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px #F59322 !important; }
+		.o100-notifications-container .focus\:border-indigo-500:focus, .o100-notifications-container .focus\:border-blue-500:focus { border-color: #F59322 !important; }
+		/* Hover */
+		.o100-notifications-container .hover\:text-slate-700:hover { color: #334155 !important; }
+		.o100-notifications-container .hover\:border-slate-300:hover { border-color: #cbd5e1 !important; }
+		.o100-notifications-container .hover\:bg-slate-50:hover { background-color: #f8fafc !important; }
+		/* Table */
+		.o100-notifications-container .border-collapse { border-collapse: collapse !important; }
+		/* Fix search icon overlap — WP admin padding override */
+		.o100-notifications-container .relative > input[type="text"] { padding-left: 36px !important; }
+		</style>
 		<div class="wrap o100-wrap">
 			<?php $this->render_page_header(); ?>
-			<div class="o100-card-box">
-				<div class="o100-card-header">
-					<h2><?php esc_html_e( 'Email & Notifications', 'order100' ); ?></h2>
-				</div>
-				<div class="o100-card-body">
-					<?php cmb2_metabox_form( 'o100_notifications', 'o100_notifications', array( 'save_button' => __( 'Save Settings', 'order100' ) ) ); ?>
-				</div>
+			<div class="o100-fluent-content o100-notifications-container">
+				<?php cmb2_metabox_form( 'o100_notifications', 'o100_notifications', array( 
+					'save_button' => __( 'Save Settings', 'order100' ),
+					'form_format' => '<form class="cmb-form" method="post" id="%1$s" enctype="multipart/form-data" encoding="multipart/form-data"><input type="hidden" name="object_id" value="%2$s"><input type="hidden" name="submit-cmb" value="1">%3$s<input type="submit" name="submit-cmb-btn" value="%4$s" class="button-primary" style="display:none;"></form>'
+				) ); ?>
+
+				<!-- ═══ REPORTS SUB-TAB (outside CMB2 form) ═══ -->
+				<div class="o100-notify-subtab-content" data-subtab="reports" style="display:none; width: 100%;">
+					<?php require_once O100_PATH . 'core/notifications/views/view-notification-reports.php'; ?>
+				</div><!-- /reports subtab -->
 			</div>
 		</div>
 		<?php
@@ -1632,6 +2039,88 @@ class O100_Admin_Menu {
 	}
 
 	/**
+	 * App Devices (QR Code Pairing)
+	 */
+	public function render_app_devices() {
+		wp_enqueue_script( 'qrcode-js', 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', array(), '1.4.4', true );
+		?>
+		<div class="wrap o100-wrap">
+			<?php $this->render_page_header(); ?>
+			<h1><?php esc_html_e( 'App Devices', 'order100' ); ?></h1>
+			
+			<div class="o100-fluent-content" style="max-width: 800px; margin-top: 20px;">
+				<div class="o100-card" style="background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+					<h2 style="margin-top: 0; font-size: 24px; color: #0f172a;"><?php esc_html_e( 'Connect Order100 App', 'order100' ); ?></h2>
+					<p style="color: #64748b; font-size: 16px; margin-bottom: 30px; max-width: 500px;">
+						<?php esc_html_e( 'Click the button below to generate a secure pairing code. Then open the Order100 App on your tablet and scan the QR code to instantly connect your device.', 'order100' ); ?>
+					</p>
+					
+					<button id="o100-generate-qr-btn" class="button button-primary button-large" style="font-size: 16px; padding: 0 30px; height: 48px; line-height: 46px; border-radius: 6px;">
+						<?php esc_html_e( 'Generate Pairing QR Code', 'order100' ); ?>
+					</button>
+					
+					<div id="o100-qr-code-container" style="display: none; margin-top: 40px; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+						<div id="o100-qr-code"></div>
+						<p style="margin-top: 16px; color: #0f172a; font-weight: 500;"><?php esc_html_e( 'Scan this code with the Order100 App', 'order100' ); ?></p>
+						<p style="margin: 0; color: #ef4444; font-size: 13px;"><?php esc_html_e( 'For your security, this code will only be shown once.', 'order100' ); ?></p>
+					</div>
+					<div id="o100-qr-loading" style="display: none; margin-top: 40px; color: #64748b;">
+						<span class="spinner is-active" style="float: none; margin: 0 10px 0 0;"></span> <?php esc_html_e( 'Generating secure keys...', 'order100' ); ?>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			$('#o100-generate-qr-btn').on('click', function(e) {
+				e.preventDefault();
+				var $btn = $(this);
+				var $loading = $('#o100-qr-loading');
+				var $container = $('#o100-qr-code-container');
+				var $qrDiv = $('#o100-qr-code');
+				
+				$btn.prop('disabled', true);
+				$loading.show();
+				$container.hide();
+				
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'o100_generate_app_pairing',
+						nonce: '<?php echo wp_create_nonce( 'o100_admin_nonce' ); ?>'
+					},
+					success: function(response) {
+						$loading.hide();
+						if ( response.success && response.data && response.data.qr_data ) {
+							$btn.hide();
+							var payload = atob(response.data.qr_data);
+							var typeNumber = 0; // Auto-detect
+							var errorCorrectionLevel = 'M';
+							var qr = qrcode(typeNumber, errorCorrectionLevel);
+							qr.addData(payload);
+							qr.make();
+							$qrDiv.html(qr.createImgTag(5, 10)); 
+							$container.fadeIn();
+						} else {
+							$btn.prop('disabled', false);
+							alert('Failed to generate QR code.');
+						}
+					},
+					error: function() {
+						$loading.hide();
+						$btn.prop('disabled', false);
+						alert('Server error.');
+					}
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+
+	/**
 	 * Placeholder for upcoming features
 	 */
 	public function render_placeholder() {
@@ -1657,4 +2146,4 @@ class O100_Admin_Menu {
 	}
 }
 
-// TS: 20260402232730
+

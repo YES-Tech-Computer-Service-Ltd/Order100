@@ -138,9 +138,3 @@ class ModernMinimal extends BaseTemplate {
         ];
     }
 }
-
-// TS: 20260308142020
-
-// TS: 20260415204924
-
-// TS: 20260519233849
