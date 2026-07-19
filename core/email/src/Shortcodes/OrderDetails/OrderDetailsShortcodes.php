@@ -23,7 +23,7 @@ class OrderDetailsShortcodes extends BaseShortcode {
                 'forced_url' => '',
             ],
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_id' ],
+            'callback'    => [ $this, 'o100ne_order_id' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_number',
@@ -32,13 +32,13 @@ class OrderDetailsShortcodes extends BaseShortcode {
                 'is_plain' => false,
             ],
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_number' ],
+            'callback'    => [ $this, 'o100ne_order_number' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_date',
             'description' => __( 'Order Date', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_date' ],
+            'callback'    => [ $this, 'o100ne_order_date' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_link',
@@ -47,14 +47,9 @@ class OrderDetailsShortcodes extends BaseShortcode {
                 'text_link' => __( 'Order', 'order100' ),
             ],
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_link' ],
+            'callback'    => [ $this, 'o100ne_order_link' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_order_url',
-            'description' => __( 'Order URL (String)', 'order100' ),
-            'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_url' ],
-        ];
+
         $shortcodes[] = [
             'name'        => 'o100_view_order_link',
             'description' => __( 'View Order Link', 'order100' ),
@@ -62,115 +57,107 @@ class OrderDetailsShortcodes extends BaseShortcode {
                 'text_link' => __( 'Your Order', 'order100' ),
             ],
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_view_order_link' ],
+            'callback'    => [ $this, 'o100ne_view_order_link' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_view_order_url',
-            'description' => __( 'View Order URL (String)', 'order100' ),
-            'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_view_order_url' ],
-        ];
+
         $shortcodes[] = [
             'name'        => 'o100_order_status',
             'description' => __( 'Order Status', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_status' ],
+            'callback'    => [ $this, 'o100ne_order_status' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_fee',
             'description' => __( 'Order Fee', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_fee' ],
+            'callback'    => [ $this, 'o100ne_order_fee' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_refund',
             'description' => __( 'Order Refund', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_refund' ],
+            'callback'    => [ $this, 'o100ne_order_refund' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_subtotal',
             'description' => __( 'Order Subtotal', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_subtotal' ],
+            'callback'    => [ $this, 'o100ne_order_subtotal' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_total',
             'description' => __( 'Order Total', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_total' ],
+            'callback'    => [ $this, 'o100ne_order_total' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_order_total_value',
-            'description' => __( 'Order Total Value', 'order100' ),
-            'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_total_value' ],
-        ];
+
         $shortcodes[] = [
             'name'        => 'o100_order_coupon_codes',
-            'description' => __( 'Order Coupon Codes', 'order100' ),
+            'description' => __( 'Used Coupon Codes', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_coupon_codes' ],
+            'callback'    => [ $this, 'o100ne_order_coupon_codes' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_product_line_item_count',
             'description' => __( 'Number of line items in the order', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_product_line_item_count' ],
+            'callback'    => [ $this, 'o100ne_order_product_line_item_count' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_product_line_item_count_double',
             'description' => __( 'Number of line items in the order (double)', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_product_line_item_count_double' ],
+            'callback'    => [ $this, 'o100ne_order_product_line_item_count_double' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_product_item_count',
             'description' => __( 'Total quantity of all items in the order', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_product_item_count' ],
+            'callback'    => [ $this, 'o100ne_order_product_item_count' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_product_count',
             'description' => __( 'Number of base products in the order', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_product_count' ],
+            'callback'    => [ $this, 'o100ne_order_product_count' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_product_variation_count',
             'description' => __( 'Number of product variations in the order', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_order_product_variation_count' ],
+            'callback'    => [ $this, 'o100ne_order_product_variation_count' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_customer_roles',
             'description' => __( 'Customer Roles', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_customer_roles' ],
+            'callback'    => [ $this, 'o100ne_customer_roles' ],
         ];
-        $shortcodes[] = [
-            'name'        => 'o100_customer_note',
-            'description' => __( 'Customer Last Note', 'order100' ),
-            'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_customer_note' ],
-        ];
-        $shortcodes[] = [
-            'name'        => 'o100_customer_notes',
-            'description' => __( 'All Customer Note', 'order100' ),
-            'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_customer_notes' ],
-        ];
+
         $shortcodes[] = [
             'name'        => 'o100_customer_provided_note',
-            'description' => __( 'Customer Provided Note', 'order100' ),
+            'description' => __( 'Customer Checkout Note', 'order100' ),
             'group'       => 'order_details',
-            'callback'    => [ $this, 'o100_customer_provided_note' ],
+            'callback'    => [ $this, 'o100ne_customer_provided_note' ],
         ];
         $shortcodes[] = [
             'name'        => 'woocommerce_email_order_meta',
             'description' => __( 'Order Meta Content', 'order100' ),
             'group'       => 'order_details',
             'callback'    => [ $this, 'woocommerce_email_order_meta' ],
+        ];
+        $shortcodes[] = [
+            'name'        => 'o100_order_items',
+            'description' => __( 'Order Items', 'order100' ),
+            'group'       => 'order_details',
+            'attributes'  => [
+                'product_title'          => 'Product',
+                'quantity_title'         => 'Quantity',
+                'price_title'            => 'Price',
+                'show_product_item_cost' => 'false',
+                'hide_footer'            => 'true',
+            ],
+            'callback'    => [ $this, 'o100ne_order_details' ],
         ];
         $shortcodes[] = [
             'name'        => 'o100_order_details',
@@ -186,6 +173,7 @@ class OrderDetailsShortcodes extends BaseShortcode {
                 'payment_method_title'   => 'Payment method',
                 'order_total_title'      => 'Total',
                 'show_product_item_cost' => 'false',
+                'hide_footer'            => 'false',
             ],
             'callback'    => [ $this, 'o100ne_order_details' ],
         ];
@@ -536,6 +524,24 @@ class OrderDetailsShortcodes extends BaseShortcode {
         return $order->get_order_number();
     }
 
+    public function o100ne_order_url( $data ) {
+        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
+
+        if ( ! empty( $render_data['is_sample'] ) ) {
+            return '#';
+        }
+
+        $order = Helpers::get_order_from_shortcode_data( $render_data );
+
+        if ( empty( $order ) ) {
+            return '';
+        }
+
+        $sent_to_admin = isset( $render_data['sent_to_admin'] ) ? $render_data['sent_to_admin'] : false;
+
+        return $sent_to_admin ? $order->get_edit_order_url() : $order->get_view_order_url();
+    }
+
     public function o100ne_order_link( $data, $shortcode_atts = [] ) {
         $order_url = $this->o100ne_order_url( $data );
 
@@ -550,36 +556,7 @@ class OrderDetailsShortcodes extends BaseShortcode {
         return wp_kses_post( "<a href='{$order_url}'>" . $text_link . '</a>' );
     }
 
-    public function o100ne_order_url( $data ) {
 
-        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
-
-        if ( ! empty( $render_data['is_sample'] ) ) {
-            /**
-             * Is sample order
-             */
-            return esc_url( get_home_url() );
-        }
-
-        $order = Helpers::get_order_from_shortcode_data( $render_data );
-
-        if ( empty( $order ) ) {
-            /**
-             * Not having order_id
-             */
-            return '';
-        }
-
-        $sent_to_admin = isset( $render_data['sent_to_admin'] ) ? $render_data['sent_to_admin'] : false;
-
-        $order_url = $sent_to_admin ? $order->get_edit_order_url() : $order->get_view_order_url();
-
-        if ( empty( $order_url ) ) {
-            return '';
-        }
-
-        return esc_url( $order_url );
-    }
 
     public function o100ne_view_order_link( $data, $shortcode_atts = [] ) {
 
@@ -614,34 +591,7 @@ class OrderDetailsShortcodes extends BaseShortcode {
         return wp_kses_post( "<a href='{$view_order_url}'>" . $text_link . '</a>' );
     }
 
-    public function o100ne_view_order_url( $data ) {
 
-        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
-
-        if ( ! empty( $render_data['is_sample'] ) ) {
-            /**
-             * Is sample order
-             */
-            return esc_url( get_home_url() );
-        }
-
-        $order = Helpers::get_order_from_shortcode_data( $render_data );
-
-        if ( empty( $order ) ) {
-            /**
-             * Not having order_id
-             */
-            return '';
-        }
-
-        $view_order_url = $order->get_view_order_url();
-
-        if ( empty( $view_order_url ) ) {
-            return '';
-        }
-
-        return esc_url( $view_order_url );
-    }
 
     public function o100ne_order_date( $data ) {
 
@@ -825,28 +775,6 @@ class OrderDetailsShortcodes extends BaseShortcode {
         }
 
         return wc_price( $order->get_total(), [ 'currency' => $order->get_currency() ] );
-    }
-
-    public function o100ne_order_total_value( $data ) {
-        $render_data = isset( $data['render_data'] ) ? $data['render_data'] : [];
-
-        if ( ! empty( $render_data['is_sample'] ) ) {
-            /**
-             * Is sample order
-             */
-            return '18.00';
-        }
-
-        $order = Helpers::get_order_from_shortcode_data( $render_data );
-
-        if ( empty( $order ) ) {
-            /**
-             * Not having order_id
-             */
-            return '';
-        }
-
-        return $order->get_total();
     }
 
     public function o100ne_order_coupon_codes( $data ) {
@@ -1150,5 +1078,3 @@ class OrderDetailsShortcodes extends BaseShortcode {
 }
 
 
-
-// TS: 20260224224303
