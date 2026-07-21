@@ -136,5 +136,3 @@ class RatingStars extends BaseElement {
         ];
     }
 }
-
-// TS: 20260531120845

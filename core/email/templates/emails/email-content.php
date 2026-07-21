@@ -79,5 +79,3 @@ if ( ! empty( $template ) ) :
 <?php endif; ?>
 
 
-
-// TS: 20260227222349

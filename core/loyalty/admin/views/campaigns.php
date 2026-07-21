@@ -367,7 +367,7 @@ $campaign_types = array(
 	<script type="text/template" id="tmpl-o100-rules-referral">
 		<!-- ═══ ADVOCATE (Existing Customer) ═══ -->
 		<div class="o100-dynamic-rule-block" data-role="advocate">
-			<h3 style="color:#4F46E5; border-left:3px solid #4F46E5; padding-left:10px;"><?php esc_html_e( 'EXISTING CUSTOMER / ADVOCATE REWARD', 'order100' ); ?></h3>
+			<h3 style="color:#F59322; border-left:3px solid #F59322; padding-left:10px;"><?php esc_html_e( 'EXISTING CUSTOMER / ADVOCATE REWARD', 'order100' ); ?></h3>
 			<div class="o100-form-row">
 				<div class="o100-form-group">
 					<label><?php esc_html_e( 'Choose the type of reward *', 'order100' ); ?></label>
@@ -403,7 +403,7 @@ $campaign_types = array(
 				</div>
 				<!-- Inline Custom Coupon Creator -->
 				<div class="o100-custom-coupon-fields" style="display:none; background:#f8f9fa; padding:15px; border-radius:8px; margin-top:10px; border:1px dashed #c7d2fe;">
-					<h4 style="margin-top:0; color:#4F46E5;"><?php esc_html_e( 'Create New Coupon', 'order100' ); ?></h4>
+					<h4 style="margin-top:0; color:#F59322;"><?php esc_html_e( 'Create New Coupon', 'order100' ); ?></h4>
 					<div class="o100-form-row">
 						<div class="o100-form-group">
 							<label><?php esc_html_e( 'Discount Type', 'order100' ); ?></label>
@@ -626,7 +626,3 @@ $campaign_types = array(
 			</div>
 		</div>
 	</script>
-
-// TS: 20260113114226
-
-// TS: 20260313161813
