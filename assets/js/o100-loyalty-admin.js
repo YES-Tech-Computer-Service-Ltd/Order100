@@ -1,3 +1,70 @@
+
+(function($) {
+    if (typeof o100_loyalty === 'undefined' || !o100_loyalty.rest_url) return;
+
+    var endpointMap = {
+        'o100_loyalty_get_levels': 'levels',
+        'o100_loyalty_save_level': 'levels/save',
+        'o100_loyalty_delete_level': 'levels/delete',
+        'o100_loyalty_save_level_settings': 'levels/settings/save',
+        'o100_loyalty_get_level_settings': 'levels/settings',
+        
+        'o100_loyalty_get_customers': 'customers',
+        'o100_loyalty_get_customer_detail': 'customers/detail',
+        'o100_loyalty_get_transactions': 'customers/transactions',
+        'o100_loyalty_adjust_points': 'customers/adjust_points',
+        'o100_loyalty_toggle_customer_status': 'customers/toggle_status',
+        'o100_loyalty_save_customer': 'customers/save',
+        'o100_loyalty_export_customers': 'customers/export',
+        'o100_loyalty_get_customer_full_data': 'customers/full_data',
+        'o100_loyalty_get_customer_rewards': 'customers/rewards',
+        
+        'o100_loyalty_get_launcher_settings': 'settings/launcher',
+        'o100_loyalty_save_launcher_settings': 'settings/launcher/save',
+        'o100_save_loyalty_settings_all': 'settings/all/save',
+        
+        'o100_loyalty_dashboard_analytic_data': 'dashboard/analytics',
+        'o100_loyalty_chart_data': 'dashboard/chart',
+        'o100_loyalty_all_customer_activities': 'dashboard/activities',
+        
+        'o100_save_campaign': 'campaigns/save',
+        'o100_campaign_status': 'campaigns/status',
+        'o100_campaign_delete': 'campaigns/delete',
+        
+        'o100_save_reward': 'rewards/save',
+        'o100_reward_status': 'rewards/status',
+        'o100_reward_delete': 'rewards/delete',
+        
+        'o100_condition_data': 'conditions/data',
+        'o100_get_customer_list': 'conditions/customers',
+        'o100_free_product_options': 'conditions/products'
+    };
+
+    $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+        if (options.url && options.url.indexOf('admin-ajax.php') !== -1) {
+            var action = null;
+            
+            // Check data string
+            if (typeof options.data === 'string') {
+                var actionMatch = options.data.match(/(?:^|&)action=([^&]+)/);
+                if (actionMatch) action = actionMatch[1];
+            } else if (options.data && typeof options.data === 'object' && options.data.action) {
+                action = options.data.action;
+            }
+            
+            if (action && endpointMap[action]) {
+                options.url = o100_loyalty.rest_url + 'o100/v1/loyalty/' + endpointMap[action];
+                options.type = 'POST'; // We map all legacy AJAX to POST since $_POST is expected
+                options.beforeSend = function(xhr) {
+                    xhr.setRequestHeader('X-WP-Nonce', o100_loyalty.rest_nonce);
+                    if (originalOptions.beforeSend) {
+                        originalOptions.beforeSend(xhr);
+                    }
+                };
+            }
+        }
+    });
+})(jQuery);
 jQuery(document).ready(function ($) {
 	'use strict';
 
@@ -554,7 +621,7 @@ jQuery(document).ready(function ($) {
 			};
 
 			var ctxRev = document.getElementById('o100-loyalty-revenue-chart').getContext('2d');
-			revenueChart = new Chart(ctxRev, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.1 }] }, options: commonOptions });
+			revenueChart = new Chart(ctxRev, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: '#F59322', backgroundColor: 'rgba(245, 147, 34, 0.1)', fill: true, tension: 0.1 }] }, options: commonOptions });
 
 			var ctxPts = document.getElementById('o100-loyalty-points-chart').getContext('2d');
 			pointsChart = new Chart(ctxPts, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.1 }] }, options: commonOptions });
@@ -624,7 +691,7 @@ jQuery(document).ready(function ($) {
 					res.data.items.forEach(function (item, index) {
 						var title = (item.action_type || '').replace(/_/g, ' ');
 						html += '<div style="position:relative; margin-bottom:20px;">';
-						html += '<div style="position:absolute; left:-30px; top:5px; width:12px; height:12px; border-radius:50%; border:2px solid #4f46e5; background:#fff; z-index:2;">';
+						html += '<div style="position:absolute; left:-30px; top:5px; width:12px; height:12px; border-radius:50%; border:2px solid #F59322; background:#fff; z-index:2;">';
 						if (index !== res.data.items.length - 1) {
 							html += '<div style="position:absolute; left:5px; top:15px; width:2px; height:calc(100% + 5px); background:#e5e7eb; z-index:1;"></div>';
 						}
@@ -2592,7 +2659,3 @@ jQuery(document).ready(function ($) {
 	});
 });
 
-
-/* TS: 20260509001148 */
-
-/* TS: 20260531192358 */

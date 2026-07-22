@@ -11,5 +11,3 @@ if ( ! empty( $template ) ) {
     o100ne_kses_post_e( $content );
 }
 
-
-// TS: 20260407144735

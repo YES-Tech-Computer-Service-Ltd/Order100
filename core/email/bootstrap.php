@@ -28,7 +28,7 @@ if ( ! defined( 'O100NE_DEBUG' ) ) {
 }
 
 if ( ! defined( 'O100NE_VERSION' ) ) {
-	define( 'O100NE_VERSION', '4.0.0' );
+	define( 'O100NE_VERSION', '4.0.2' );
 }
 
 if ( ! defined( 'O100NE_PLUGIN_URL' ) ) {
@@ -73,6 +73,8 @@ function o100ne_init() {
 	add_action( 'before_woocommerce_init', 'o100ne_enable_compatible_hpos' );
 	do_action( 'o100ne_before_init' );
 
+	require_once __DIR__ . '/src/Models/DynamicEmails.php';
+
 	\Order100\Notification\Engine\Initialize::get_instance();
 }
 
@@ -92,9 +94,31 @@ function o100ne_enable_compatible_hpos() {
 // Hook into plugins_loaded with priority 20 (after WC loads at 10)
 add_action( 'plugins_loaded', 'o100ne_init', 20 );
 
+if ( isset($_GET['o100_debug_vite']) && $_GET['o100_debug_vite'] == '1' ) {
+    add_action('init', function() {
+        echo "<h1>VITE DEBUG INFO</h1>";
+        $manifest_path = O100NE_PLUGIN_PATH . 'assets/dist/builder/.vite/manifest.json';
+        echo "<p>Manifest Path: $manifest_path</p>";
+        echo "<p>Exists: " . (file_exists($manifest_path) ? 'Yes' : 'No') . "</p>";
+        if (file_exists($manifest_path)) {
+            echo "<pre>" . file_get_contents($manifest_path) . "</pre>";
+        }
+        
+        // Also dump the API template response
+        echo "<h2>API TEMPLATES</h2>";
+        $templates = \Order100\Notification\Engine\Models\TemplateModel::find_all();
+        $out = [];
+        foreach ($templates as $t) {
+            if (strpos($t['name'], 'o100_') !== false) {
+                $out[] = [
+                    'name' => $t['name'],
+                    'title' => $t['template_title'],
+                    'category' => (isset($t['category']) ? $t['category'] : 'none')
+                ];
+            }
+        }
+        echo "<pre>" . print_r($out, true) . "</pre>";
 
-
-
-// TS: 20260206225224
-
-// TS: 20260507231920
+        die();
+    });
+}

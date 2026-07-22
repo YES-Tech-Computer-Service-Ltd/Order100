@@ -173,9 +173,3 @@ jQuery(document).ready(function($) {
         }, 1500); // Slight delay to let WC initialize
     }
 });
-
-/* TS: 20260126122334 */
-
-/* TS: 20260130215710 */
-
-/* TS: 20260515170952 */
