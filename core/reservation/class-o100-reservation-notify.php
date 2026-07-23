@@ -110,7 +110,7 @@ class O100_Reservation_Notify {
 			__( 'A new reservation has been submitted on your website:', 'order100' ),
 			$vars,
 			sprintf(
-				'<a href="%s" style="display:inline-block;padding:10px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">%s</a>',
+				'<a href="%s" style="display:inline-block;padding:10px 24px;background:#F59322;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">%s</a>',
 				esc_url( admin_url( 'admin.php?page=o100-reservations' ) ),
 				__( 'View Reservations', 'order100' )
 			)
@@ -178,14 +178,56 @@ class O100_Reservation_Notify {
 
 		$vars = self::get_template_vars( $resv );
 
+		$token = wp_hash( 'o100_resv_' . $resv->id . '_' . $resv->guest_email );
+		$confirm_url = add_query_arg( array(
+			'o100_resv_action' => 'confirm',
+			'id'               => $resv->id,
+			'token'            => $token,
+		), home_url( '/' ) );
+		$cancel_url = add_query_arg( array(
+			'o100_resv_action' => 'cancel',
+			'id'               => $resv->id,
+			'token'            => $token,
+		), home_url( '/' ) );
+
+		$buttons_html = '
+		<div style="margin:25px 0 10px; text-align:center;">
+			<a href="'.esc_url($confirm_url).'" style="display:inline-block; padding:12px 24px; background:#10b981; color:#fff; text-decoration:none; border-radius:6px; font-weight:600; margin-right:12px; font-size:15px;">✓ Confirm Reservation</a>
+			<a href="'.esc_url($cancel_url).'" style="display:inline-block; padding:12px 24px; background:#f43f5e; color:#fff; text-decoration:none; border-radius:6px; font-weight:600; font-size:15px;">✗ Cancel Reservation</a>
+		</div>';
+
 		$body = self::build_email_body(
 			__( 'See you soon! 🍽️', 'order100' ),
 			sprintf(
-				__( 'Hi %s, this is a friendly reminder about your upcoming reservation:', 'order100' ),
+				__( 'Hi %s, this is a friendly reminder about your upcoming reservation. Please confirm or cancel using the buttons below:', 'order100' ),
+				esc_html( $resv->guest_name )
+			) . $buttons_html,
+			$vars,
+			__( 'We look forward to welcoming you.', 'order100' )
+		);
+
+		self::send( $resv->guest_email, $subject, $body );
+	}
+
+	/**
+	 * Guest: Post-dining review/marketing request
+	 */
+	public static function send_guest_review_request( $resv ) {
+		$subject = sprintf(
+			__( 'How was your experience at %s?', 'order100' ),
+			get_bloginfo( 'name' )
+		);
+
+		$vars = array(); // Minimal vars
+
+		$body = self::build_email_body(
+			__( 'Thank you for dining with us! 🌟', 'order100' ),
+			sprintf(
+				__( 'Hi %s, we hope you enjoyed your recent visit. We would love to hear your feedback. Please consider leaving us a review to let us know how we did.', 'order100' ),
 				esc_html( $resv->guest_name )
 			),
 			$vars,
-			__( 'We look forward to welcoming you. If you need to cancel or modify your reservation, please contact us as soon as possible.', 'order100' )
+			__( 'We look forward to serving you again soon.', 'order100' )
 		);
 
 		self::send( $resv->guest_email, $subject, $body );
@@ -264,9 +306,3 @@ class O100_Reservation_Notify {
 	}
 }
 
-
-// TS: 20260115202946
-
-// TS: 20260314134613
-
-// TS: 20260528002108

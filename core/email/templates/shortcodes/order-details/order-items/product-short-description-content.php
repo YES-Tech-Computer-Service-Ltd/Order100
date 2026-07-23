@@ -9,7 +9,3 @@ defined( 'ABSPATH' ) || exit;
     ?>
     </div>
 <?php
-
-// TS: 20260331004200
-
-// TS: 20260410164659
